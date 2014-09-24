@@ -1,0 +1,19 @@
+<script type="text/javascript" src="../build/maya-client.js"></script>
+<script>
+	
+	
+	function onClientAuthenticated(){
+		
+	}
+	
+	
+	var node = new maya.Maya("ws://localhost:1234");
+	node.connect(function(){
+		var cmd_auth = new maya.core.Authenticate("admin", "admin", function(authenticated){
+			onClientAuthenticated(node);
+		});
+		node.exec(cmd_auth);
+	});
+	
+
+</script>

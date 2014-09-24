@@ -1,0 +1,14 @@
+{
+  "name": "maya-client",
+  "version": "0.0.1",
+  "description": "client side code for maya",
+  "main": "src/maya-client.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Sylvain Mahé <sylv.mahe@gmail.com> (https://github.com/nilpotence)",
+  "license": "MIT",
+  "dependencies": {
+    "jquery": "^2.1.1"
+  }
+}
