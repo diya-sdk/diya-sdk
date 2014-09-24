@@ -2,15 +2,20 @@
 <script>
 	
 	
-	function onClientAuthenticated(){
-		
+	function onClientAuthenticated(node){
+		console.log("Starting App...");
 	}
 	
 	
 	var node = new maya.Maya("ws://localhost:1234");
 	node.connect(function(){
 		var cmd_auth = new maya.core.Authenticate("admin", "admin", function(authenticated){
-			onClientAuthenticated(node);
+			if(authenticated){
+				console.log("App authenticated !");
+				onClientAuthenticated(node);
+			}else{
+				console.log("App failed to authenticate !");
+			}
 		});
 		node.exec(cmd_auth);
 	});

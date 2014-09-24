@@ -1,5 +1,3 @@
-var $ = require('jquery');
-
 var message = require('./services/message');
 var core = require('./services/core/core');
 

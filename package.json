@@ -4,11 +4,17 @@
   "description": "client side code for maya",
   "main": "src/maya-client.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build-debug": "browserify src/maya-client.js -d --s maya > build/maya-client.js",
+    "build-min": "browserify src/maya-client.js --s maya | uglifyjs -c > build/maya-client.min.js",
+    "build": "npm run build-debug && npm run build-min",
+    "watch": "watchify src/maya-client.js -d --s maya -o build/maya-client.js -v"
   },
   "author": "Sylvain Mahé <sylv.mahe@gmail.com> (https://github.com/nilpotence)",
   "license": "MIT",
-  "dependencies": {
-    "jquery": "^2.1.1"
+  "dependencies": {},
+  "devDependencies": {
+    "browserify": "^5.12.0",
+    "uglify-js": "^2.4.15",
+    "watchify": "^1.0.5"
   }
 }
