@@ -1,4 +1,4 @@
 maya-client
 ===========
 
-Client-side Javascript library to interact with Diya One Robots
+Client-side Javascript library for interacting with Diya One Robots
