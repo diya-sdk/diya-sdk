@@ -1,0 +1,64 @@
+<script type="text/javascript" src="../build/maya-client.js"></script>
+<script>
+
+	var rtc = null;
+	var rtc2 = null;
+
+	function onClientAuthenticationFailure(){
+		console.log("Cannot authenticate client !");
+	}
+
+	function onClientAuthenticated(node){
+		console.log("Client authenticated !");
+		rtc = new maya.rtc.RTC(node);
+	}
+
+	function connectRTC(){
+
+		rtc.use(/^air\.co.*/, function(channel){
+
+			channel.setOnMessage(function(message){
+				console.log(channel.name +" : "+ message.data);
+			});
+			
+		});
+
+		rtc.connect();
+	}
+
+	function onClientAuthenticated2(node){
+		console.log("Client authenticated !");
+		rtc2 = new maya.rtc.RTC(node);
+	}
+
+	function connectRTC2(){
+
+		rtc2.use(/^air\.tem.*/, function(channel){
+
+			channel.setOnMessage(function(message){
+				console.log(channel.name +" : "+ message.data);
+			});
+			
+		});
+
+		rtc2.connect();
+	}
+
+	function disconnectAll(){
+		rtc2.disconnect();
+		rtc.disconnect();
+	}
+	
+
+	var client = new maya.MayaClient("ws://localhost:1234", "admin", "pass");
+
+	client.createSession(onClientAuthenticated, onClientAuthenticationFailure);
+	client.createSession(onClientAuthenticated2, onClientAuthenticationFailure);
+
+
+</script>
+
+<button onclick="connectRTC()">Connect</button>
+<button onclick="connectRTC2()">Connect</button>
+
+<button onclick="disconnectAll()">Disconnect All</button>

@@ -1,0 +1,103 @@
+<script type="text/javascript" src="../build/maya-client.js"></script>
+<script>
+
+	
+
+	var promethe = null;
+	var outputNeuron = null;
+
+	function addInputNeuron(neuron){
+		console.log(neuron.type+':'+neuron.size);
+
+
+		var count = 0;
+		var fps = 0;
+		var lastTick = new Date().getTime();
+
+		neuron.setOnValue(function(val){
+
+			console.log(new DataView(val.data).getFloat32(0,true));
+
+			fps++;
+			count++;
+			if(count > 100){
+				fps = fps / (new Date().getTime() - lastTick);
+
+				lastTick = new Date().getTime();
+				count = 0;
+
+				console.log(1000*fps + 'fps');
+				fps = 0;
+			}
+		});
+	}
+
+	function addOutputNeuron(neuron){
+		console.log(neuron.type+':'+neuron.size);
+
+
+		outputNeuron = neuron;
+
+	}
+
+	function writeNeuron(val){
+
+		if(outputNeuron === null) return ;
+
+		var ff = true;
+
+		for(var i = 0; i<outputNeuron.size; i++){
+			var v = 0;
+			if(ff) v = val;
+			else v = 1.0 - val;
+
+			ff = !ff;
+
+			outputNeuron.write(i, v);
+		}
+
+	}
+
+	function connectPromethe(session){
+		promethe.use(/^ctrl\..*/, function(neuron){
+
+			if(neuron.type === 'input'){
+				addInputNeuron(neuron);
+			}
+			else if(neuron.type === 'output'){
+				addOutputNeuron(neuron);
+			}
+			else console.log('Unknown neuron type !');
+		});
+
+		promethe.connect();
+	}
+
+	function disconnectAll(){
+		promethe.disconnect();
+	}
+
+	function onAuthenticationSucceded(session){
+		console.log('Connection successful !');
+		promethe = new maya.Promethe(session);
+	}
+
+	function onAuthenticationFailed(){
+		console.log("Cannot connect to maya-node");
+	}
+
+	var client = new maya.MayaClient("ws://192.168.1.13:1234", "admin", "pass");
+
+	client.createSession(onAuthenticationSucceded, onAuthenticationFailed)
+
+
+</script>
+
+<button onclick="connectPromethe()">Connect</button>
+
+<button onclick="disconnectAll()">Disconnect All</button>
+
+<input type="range" min="0" max="1" value="0.5" step="0.01" onchange="writeNeuron(this.value)" />
+
+<div id="neuron_value"></div>
+<div id="console"></div>
