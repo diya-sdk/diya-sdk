@@ -1,20 +1,76 @@
-/* maya-client
- *
- * Copyright (c) 2014, Partnering Robotics, All rights reserved.
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; version
- *  3.0 of the License This library is distributed in the hope
- * that it will be useful, but WITHOUT ANY WARRANTY; without even
- * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- * PURPOSE. See the GNU Lesser General Public License for more details.
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library.
- */
+var RTC = require('../rtc/rtc');
 
-
-var exports ={
-		rtc: require('./rtc')
+function Promethe(session){
+	this.rtc = new RTC.RTC(session);
 }
 
-module.exports = exports;
+Promethe.prototype.use = function(regex, callback){
+	var that = this;
+	this.rtc.use(regex, function(channel){
+		that._negociateNeuron(channel, callback);
+	});
+}
+
+Promethe.prototype.connect = function(){
+	this.rtc.connect();
+}
+
+Promethe.prototype.disconnect = function(){
+	this.rtc.disconnect();
+}
+
+
+Promethe.prototype._negociateNeuron = function(channel, callback){
+	channel.setOnMessage(function(message){
+		
+		var view = new DataView(message.data);
+
+		var typeChar = String.fromCharCode(view.getUint8(0));
+		if(typeChar === 'O'){
+			//Input
+			channel.type = 'input'; //Promethe Output = Client Input
+		}else if(typeChar === 'I'){
+			//Output
+			channel.type = 'output'; //Promethe Input = Client Output
+		}else{
+			//Error
+		}
+
+		var size = view.getInt32(1,true);
+		if(size != undefined){
+			channel.size = size;
+			channel._buffer = new Float32Array(size);
+		}else{
+			//error
+		}
+
+
+
+		channel.setOnMessage(undefined);
+
+		channel.setOnValue = function(onvalue_cb){
+			channel.setOnMessage(onvalue_cb);
+		}
+
+		channel.write = function(index, value){
+			if(index < 0 || index > channel.size || isNaN(value)) return false;
+			channel._buffer[index] = value;
+			return true;
+		}
+
+		channel.frequency = 33;
+
+		channel._run = function(){
+			channel.send(channel._buffer);
+			setTimeout(channel._run, channel.frequency);
+		}
+
+		channel._run();
+
+		callback(channel);
+
+	});
+}
+
+
+module.exports = Promethe;

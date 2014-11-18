@@ -18,11 +18,12 @@ var message = require('./services/message');
 //Services
 var core = require('./services/core/core');
 var timer = require('./services/timer/timer');
-var promethe = require('./services/promethe/promethe');
+var rtc = require('./services/rtc/rtc');
+var Promethe = require('./services/promethe/promethe');
 
 var WebSocket = window.WebSocket || window.MozWebSocket;
 
-
+ 
 
 function Maya(addr){
 	var that = this;
@@ -34,11 +35,16 @@ function Maya(addr){
 		var sig = message.buildSignature(msg);
 		var handler = messageHandlers[sig];
 		
+		console.log(msg);
+		console.log(handler);
+
 		if(handler){
 			if(!handler.permanent){
 				delete messageHandlers[sig];
 			}
-			handler.parse(msg.data);
+
+				handler.parse(msg.data);
+			
 		}
 	}
 	
@@ -54,7 +60,7 @@ function Maya(addr){
 	
 	function handleMessage(incomingMessage){
 		var msg;
-		
+
 		try{
 			msg = JSON.parse(incomingMessage.data);
 		}catch(e){
@@ -106,12 +112,46 @@ function Maya(addr){
 }
 
 
+function MayaClient(addr, user, password){
+
+	var that = this;
+
+	var nodes = new Array();
+
+
+	function createNode(){
+		var node = new maya.Maya(addr);
+		nodes.push(node);
+
+		return node;
+	}
+
+	this.createSession = function(onconnected, onfailure){
+
+		var node = createNode();
+
+		node.connect(function(){
+			var cmd_auth = new maya.core.Authenticate(user, password, function(authenticated){
+				if(authenticated){
+					onconnected(node);
+				}else{
+					onfailure();
+				}
+			});
+			node.exec(cmd_auth);
+		});	
+	}
+	
+}
+
 
 var maya = {
+		MayaClient: MayaClient,
 		Maya: Maya,
 		core: core,
 		timer: timer,
-		promethe: promethe
+		rtc: rtc,
+		Promethe: Promethe
 }
 
 module.exports = maya;
