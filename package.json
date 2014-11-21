@@ -1,13 +1,13 @@
 {
-  "name": "maya-client",
-  "version": "0.0.1",
-  "description": "client side code for maya",
-  "main": "src/maya-client.js",
+  "name": "diya-sdk",
+  "version": "0.5.0",
+  "description": "SDK for accessing Diya One services",
+  "main": "src/diya-sdk.js",
   "scripts": {
-    "build-debug": "browserify src/maya-client.js -d --s maya > build/maya-client.js",
-    "build-min": "browserify src/maya-client.js --s maya | uglifyjs -c > build/maya-client.min.js",
+    "build-debug": "browserify src/diya-sdk.js -d --s diya > dist/diya-sdk.js",
+    "build-min": "browserify src/diya-sdk.js --s diya | uglifyjs -c > dist/diya-sdk.min.js",
     "build": "npm run build-debug && npm run build-min",
-    "watch": "watchify src/maya-client.js -d --s maya -o build/maya-client.js -v"
+    "watch": "watchify src/diya-sdk.js -d --s diya -o dist/diya-sdk.js -v"
   },
   "author": "Sylvain Mahé <sylv.mahe@gmail.com> (https://github.com/nilpotence)",
   "license": "MIT",

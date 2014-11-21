@@ -1,4 +1,4 @@
-<script type="text/javascript" src="../build/maya-client.js"></script>
+<script type="text/javascript" src="../dist/diya-sdk.js"></script>
 <script>
 
 	
@@ -79,14 +79,14 @@
 
 	function onAuthenticationSucceded(session){
 		console.log('Connection successful !');
-		promethe = new maya.Promethe(session);
+		promethe = new diya.Promethe(session);
 	}
 
 	function onAuthenticationFailed(){
 		console.log("Cannot connect to maya-node");
 	}
 
-	var client = new maya.MayaClient("ws://192.168.1.13:1234", "admin", "pass");
+	var client = new diya.MayaClient("ws://localhost:1234", "admin", "pass");
 
 	client.createSession(onAuthenticationSucceded, onAuthenticationFailed)
 
