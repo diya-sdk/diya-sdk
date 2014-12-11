@@ -1,4 +1,4 @@
-/* maya-client
+/* Diya-client
  *
  * Copyright (c) 2014, Partnering Robotics, All rights reserved.
  * This library is free software; you can redistribute it and/or
@@ -16,16 +16,16 @@
 var message = require('./services/message');
 
 //Services
-var core = require('./services/core/core');
+var auth = require('./services/auth/auth');
 var timer = require('./services/timer/timer');
 var rtc = require('./services/rtc/rtc');
 var Promethe = require('./services/promethe/promethe');
-
+ 
 var WebSocket = window.WebSocket || window.MozWebSocket;
 
  
 
-function Maya(addr){
+function Diya(addr){
 	var that = this;
 	var socket;	
 	
@@ -112,7 +112,7 @@ function Maya(addr){
 }
 
 
-function MayaClient(addr, user, password){
+function DiyaClient(addr, user, password){
 
 	var that = this;
 
@@ -120,7 +120,7 @@ function MayaClient(addr, user, password){
 
 
 	function createNode(){
-		var node = new maya.Maya(addr);
+		var node = new diya.Diya(addr);
 		nodes.push(node);
 
 		return node;
@@ -131,7 +131,7 @@ function MayaClient(addr, user, password){
 		var node = createNode();
 
 		node.connect(function(){
-			var cmd_auth = new maya.core.Authenticate(user, password, function(authenticated){
+			var cmd_auth = new diya.auth.Authenticate(user, password, function(authenticated){
 				if(authenticated){
 					onconnected(node);
 				}else{
@@ -145,13 +145,13 @@ function MayaClient(addr, user, password){
 }
 
 
-var maya = {
-		MayaClient: MayaClient,
-		Maya: Maya,
-		core: core,
+var diya = {
+		DiyaClient: DiyaClient,
+		Diya: Diya,
+		auth: auth,
 		timer: timer,
 		rtc: rtc,
 		Promethe: Promethe
 }
 
-module.exports = maya;
+module.exports = diya;

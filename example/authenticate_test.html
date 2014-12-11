@@ -1,0 +1,25 @@
+<script type="text/javascript" src="../dist/diya-sdk.js"></script>
+<script>
+
+
+	function onClientAuthenticationFailure(){
+		console.log("Cannot authenticate client !");
+	}
+
+	function onClientAuthenticated(node){
+		console.log("Client authenticated !");
+
+		var cmdTimer = new diya.timer.Timer(undefined, function(time){
+			console.log(time);
+		});
+
+		node.exec(cmdTimer);
+	}
+
+
+	var client = new diya.DiyaClient("ws://localhost:1234", "zorblax", "pass");
+
+	client.createSession(onClientAuthenticated, onClientAuthenticationFailure);
+
+
+</script>

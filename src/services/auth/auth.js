@@ -19,7 +19,7 @@ var Message = require('../message');
 
 
 function Authenticate(user, password, callback){
-	Message.call(this, 'core', 'authenticate');
+	Message.call(this, 'auth', 'Authenticate');
 	
 	this.user = user;
 	this.password = password;
