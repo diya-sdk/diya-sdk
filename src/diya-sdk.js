@@ -20,7 +20,8 @@ var auth = require('./services/auth/auth');
 var timer = require('./services/timer/timer');
 var rtc = require('./services/rtc/rtc');
 var Promethe = require('./services/promethe/promethe');
- 
+var watchdog = require('./services/watchdog/watchdog');
+
 var WebSocket = window.WebSocket || window.MozWebSocket;
 
  
@@ -28,23 +29,63 @@ var WebSocket = window.WebSocket || window.MozWebSocket;
 function Diya(addr){
 	var that = this;
 	var socket;	
-	
-	var messageHandlers = new Array();
+
+	var pendingRequests = [];
+	var registeredListeners = [];
+
+	var nextReqId = -1;
+	function consumeNextReqId(){
+		nextReqId++;
+		return nextReqId;
+	}
+
+	var nextSubscriptionId = -1;
+	function consumeNextSubscriptionId(){
+		nextSubscriptionId++;
+		return nextSubscriptionId;
+	}
+
 	
 	function dispatch(msg){
-		var sig = message.buildSignature(msg);
-		var handler = messageHandlers[sig];
+
+		if(msg.reqId !== undefined){
+			dispatchRequest(msg);
+		}else if(msg.subId !== undefined){
+			dispatchEvent(msg);
+		}
+		//If the msg doesn't have a reqId, it cannot be matched to a pending request
+		else {
+			console.log('missing reqId or subId. Ignoring msg : ');
+			console.log(msg);
+			return ;
+		}
+
 		
-		console.log(msg);
-		console.log(handler);
+	}
 
-		if(handler){
-			if(!handler.permanent){
-				delete messageHandlers[sig];
-			}
+	function dispatchRequest(msg){
+		//If msg.reqId corresponds to a pending request, execute the response callback
+		if(typeof pendingRequests[msg.reqId] === 'function'){
+			console.log(msg);
+			//execute the response callback, pass the message data as argument
+			pendingRequests[msg.reqId](msg.data);
+		}else{
+			//No pending request for this reqId, ignoring response
+			console.log('msg.reqId doesn\'t match any pending request, Ignoring msg ! '+msg);
+			return ;
+		}
+	}
 
-				handler.parse(msg.data);
-			
+	function dispatchEvent(msg){
+		//If msg.subId corresponds to a registered listener, execute the event callback
+		if(typeof registeredListeners[msg.subId] === 'function'){
+			console.log(msg);
+			//execute the event callback, pass the message data as argument
+			registeredListeners[msg.subId](msg.data);
+		}else{
+			//No pending request for this subId, ignoring event
+			console.log('msg.subId doesn\'t match any registered listeners, Ignoring msg ! '+msg);
+			return ;
 		}
 	}
 	
@@ -74,14 +115,25 @@ function Diya(addr){
 	};
 	
 	function closeAll(){
-		for(var i in messageHandlers){
-			if(messageHandlers[i].onClose)
-				messageHandlers[i].onClose();
-			
-			delete messageHandlers[i];
+		while(pendingRequests.length){
+			pendingRequests.pop();
 		}
-		if(that.onClose) that.onClose();
 	}
+
+	function createMessage(params){
+		if(!params.service) return null;
+		else return {
+			service: params.service,
+			func: params.func ? params.func : undefined,
+			obj: params.obj ? params.obj : undefined,
+			data: params.data ? params.data : undefined
+		}
+	}
+
+
+	///////////////////////////////////
+	//////////Public API///////////////
+	///////////////////////////////////
 	
 	this.connect = function(callback, args){
 		
@@ -103,10 +155,27 @@ function Diya(addr){
 			closeAll();
 		}
 	};
-	
-	this.exec = function(message){
-		messageHandlers[message.signature()] = message;
-		send(message.exec());
+
+	this.get = function(params, callback){
+		var msg = createMessage(params);
+		if(msg === null) return ;
+
+		msg.reqId = consumeNextReqId();
+		pendingRequests[msg.reqId] = callback;
+
+		send(msg);
+	}
+
+	this.listen = function(params, callback){
+		var msg = createMessage(params);
+		if(msg === null) return ;
+
+		msg.subId = consumeNextSubscriptionId();
+		registeredListeners[msg.subId] = callback;
+		
+		send(msg);
+
+		return msg.subId;
 	}
 	
 }
@@ -131,14 +200,15 @@ function DiyaClient(addr, user, password){
 		var node = createNode();
 
 		node.connect(function(){
-			var cmd_auth = new diya.auth.Authenticate(user, password, function(authenticated){
-				if(authenticated){
-					onconnected(node);
-				}else{
-					onfailure();
-				}
+			node.get({
+				service: 'auth',
+				func: 'Authenticate',
+				data: {user: user, password: password}
+			},
+			function(res){
+				if(res.authenticated) onconnected(node);
+				else onfailure();
 			});
-			node.exec(cmd_auth);
 		});	
 	}
 	
@@ -151,7 +221,8 @@ var diya = {
 		auth: auth,
 		timer: timer,
 		rtc: rtc,
-		Promethe: Promethe
+		Promethe: Promethe,
+		watchdog: watchdog
 }
 
 module.exports = diya;

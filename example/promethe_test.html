@@ -86,7 +86,7 @@
 		console.log("Cannot connect to maya-node");
 	}
 
-	var client = new diya.MayaClient("ws://localhost:1234", "admin", "pass");
+	var client = new diya.DiyaClient("ws://localhost:1234", "admin", "pass");
 
 	client.createSession(onAuthenticationSucceded, onAuthenticationFailed)
 
@@ -101,3 +101,5 @@
 
 <div id="neuron_value"></div>
 <div id="console"></div>
+
+<video id="myvid" autoplay></video>

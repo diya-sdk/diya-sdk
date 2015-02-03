@@ -169,11 +169,9 @@ function RTC(node){
 
 	function listChannels(){
 		var cmdListChannels = new ListChannels(function(data){ 
-
 			for(var i = 0; i < data.length; i++){
 				that.availableChannels.push(new Channel(data[i]));
 			}
-			
 		});
 		that.node.exec(cmdListChannels);
 	}
@@ -182,9 +180,9 @@ function RTC(node){
 }
 
 RTC.prototype.use = function(name_regex, onopen_callback){
+
 	for(var i=0; i < this.availableChannels.length;i++){
 		var n = this.availableChannels[i];
-
 		if(n.name && n.name.match(name_regex)){
 			n.onopen = onopen_callback;
 			this.usedChannels[n.name] = n;
@@ -250,6 +248,11 @@ RTC.prototype._createPeer = function(data){
 		that._onDataChannel(evt.channel);
 	};
 
+	peer.onaddstream = function(evt){
+		console.log("ON ADD STREAM");
+		var remoteView = document.querySelector("#myvid");
+		remoteView.src = URL.createObjectURL(evt.stream);
+	};
 
 	var cmdIce = new ICECandidateListener(function(data){
 		

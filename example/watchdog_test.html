@@ -9,18 +9,17 @@
 	function onClientAuthenticated(node){
 		console.log("Client authenticated !");
 
-		node.listen({
-			service: 'timer',
-			func: 'SubscribeTimer'
-		}, 
-		function(res){
-			console.log(res.currentTime);
+		node.get({
+			service: 'watchdog',
+			func: 'ListServices'
+		},
+		function(data){
+			console.log(data.services);
 		});
 	}
 
 
 	var client = new diya.DiyaClient("ws://localhost:1234", "admin", "pass");
-
 	client.createSession(onClientAuthenticated, onClientAuthenticationFailure);
 
 
