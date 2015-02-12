@@ -1,4 +1,4 @@
-<script type="text/javascript" src="../build/maya-client.js"></script>
+<script type="text/javascript" src="../dist/diya-sdk.js"></script>
 <script>
 
 	var rtc = null;
@@ -10,12 +10,12 @@
 
 	function onClientAuthenticated(node){
 		console.log("Client authenticated !");
-		rtc = new maya.rtc.RTC(node);
+		rtc = new diya.rtc.RTC(node);
 	}
 
 	function connectRTC(){
 
-		rtc.use(/^air\.co.*/, function(channel){
+		rtc.use(/^ctrl\..*/, function(channel){
 
 			channel.setOnMessage(function(message){
 				console.log(channel.name +" : "+ message.data);
@@ -50,10 +50,10 @@
 	}
 	
 
-	var client = new maya.MayaClient("ws://localhost:1234", "admin", "pass");
+	var client = new diya.DiyaClient("ws://localhost:1234", "admin", "pass");
 
 	client.createSession(onClientAuthenticated, onClientAuthenticationFailure);
-	client.createSession(onClientAuthenticated2, onClientAuthenticationFailure);
+	//client.createSession(onClientAuthenticated2, onClientAuthenticationFailure);
 
 
 </script>

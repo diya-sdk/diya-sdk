@@ -167,16 +167,16 @@ function RTC(node){
 	
 	this.id = -1;
 
-	function listChannels(){
-		var cmdListChannels = new ListChannels(function(data){ 
-			for(var i = 0; i < data.length; i++){
-				that.availableChannels.push(new Channel(data[i]));
-			}
-		});
-		that.node.exec(cmdListChannels);
-	}
+	node.listen({
+		service: 'rtc',
+		func: 'ListChannels'
+	},
+	function(data){ 
+		for(var i = 0; i < data.channels.length; i++){
+			that.availableChannels.push(new Channel(data.channels[i]));
+		}
+	});
 
-	listChannels();
 }
 
 RTC.prototype.use = function(name_regex, onopen_callback){
@@ -205,7 +205,18 @@ RTC.prototype.connect = function(){
 		channels.push(n);
 	}
 
-	var cmdConnect = new Connect(channels);
+
+	this.node.listen({
+		service: 'rtc',
+		func: 'Connect',
+		obj: channels
+	},
+	function(data){
+		console.log(data);
+	});
+
+
+	/*var cmdConnect = new Connect(channels);
 
 	//Register for offers
 	var cmdOffer = new OfferListener(function(data){
@@ -215,7 +226,7 @@ RTC.prototype.connect = function(){
 	
 	this.node.exec(cmdOffer);
 
-	this.node.exec(cmdConnect);
+	this.node.exec(cmdConnect);*/
 }
 
 
