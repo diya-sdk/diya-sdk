@@ -1,0 +1,27 @@
+<script type="text/javascript" src="../dist/diya-sdk.js"></script>
+<script>
+
+
+	function onClientAuthenticationFailure(){
+		console.log("Cannot authenticate client !");
+	}
+
+	function onClientAuthenticated(node){
+		console.log("Client authenticated !");
+
+		node.listen({
+			service: 'qei',
+			func: 'SubscribeQei'
+		}, 
+		function(res){
+			console.log(res.data);
+		});
+	}
+
+
+	var client = new diya.DiyaClient("ws://localhost:1234", "admin", "pass");
+
+	client.createSession(onClientAuthenticated, onClientAuthenticationFailure);
+
+
+</script>
