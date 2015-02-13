@@ -67,8 +67,10 @@ function Diya(addr){
 		//If msg.reqId corresponds to a pending request, execute the response callback
 		if(typeof pendingRequests[msg.reqId] === 'function'){
 			console.log(msg);
+
 			//execute the response callback, pass the message data as argument
 			pendingRequests[msg.reqId](msg.data);
+			delete pendingRequests[msg.reqId];
 		}else{
 			//No pending request for this reqId, ignoring response
 			console.log('msg.reqId doesn\'t match any pending request, Ignoring msg ! '+msg);
@@ -80,8 +82,16 @@ function Diya(addr){
 		//If msg.subId corresponds to a registered listener, execute the event callback
 		if(typeof registeredListeners[msg.subId] === 'function'){
 			console.log(msg);
+
 			//execute the event callback, pass the message data as argument
-			registeredListeners[msg.subId](msg.data);
+			if(!msg.result || msg.result != 'closed'){
+				registeredListeners[msg.subId](msg.data);
+			}else{
+				//If the subscription was closed, then remove the handler
+				delete registeredListeners[msg.subId];
+			}
+
+
 		}else{
 			//No pending request for this subId, ignoring event
 			console.log('msg.subId doesn\'t match any registered listeners, Ignoring msg ! '+msg);
@@ -176,6 +186,17 @@ function Diya(addr){
 		send(msg);
 
 		return msg.subId;
+	}
+
+	this.stopListening = function(subId){
+		msg = {
+			func: 'Unsubscribe',
+			data: {
+				subId: subId
+			}
+		}
+
+		send(msg);
 	}
 	
 }

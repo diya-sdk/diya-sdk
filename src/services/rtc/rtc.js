@@ -212,26 +212,21 @@ RTC.prototype.connect = function(){
 		obj: channels
 	},
 	function(data){
-		console.log(data);
+		that._handleNegociationMessage(data);
 	});
-
-
-	/*var cmdConnect = new Connect(channels);
-
-	//Register for offers
-	var cmdOffer = new OfferListener(function(data){
-		var peer = that._createPeer(data);
-		that.peers.push(peer);
-	});
-	
-	this.node.exec(cmdOffer);
-
-	this.node.exec(cmdConnect);*/
 }
 
 
-var servers = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
+RTC.prototype._handleNegociationMessage = function(msg){
 
+	if(msg.eventType === 'RemoteOffer'){
+		this.peers[msg.promID] = this._createPeer(msg);
+	}else if(msg.eventType === 'RemoteICECandidate'){
+		this._addRemoteICECandidate(this.peers[msg.promID], msg);
+	}
+}
+
+var servers = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
 RTC.prototype._createPeer = function(data){
 	var that = this;
 
@@ -239,11 +234,21 @@ RTC.prototype._createPeer = function(data){
 
 	peer.setRemoteDescription(new RTCSessionDescription({sdp: data.sdp, type: data.type}));
 
+	console.log("create answer");
+
 	peer.createAnswer(function(session_description){
 		peer.setLocalDescription(session_description);
 
-		var cmdAnswer = new Answer(data.promID, session_description);
-		that.node.exec(cmdAnswer);
+		that.node.get({
+			service: 'rtc',
+			func: 'Answer',
+			data:{
+				promID: data.promID,
+				peerId: data.peerId,
+				sdp: session_description.sdp,
+				type: session_description.type
+			}
+		});
 	},
 	function(err){
 		console.log("cannot create answer");
@@ -251,8 +256,16 @@ RTC.prototype._createPeer = function(data){
 	{ 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } });
 
 	peer.onicecandidate = function(evt){
-		var cmdICECandidate = new ICECandidate(data.promID,evt.candidate);
-		that.node.exec(cmdICECandidate);
+		
+		that.node.get({
+			service: 'rtc',
+			func: 'ICECandidate',
+			data:{
+				peerId: data.peerId,
+				promID: data.promID,
+				candidate: evt.candidate
+			}
+		});
 	};
 
 	peer.ondatachannel = function(evt){
@@ -265,24 +278,20 @@ RTC.prototype._createPeer = function(data){
 		remoteView.src = URL.createObjectURL(evt.stream);
 	};
 
-	var cmdIce = new ICECandidateListener(function(data){
-		
-		try{
-			var candidate = new RTCIceCandidate(data.candidate);
-			peer.addIceCandidate(candidate,function(){
-				console.log("candidate added ("+peer.iceConnectionState+")");
-			},function(e){
-				console.log(e);
-			});
-		}catch(e) {console.log(e);}
-		
-
-	});
-	that.node.exec(cmdIce);
-
 	peer.promID = data.promID;
 
 	return peer;
+}
+
+RTC.prototype._addRemoteICECandidate = function(peer, data){
+	try{
+		var candidate = new RTCIceCandidate(data.candidate);
+		peer.addIceCandidate(candidate,function(){
+			console.log("candidate added ("+peer.iceConnectionState+")");
+		},function(e){
+			console.log(e);
+		});
+	}catch(e) {console.log(e);}
 }
 
 RTC.prototype._onDataChannel = function(datachannel){
