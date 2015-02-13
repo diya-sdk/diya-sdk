@@ -128,6 +128,13 @@ function Diya(addr){
 		while(pendingRequests.length){
 			pendingRequests.pop();
 		}
+		while(registeredListeners.length){
+			registeredListeners.pop();
+		}
+
+		if(typeof this.onclose === 'function'){
+			this.onclose();
+		}
 	}
 
 	function createMessage(params){
@@ -152,9 +159,13 @@ function Diya(addr){
 		}catch(e){
 			console.log("can't connect to "+addr);
 		}
+
+		socket.onerror = function(e){
+			callback("Cannot Connect", null);
+		}
 		
 		socket.onopen = function(){
-			callback(args);
+			callback(null, args);
 		};
 		
 		socket.onmessage = function(incomingMessage){
@@ -220,16 +231,20 @@ function DiyaClient(addr, user, password){
 
 		var node = createNode();
 
-		node.connect(function(){
-			node.get({
-				service: 'auth',
-				func: 'Authenticate',
-				data: {user: user, password: password}
-			},
-			function(res){
-				if(res.authenticated) onconnected(node);
-				else onfailure();
-			});
+		node.connect(function(err){
+			if(err){
+				onfailure(err);
+			}else{
+				node.get({
+					service: 'auth',
+					func: 'Authenticate',
+					data: {user: user, password: password}
+				},
+				function(res){
+					if(res.authenticated) onconnected(node);
+					else onfailure();
+				});
+			}
 		});	
 	}
 	
