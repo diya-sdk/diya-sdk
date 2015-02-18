@@ -21,6 +21,7 @@ var timer = require('./services/timer/timer');
 var rtc = require('./services/rtc/rtc');
 var Promethe = require('./services/promethe/promethe');
 var watchdog = require('./services/watchdog/watchdog');
+var discover = require('./services/discover/discover');
 
 var WebSocket = window.WebSocket || window.MozWebSocket;
 
@@ -280,7 +281,8 @@ var diya = {
 		timer: timer,
 		rtc: rtc,
 		Promethe: Promethe,
-		watchdog: watchdog
+		watchdog: watchdog,
+		discover: discover
 }
 
 module.exports = diya;
