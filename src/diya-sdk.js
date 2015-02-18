@@ -30,6 +30,8 @@ function Diya(addr){
 	var that = this;
 	var socket;	
 
+	var close_cb = null;
+
 	var pendingRequests = [];
 	var registeredListeners = [];
 
@@ -44,7 +46,6 @@ function Diya(addr){
 		nextSubscriptionId++;
 		return nextSubscriptionId;
 	}
-
 	
 	function dispatch(msg){
 
@@ -101,6 +102,9 @@ function Diya(addr){
 	
 	
 	function send(msg){
+		if(socket.readyState === WebSocket.CLOSING || socket.readyState === WebSocket.CLOSED){
+			console.log("diya-SDK : cannot send message -> socket closed");
+		}
 		try{
 			data = JSON.stringify(msg);
 			socket.send(data);
@@ -132,8 +136,10 @@ function Diya(addr){
 			registeredListeners.pop();
 		}
 
-		if(typeof this.onclose === 'function'){
-			this.onclose();
+		console.log(close_cb);
+
+		if(typeof close_cb === 'function'){
+			close_cb();
 		}
 	}
 
@@ -156,24 +162,24 @@ function Diya(addr){
 		
 		try{
 			socket = new WebSocket(addr);
+
+			socket.onerror = function(e){
+				callback("Cannot Connect", null);
+			}
+			
+			socket.onopen = function(){
+				callback(null, args);
+			};
+			
+			socket.onmessage = function(incomingMessage){
+				handleMessage(incomingMessage);
+			}
+			
+			socket.onclose = function(){
+				closeAll();
+			}
 		}catch(e){
 			console.log("can't connect to "+addr);
-		}
-
-		socket.onerror = function(e){
-			callback("Cannot Connect", null);
-		}
-		
-		socket.onopen = function(){
-			callback(null, args);
-		};
-		
-		socket.onmessage = function(incomingMessage){
-			handleMessage(incomingMessage);
-		}
-		
-		socket.onclose = function(){
-			closeAll();
 		}
 	};
 
@@ -199,6 +205,10 @@ function Diya(addr){
 		return msg.subId;
 	}
 
+	this.closeCallback = function(cb){
+		close_cb = cb;
+	}
+
 	this.stopListening = function(subId){
 		msg = {
 			func: 'Unsubscribe',
@@ -209,6 +219,14 @@ function Diya(addr){
 
 		send(msg);
 	}
+
+	this.connected = function(){
+		return ! (socket.readyState === WebSocket.CLOSING || socket.readyState === WebSocket.CLOSED);
+	}
+
+	this.disconnect = function(){
+		socket.close();
+	}
 	
 }
 
@@ -217,14 +235,18 @@ function DiyaClient(addr, user, password){
 
 	var that = this;
 
-	var nodes = new Array();
+	//var nodes = new Array();
 
 
 	function createNode(){
 		var node = new diya.Diya(addr);
-		nodes.push(node);
+		//nodes.push(node);
 
 		return node;
+	}
+
+	this.setAddress = function(address){
+		addr = address;
 	}
 
 	this.createSession = function(onconnected, onfailure){
