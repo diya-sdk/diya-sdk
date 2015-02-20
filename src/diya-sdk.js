@@ -21,6 +21,7 @@ var timer = require('./services/timer/timer');
 var rtc = require('./services/rtc/rtc');
 var Promethe = require('./services/promethe/promethe');
 var watchdog = require('./services/watchdog/watchdog');
+var discover = require('./services/discover/discover');
 
 var WebSocket = window.WebSocket || window.MozWebSocket;
 
@@ -29,6 +30,8 @@ var WebSocket = window.WebSocket || window.MozWebSocket;
 function Diya(addr){
 	var that = this;
 	var socket;	
+
+	var close_cb = null;
 
 	var pendingRequests = [];
 	var registeredListeners = [];
@@ -44,7 +47,6 @@ function Diya(addr){
 		nextSubscriptionId++;
 		return nextSubscriptionId;
 	}
-
 	
 	function dispatch(msg){
 
@@ -67,8 +69,10 @@ function Diya(addr){
 		//If msg.reqId corresponds to a pending request, execute the response callback
 		if(typeof pendingRequests[msg.reqId] === 'function'){
 			console.log(msg);
+
 			//execute the response callback, pass the message data as argument
 			pendingRequests[msg.reqId](msg.data);
+			delete pendingRequests[msg.reqId];
 		}else{
 			//No pending request for this reqId, ignoring response
 			console.log('msg.reqId doesn\'t match any pending request, Ignoring msg ! '+msg);
@@ -80,8 +84,16 @@ function Diya(addr){
 		//If msg.subId corresponds to a registered listener, execute the event callback
 		if(typeof registeredListeners[msg.subId] === 'function'){
 			console.log(msg);
+
 			//execute the event callback, pass the message data as argument
-			registeredListeners[msg.subId](msg.data);
+			if(!msg.result || msg.result != 'closed'){
+				registeredListeners[msg.subId](msg.data);
+			}else{
+				//If the subscription was closed, then remove the handler
+				delete registeredListeners[msg.subId];
+			}
+
+
 		}else{
 			//No pending request for this subId, ignoring event
 			console.log('msg.subId doesn\'t match any registered listeners, Ignoring msg ! '+msg);
@@ -91,6 +103,9 @@ function Diya(addr){
 	
 	
 	function send(msg){
+		if(socket.readyState === WebSocket.CLOSING || socket.readyState === WebSocket.CLOSED){
+			console.log("diya-SDK : cannot send message -> socket closed");
+		}
 		try{
 			data = JSON.stringify(msg);
 			socket.send(data);
@@ -118,6 +133,15 @@ function Diya(addr){
 		while(pendingRequests.length){
 			pendingRequests.pop();
 		}
+		while(registeredListeners.length){
+			registeredListeners.pop();
+		}
+
+		console.log(close_cb);
+
+		if(typeof close_cb === 'function'){
+			close_cb();
+		}
 	}
 
 	function createMessage(params){
@@ -139,20 +163,24 @@ function Diya(addr){
 		
 		try{
 			socket = new WebSocket(addr);
+
+			socket.onerror = function(e){
+				callback("Cannot Connect", null);
+			}
+			
+			socket.onopen = function(){
+				callback(null, args);
+			};
+			
+			socket.onmessage = function(incomingMessage){
+				handleMessage(incomingMessage);
+			}
+			
+			socket.onclose = function(){
+				closeAll();
+			}
 		}catch(e){
 			console.log("can't connect to "+addr);
-		}
-		
-		socket.onopen = function(){
-			callback(args);
-		};
-		
-		socket.onmessage = function(incomingMessage){
-			handleMessage(incomingMessage);
-		}
-		
-		socket.onclose = function(){
-			closeAll();
 		}
 	};
 
@@ -177,6 +205,29 @@ function Diya(addr){
 
 		return msg.subId;
 	}
+
+	this.closeCallback = function(cb){
+		close_cb = cb;
+	}
+
+	this.stopListening = function(subId){
+		msg = {
+			func: 'Unsubscribe',
+			data: {
+				subId: subId
+			}
+		}
+
+		send(msg);
+	}
+
+	this.connected = function(){
+		return ! (socket.readyState === WebSocket.CLOSING || socket.readyState === WebSocket.CLOSED);
+	}
+
+	this.disconnect = function(){
+		socket.close();
+	}
 	
 }
 
@@ -185,30 +236,38 @@ function DiyaClient(addr, user, password){
 
 	var that = this;
 
-	var nodes = new Array();
+	//var nodes = new Array();
 
 
 	function createNode(){
 		var node = new diya.Diya(addr);
-		nodes.push(node);
+		//nodes.push(node);
 
 		return node;
+	}
+
+	this.setAddress = function(address){
+		addr = address;
 	}
 
 	this.createSession = function(onconnected, onfailure){
 
 		var node = createNode();
 
-		node.connect(function(){
-			node.get({
-				service: 'auth',
-				func: 'Authenticate',
-				data: {user: user, password: password}
-			},
-			function(res){
-				if(res.authenticated) onconnected(node);
-				else onfailure();
-			});
+		node.connect(function(err){
+			if(err){
+				onfailure(err);
+			}else{
+				node.get({
+					service: 'auth',
+					func: 'Authenticate',
+					data: {user: user, password: password}
+				},
+				function(res){
+					if(res.authenticated) onconnected(node);
+					else onfailure();
+				});
+			}
 		});	
 	}
 	
@@ -222,7 +281,8 @@ var diya = {
 		timer: timer,
 		rtc: rtc,
 		Promethe: Promethe,
-		watchdog: watchdog
+		watchdog: watchdog,
+		discover: discover
 }
 
 module.exports = diya;

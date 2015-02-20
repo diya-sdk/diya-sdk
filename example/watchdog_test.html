@@ -9,12 +9,12 @@
 	function onClientAuthenticated(node){
 		console.log("Client authenticated !");
 
-		node.get({
+		node.listen({
 			service: 'watchdog',
-			func: 'ListServices'
+			func: 'WatchServices'
 		},
-		function(data){
-			console.log(data.services);
+		function(evt){
+			console.log(evt);
 		});
 	}
 
