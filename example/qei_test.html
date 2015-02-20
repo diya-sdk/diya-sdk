@@ -2,6 +2,9 @@
 <script>
 
 
+var displayConfig={};
+var dataModel={};
+
 	function onClientAuthenticationFailure(){
 		console.log("Cannot authenticate client !");
 	}
@@ -9,19 +12,142 @@
 	function onClientAuthenticated(node){
 		console.log("Client authenticated !");
 
-		node.listen({
-			service: 'qei',
-			func: 'SubscribeQei'
-		}, 
-		function(res){
-			console.log(res.data);
-		});
+		node.get({
+			service: "qei",
+			func: "DataRequest",
+			data: "test"
+			}, function(data){
+				console.log(JSON.stringify(data));
+				for (var n in data) {
+					if(n != "header") {
+						dataModel[n]={};
+						dataModel[n].sampling=data.header.sampling;
+						dataModel[n].frame=data[n].frame;
+						dataModel[n].data=[];
+					}
+				}
+
+				console.log(JSON.stringify(dataModel));
+
+				/* update internal model for display */
+
+				node.listen({
+						service: "qei",
+						func: "SubscribeQei"
+					},printVals);
+			});
+	}
+
+	
+
+	/** 
+	*		Display values 
+	*/ 
+	/* should be displayed in the framework not in console only... */
+	function printVals(res){
+		/* infos are in data */
+		/* VERY BADLY CODED - TO BE IMPROVED */
+		console.log(JSON.stringify(res));
+
+		/** update internal model */
+		_getDataModelFromRecv(res);
+		
+		console.log("In memory:  DC:"+JSON.stringify(displayConfig));
+		console.log("DM: "+JSON.stringify(dataModel));
 	}
 
 
-	var client = new diya.DiyaClient("ws://localhost:1234", "admin", "pass");
+	/**
+	 * Update internal model with received data
+	 * @param  {Object} res data received from DiyaNode by websocket
+	 * @return {[type]}     [description]
+	 */
+	function _getDataModelFromRecv(res){
+		var data = res.data;
+		if(data) {
+			if(!data.header.sampling) data.header.sampling=1;
+			for (var n in data) {
+				if(n != "header") {
+					console.log(n);
+					/* increase size of data if necessary */
+					if(data.header.sampling>dataModel[n].sampling) {
+						dataModel[n].data=new Array(data.header.sampling);
+					}
+					/* update nb of samples stored */
+					dataModel[n].sampling=data.header.sampling;
+
+					/* update dataFrame */
+					dataModel[n].frame=data[n].frame;
+
+					/* decode data to Float32Array*/
+					var buf = base64DecToArr(data[n].data, 4); 
+					console.log(JSON.stringify(buf));
+					var mydata = new Float32Array(buf);
+					console.log(JSON.stringify(mydata));
+				}
+			}
+		}
+		else {
+			console.err("No Data to read !");
+		}
+	}
+
+/*\
+|*|
+|*|  utilitaires de manipulations de chaînes base 64 / binaires / UTF-8
+|*|
+|*|  https://developer.mozilla.org/fr/docs/Décoder_encoder_en_base64
+|*|
+\*/
+	/* Decoder un tableau d'octets depuis une chaîne en base64 */
+	function b64ToUint6 (nChr) {
+	  return nChr > 64 && nChr < 91 ?
+	      nChr - 65
+	    : nChr > 96 && nChr < 123 ?
+	      nChr - 71
+	    : nChr > 47 && nChr < 58 ?
+	      nChr + 4
+	    : nChr === 43 ?
+	      62
+	    : nChr === 47 ?
+	      63
+	    :
+	      0;
+	}
+	/**
+	 * Decode base64 string to UInt8Array
+	 * @param  {String} sBase64     base64 coded string
+	 * @param  {int} nBlocksSize size of blocks of bytes to be read. Output byteArray length will be a multiple of this value.
+	 * @return {Uint8Array}             tab of decoded bytes
+	 */
+	function base64DecToArr (sBase64, nBlocksSize) {
+		var
+		sB64Enc = sBase64.replace(/[^A-Za-z0-9\+\/]/g, ""), nInLen = sB64Enc.length,
+		nOutLen = nBlocksSize ? Math.ceil((nInLen * 3 + 1 >> 2) / nBlocksSize) * nBlocksSize : nInLen * 3 + 1 >> 2,
+		buffer = new ArrayBuffer(nOutLen), taBytes = new Uint8Array(buffer);
+
+		for (var nMod3, nMod4, nUint24 = 0, nOutIdx = 0, nInIdx = 0; nInIdx < nInLen; nInIdx++) {
+			nMod4 = nInIdx & 3; /* n mod 4 */
+			nUint24 |= b64ToUint6(sB64Enc.charCodeAt(nInIdx)) << 18 - 6 * nMod4;
+			if (nMod4 === 3 || nInLen - nInIdx === 1) {
+			  for (nMod3 = 0; nMod3 < 3 && nOutIdx < nOutLen; nMod3++, nOutIdx++) {
+			    taBytes[nOutIdx] = nUint24 >>> (16 >>> nMod3 & 24) & 255;
+			  }
+			  nUint24 = 0;
+
+			}
+		}
+		console.log("u8int : "+JSON.stringify(taBytes));
+	  	return buffer;
+	}
+
+
+
+
+	var client = new diya.DiyaClient("ws://192.168.1.21:1234", "admin", "pass");
 
 	client.createSession(onClientAuthenticated, onClientAuthenticationFailure);
+
 
 
 </script>
