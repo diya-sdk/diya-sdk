@@ -161,6 +161,8 @@ function Diya(addr){
 	
 	this.connect = function(callback, args){
 		
+console.log("sock created");	
+
 		try{
 			socket = new WebSocket(addr);
 
@@ -238,6 +240,7 @@ function DiyaClient(addr, user, password){
 
 	//var nodes = new Array();
 
+	console.log("EOK");
 
 	function createNode(){
 		var node = new diya.Diya(addr);
@@ -252,6 +255,8 @@ function DiyaClient(addr, user, password){
 
 	this.createSession = function(onconnected, onfailure){
 
+		console.log("createSession");
+
 		var node = createNode();
 
 		node.connect(function(err){
@@ -264,7 +269,7 @@ function DiyaClient(addr, user, password){
 					data: {user: user, password: password}
 				},
 				function(res){
-					if(res.authenticated) onconnected(node);
+					if(res.authenticated || (res.error && res.error === 'ServiceNotFound')) onconnected(node);
 					else onfailure();
 				});
 			}
