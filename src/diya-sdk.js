@@ -25,6 +25,8 @@ var discover = require('./services/discover/discover');
 
 var WebSocket = window.WebSocket || window.MozWebSocket;
 
+
+
  
 
 function Diya(addr){
@@ -224,7 +226,7 @@ console.log("sock created");
 	}
 
 	this.connected = function(){
-		return ! (socket.readyState === WebSocket.CLOSING || socket.readyState === WebSocket.CLOSED);
+		return ! (socket.readyState === WebSocket.CLOSING || socket.readyState === WebSocket.CLOSED);
 	}
 
 	this.disconnect = function(){
