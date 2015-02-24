@@ -3,7 +3,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Simple chart with C3 - in 5 minutes! </title>
+  <title> Display QEI data </title>
   
   <!-- Here are all the javascripts and css that you need, you can download them or linked them like here -->
   <script type="text/javascript" src="../node_modules/c3/node_modules/d3/d3.min.js"></script>
@@ -34,23 +34,39 @@
   <script>
 var chart = c3.generate({
     data: {
-        x: 'x',
+        // x: 'x',
 //        xFormat: '%Y%m%d', // 'xFormat' can be used as custom format of 'x'
         columns: [
-            ['x', '2013-01-01', '2013-01-02', '2013-01-03', '2013-01-04', '2013-01-05', '2013-01-06'],
+            // ['x', '2013-01-01', '2013-01-02', '2013-01-03', '2013-01-04', '2013-01-05', '2013-01-06'],
 //            ['x', '20130101', '20130102', '20130103', '20130104', '20130105', '20130106'],
             ['data1', 30, 200, 100, 400, 150, 250],
             ['data2', 130, 340, 200, 500, 250, 350]
-        ]
+        ],
+      	axes: {
+        	data2: 'y2'
+      	}
     },
     bindto:'#chart',
     axis: {
-        x: {
-            type: 'timeseries',
-            tick: {
-                format: '%Y-%m-%d'
-            }
-        }
+        // x: {
+        //     type: 'timeseries',
+        //     tick: {
+        //         format: '%Y-%m-%d'
+        //     }
+        // },
+		y: {
+			label: { // ADD
+		  		text: 'ppm (CO2)',
+		  		position: 'outer-middle'
+			}
+		},
+		y2: {
+			show: true,
+			label: { // ADD
+		  		text: 'T/HR',
+		  		position: 'outer-middle'
+			}
+      	}
     }
 });
 
@@ -69,11 +85,11 @@ var dataModel={};
 			func: "DataRequest",
 			data: "test"
 			}, function(data){
-				console.log(JSON.stringify(data));
+				// console.log(JSON.stringify(data));
 				for (var n in data) {
 					if(n != "header") {
 						dataModel[n]={};
-						dataModel[n].sampling=data.header.sampling;
+						dataModel[n].size=data[n].size;
 						dataModel[n].frame=data[n].frame;
 						dataModel[n].data=[];
 					}
@@ -88,7 +104,7 @@ var dataModel={};
 						func: "SubscribeQei"
 					},printVals);
 			});
-	}
+	};
 
 	
 
@@ -97,16 +113,27 @@ var dataModel={};
 	*/ 
 	/* should be displayed in the framework not in console only... */
 	function printVals(res){
-		/* infos are in data */
-		/* VERY BADLY CODED - TO BE IMPROVED */
-		console.log(JSON.stringify(res));
+
+		// console.log(JSON.stringify(res));
 
 		/** update internal model */
 		_getDataModelFromRecv(res);
 		
-		console.log("In memory:  DC:"+JSON.stringify(displayConfig));
-		console.log("DM: "+JSON.stringify(dataModel));
-	}
+		// console.log("In memory:  DC:"+JSON.stringify(displayConfig));
+		// console.log("DM: "+JSON.stringify(dataModel));
+
+		var updateChart = {};
+		updateChart.columns=[];
+		for (var n in dataModel) {
+			console.log("recv data: "+dataModel[n].size);
+			updateChart.columns.push(dataModel[n].data);
+			updateChart.columns[updateChart.columns.length-1].unshift(n); /* add name at beginning of data vals */
+		}
+		// console.log("UC: "+JSON.stringify(updateChart));
+		// 
+		chart.load(updateChart); /* update chart */
+		//chart.unload({ ids: ['data1', 'data2'] });
+	};
 
 
 	/**
@@ -117,32 +144,40 @@ var dataModel={};
 	function _getDataModelFromRecv(res){
 		var data = res.data;
 		if(data) {
-			if(!data.header.sampling) data.header.sampling=1;
+			// if(!data.header.sampling) data.header.sampling=1;
 			for (var n in data) {
 				if(n != "header") {
-					console.log(n);
-					/* increase size of data if necessary */
-					if(data.header.sampling>dataModel[n].sampling) {
-						dataModel[n].data=new Array(data.header.sampling);
-					}
-					/* update nb of samples stored */
-					dataModel[n].sampling=data.header.sampling;
+					// console.log(n);
 
 					/* update dataFrame */
 					dataModel[n].frame=data[n].frame;
 
 					/* decode data to Float32Array*/
 					var buf = base64DecToArr(data[n].data, 4); 
-					console.log(JSON.stringify(buf));
-					var mydata = new Float32Array(buf);
-					console.log(JSON.stringify(mydata));
+					// console.log(JSON.stringify(buf));
+					var fArray = new Float32Array(buf);
+
+					if(data[n].size != fArray.length) console.log("Mismatch of size "+data[n].size+" vs "+fArray.length);
+					// /* increase size of data if necessary */
+					if(fArray.length>dataModel[n].size) {
+						// dataModel[n].size=data[n].size;
+					 	dataModel[n].data = new Array(dataModel[n].size);
+					}
+					/* update nb of samples stored */
+					dataModel[n].size = fArray.length;
+
+					for(var i in fArray) {
+						dataModel[n].data[i]=fArray[i];
+					}
+					// dataModel[n].data = Array.from(fArray);
+					// console.log('mydata '+JSON.stringify(dataModel[n].data));
 				}
 			}
 		}
 		else {
 			console.err("No Data to read !");
 		}
-	}
+	};
 
 /*\
 |*|
@@ -165,7 +200,7 @@ var dataModel={};
 	      63
 	    :
 	      0;
-	}
+	};
 	/**
 	 * Decode base64 string to UInt8Array
 	 * @param  {String} sBase64     base64 coded string
@@ -189,16 +224,16 @@ var dataModel={};
 
 			}
 		}
-		console.log("u8int : "+JSON.stringify(taBytes));
+		// console.log("u8int : "+JSON.stringify(taBytes));
 	  	return buffer;
-	}
+	};
 
 
 
 
-	//var client = new diya.DiyaClient("ws://127.0.0.1:1234", "admin", "pass");
+	var client = new diya.DiyaClient("ws://192.168.1.21:1234", "admin", "pass");
 
-	//client.createSession(onClientAuthenticated, onClientAuthenticationFailure);
+	client.createSession(onClientAuthenticated, onClientAuthenticationFailure);
 
 </script>
   
