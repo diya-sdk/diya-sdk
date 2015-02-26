@@ -32,142 +32,190 @@
 <div id="chart"></div>
   
   <script>
-var chart = c3.generate({
-    data: {
-        // x: 'x',
-//        xFormat: '%Y%m%d', // 'xFormat' can be used as custom format of 'x'
-        columns: [
-            // ['x', '2013-01-01', '2013-01-02', '2013-01-03', '2013-01-04', '2013-01-05', '2013-01-06'],
-//            ['x', '20130101', '20130102', '20130103', '20130104', '20130105', '20130106'],
-            ['data1', 30, 200, 100, 400, 150, 250],
-            ['data2', 130, 340, 200, 500, 250, 350]
-        ],
-      	axes: {
-        	data2: 'y2'
-      	}
-    },
-    bindto:'#chart',
-    axis: {
-        // x: {
-        //     type: 'timeseries',
-        //     tick: {
-        //         format: '%Y-%m-%d'
-        //     }
-        // },
-		y: {
-			label: { // ADD
-		  		text: 'ppm (CO2)',
-		  		position: 'outer-middle'
-			}
-		},
-		y2: {
-			show: true,
-			label: { // ADD
-		  		text: 'T/HR',
-		  		position: 'outer-middle'
-			}
-      	}
-    }
-});
+
 
 var displayConfig={};
 var dataModel={};
+var currDisplayOptions={};
 
-	function onClientAuthenticationFailure(){
-		console.log("Cannot authenticate client !");
-	}
+var barChartOptions = {
+	type: 'bar', /* bar */
+    axis: {
+        x: {
+            tick: {
+                format: function(x) {return "";} /* no number below x axis */
+            }
+        }
+    }
+};
 
-	function onClientAuthenticated(node){
-		console.log("Client authenticated !");
+/** Boolean determine if page is visible so if chart update should be performed */
+/** TODO : use Page Visibility API instead */
+var pageVisible=true;
+window.onfocus=function(){
+	pageVisible=true;
+	updateChart(dataModel,currDisplayOptions);
+};
+window.onblur=function(){
+	pageVisible=false;
+};
 
-		node.get({
-			service: "qei",
-			func: "DataRequest",
-			data: "test"
-			}, function(data){
-				// console.log(JSON.stringify(data));
-				for (var n in data) {
-					if(n != "header") {
-						dataModel[n]={};
-						dataModel[n].size=data[n].size;
-						dataModel[n].frame=data[n].frame;
-						dataModel[n].data=[];
-					}
-				}
+function onClientAuthenticationFailure(){
+	console.log("Cannot authenticate client !");
+};
 
-				console.log(JSON.stringify(dataModel));
+var arraySize = 1000;
+var array1 = new Array(arraySize);
+var array2 = new Array(arraySize);
 
-				/* update internal model for display */
+var chart;
 
-				node.listen({
-						service: "qei",
-						func: "SubscribeQei"
-					},printVals);
-			});
-	};
+function onClientAuthenticated(node){
+	var that=this;
+	console.log("Client authenticated !");
+
+	/* create/init c3 chart */
+	chart = c3.generate({
+		data: {
+	        columns: [
+	            [],
+	            []
+	        ]
+      	},
+	    bindto:'#chart',
+        tooltip: {
+	        format: {
+	            value: function (value, ratio, id) {
+	                var format = d3.format(".1f");
+	                return format(value);
+	            }
+	//            value: d3.format(',') // apply this format to both y and y2
+	        }
+	    },
+	    axis: {
+	        x: {
+	            tick: {
+	                format: function(x) {return "";} /* no number below x axis */
+	            }
+	        }
+	    },
+	    size: {
+			width: 800, /* fixed size */
+			height: 600
+		}
+	});
+
+	node.get({
+		service: "qei",
+		func: "DataRequest",
+		data: {
+			type:"msgInit",
+			sampling: 1,
+			requestedData: "all"
+			/* no time range specified */
+			}
+		}, function(data){
+			// console.log(JSON.stringify(data));
+			_getDataModelFromRecv(data);
+
+			console.log(JSON.stringify(that.dataModel));
+
+			/* init chart display */
+			currDisplayOptions=barChartOptions;
+
+			updateChart(dataModel,currDisplayOptions);
+
+
+			node.listen({
+					service: "qei",
+					func: "SubscribeQei"
+				},printVals);
+	});
+};
 
 	
 
 	/** 
 	*		Display values 
 	*/ 
-	/* should be displayed in the framework not in console only... */
 	function printVals(res){
 
 		// console.log(JSON.stringify(res));
 
 		/** update internal model */
-		_getDataModelFromRecv(res);
-		
+		_getDataModelFromRecv(res.data);
+
 		// console.log("In memory:  DC:"+JSON.stringify(displayConfig));
 		// console.log("DM: "+JSON.stringify(dataModel));
+		
+		/** Display model in chart */
+		updateChart(dataModel);
+		//chart.unload({ ids: ['data1', 'data2'] });
+	};
+
+	/** 
+	*		Update chart
+	*/ 
+	function updateChart(model, options){
+		if(!pageVisible)
+			return;
 
 		var updateChart = {};
 		updateChart.columns=[];
-		for (var n in dataModel) {
-			console.log("recv data: "+dataModel[n].size);
-			updateChart.columns.push(dataModel[n].data);
-			updateChart.columns[updateChart.columns.length-1].unshift(n); /* add name at beginning of data vals */
+		for (var n in model) {
+			updateChart.columns.push(model[n].data);
+		}
+		for(var o in options){
+			updateChart[o]=options[o];	
 		}
 		// console.log("UC: "+JSON.stringify(updateChart));
-		// 
+		
 		chart.load(updateChart); /* update chart */
 		//chart.unload({ ids: ['data1', 'data2'] });
 	};
 
-
 	/**
 	 * Update internal model with received data
-	 * @param  {Object} res data received from DiyaNode by websocket
+	 * @param  {Object} data data received from DiyaNode by websocket
 	 * @return {[type]}     [description]
 	 */
-	function _getDataModelFromRecv(res){
-		var data = res.data;
+	function _getDataModelFromRecv(data){
 		if(data) {
+			// console.log('rcvdata '+JSON.stringify(data));
 			// if(!data.header.sampling) data.header.sampling=1;
 			for (var n in data) {
 				if(n != "header") {
 					// console.log(n);
+					if(!dataModel[n]) {
+						dataModel[n]={};
+						dataModel[n].data=[];
+						dataModel[n].data[0]=n;
+					}
 
 					/* update dataFrame */
 					dataModel[n].frame=data[n].frame;
 
-					/* decode data to Float32Array*/
-					var buf = base64DecToArr(data[n].data, 4); 
-					// console.log(JSON.stringify(buf));
-					var fArray = new Float32Array(buf);
+					if(data[n].data.length > 0) {
+						/* decode data to Float32Array*/
+						var buf = base64DecToArr(data[n].data, 4); 
+						// console.log(JSON.stringify(buf));
+						var fArray = new Float32Array(buf);
 
-					if(data[n].size != fArray.length) console.log("Mismatch of size "+data[n].size+" vs "+fArray.length);
-					// /* increase size of data if necessary */
-					if(fArray.length>dataModel[n].size) {
-						// dataModel[n].size=data[n].size;
-					 	dataModel[n].data = new Array(dataModel[n].size);
+						if(data[n].size != fArray.length) console.log("Mismatch of size "+data[n].size+" vs "+fArray.length);
+						// /* increase size of data if necessary */
+						if(fArray.length>dataModel[n].size) {
+							// dataModel[n].size=data[n].size;
+						 	dataModel[n].data = new Array(dataModel[n].size);
+						}
+						/* update nb of samples stored */
+						dataModel[n].size = fArray.length;
+						for(var i in fArray) {
+							dataModel[n].data[parseInt(i)+1]=fArray[i]; /* keep first val - name of column */
+						}
 					}
-					/* update nb of samples stored */
-					dataModel[n].size = fArray.length;
-
-					for(var i in fArray) {
-						dataModel[n].data[i]=fArray[i];
+					else {
+						dataModel[n].size = data[n].size;
+						dataModel[n].data = [];
 					}
 					// dataModel[n].data = Array.from(fArray);
 					// console.log('mydata '+JSON.stringify(dataModel[n].data));
