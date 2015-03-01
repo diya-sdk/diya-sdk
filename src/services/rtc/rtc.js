@@ -24,11 +24,11 @@ var RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection 
 var RTCIceCandidate = window.RTCIceCandidate || window.mozRTCIceCandidate || window.webkitRTCIceCandidate;
 var RTCSessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription || window.webkitRTCSessionDescription;
 
-function Channel(params){
-	this.name = params;
+function Channel(name, open_cb){
+	this.name = name;
 
 	this.channel = undefined;
-	this.onopen = undefined;
+	this.onopen = open_cb;
 }
 
 Channel.prototype.setChannel = function(datachannel){
@@ -51,51 +51,69 @@ function RTC(node){
 	var that = this;
 	
 	this.node = node;
-	this.availableChannels = new Array();
-	this.usedChannels = new Array();
+	this.availableChannels = [];
+	this.usedChannels = [];
 
-	this.peers = new Array();
+	this.requestedChannels = [];
+
+	this.peers = [];
 	
 	this.id = -1;
-
-	node.listen({
-		service: 'rtc',
-		func: 'ListChannels'
-	},
-	function(data){ 
-		for(var i = 0; i < data.channels.length; i++){
-			that.availableChannels.push(new Channel(data.channels[i]));
-		}
-	});
-
 }
 
 RTC.prototype.use = function(name_regex, onopen_callback){
-
-	for(var i=0; i < this.availableChannels.length;i++){
-		var n = this.availableChannels[i];
-		if(n.name && n.name.match(name_regex)){
-			n.onopen = onopen_callback;
-			this.usedChannels[n.name] = n;
-		}
-	}
+	this.requestedChannels.push({regex: name_regex, cb: onopen_callback});
 }
 
 RTC.prototype.disconnect = function(){
-	for(var i=0;i<this.peers.length;i++){
-		this.peers[i].close();
+	for(var promID in this.peers){
+		this.peers[promID].close();
+		delete this.peers[promID];
 	}
-	this.peers = new Array();
 }
 
 RTC.prototype.connect = function(){
 	var that = this;
 
-	var channels = new Array();
-	for(var n in this.usedChannels){
-		channels.push(n);
+	this.node.listen({
+		service: 'rtc',
+		func: 'ListChannels'
+	},
+	function(data){
+		//Match received channels with requested channels
+		var channels = that._matchChannels(data.channels);
+		//Initiate a new Connection
+		that._doConnect(channels);		
+	});
+}
+
+
+RTC.prototype._matchChannels = function(receivedChannels){
+	var that = this;
+
+	//Contains all channels that will be passed to Connect as objects
+	var channels = [];
+
+	for(var i = 0; i < receivedChannels.length; i++){
+		var name = receivedChannels[i];
+		
+		for(var j = 0; j < that.requestedChannels.length; j++){
+			var req = that.requestedChannels[j];
+			
+			if(name && name.match(req.regex)){
+				that.usedChannels[name] = new Channel(name, req.cb);
+				channels.push(name); //prepare the connect object list
+			}
+		}
 	}
 
+	return channels;
+};
+
+RTC.prototype._doConnect = function(channels){
+	var that = this;
+
+	console.log(channels);
 
 	this.node.listen({
 		service: 'rtc',
@@ -105,7 +123,7 @@ RTC.prototype.connect = function(){
 	function(data){
 		that._handleNegociationMessage(data);
 	});
-}
+};
 
 
 RTC.prototype._handleNegociationMessage = function(msg){
@@ -115,7 +133,7 @@ RTC.prototype._handleNegociationMessage = function(msg){
 	}else if(msg.eventType === 'RemoteICECandidate'){
 		this._addRemoteICECandidate(this.peers[msg.promID], msg);
 	}
-}
+};
 
 var servers = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
 RTC.prototype._createPeer = function(data){
@@ -199,7 +217,6 @@ RTC.prototype._onDataChannel = function(datachannel){
 
 
 var exp = {
-		ListChannels: ListChannels,
 		RTC: RTC
 }
 

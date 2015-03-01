@@ -59,7 +59,7 @@
 	}
 
 	function connectPromethe(session){
-		promethe.use(/^ctrl\..*/, function(neuron){
+		promethe.use(/^info\..*/, function(neuron){
 
 			if(neuron.type === 'input'){
 				addInputNeuron(neuron);
