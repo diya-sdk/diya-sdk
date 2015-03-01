@@ -56,6 +56,8 @@ function RTC(node){
 
 	this.requestedChannels = [];
 
+	this.subscriptions = [];
+
 	this.peers = [];
 	
 	this.id = -1;
@@ -75,7 +77,7 @@ RTC.prototype.disconnect = function(){
 RTC.prototype.connect = function(){
 	var that = this;
 
-	this.node.listen({
+	var sub = this.node.listen({
 		service: 'rtc',
 		func: 'ListChannels'
 	},
@@ -85,6 +87,8 @@ RTC.prototype.connect = function(){
 		//Initiate a new Connection
 		that._doConnect(channels);		
 	});
+
+	this.subscriptions.push(sub);
 }
 
 
@@ -115,7 +119,7 @@ RTC.prototype._doConnect = function(channels){
 
 	console.log(channels);
 
-	this.node.listen({
+	var sub = this.node.listen({
 		service: 'rtc',
 		func: 'Connect',
 		obj: channels
@@ -123,6 +127,8 @@ RTC.prototype._doConnect = function(channels){
 	function(data){
 		that._handleNegociationMessage(data);
 	});
+
+	this.subscriptions.push(sub);
 };
 
 
@@ -164,6 +170,16 @@ RTC.prototype._createPeer = function(data){
 	}, 
 	{ 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } });
 
+
+	peer.oniceconnectionstatechange = function(){
+		if(peer.iceConnectionState === 'connected'){
+			//Unregister listeners
+			//that._unsubscribeAll();
+		}else if(peer.iceConnectionState === 'disconnected'){
+			//try reconnect
+		}
+	}
+
 	peer.onicecandidate = function(evt){
 		
 		that.node.get({
@@ -201,6 +217,16 @@ RTC.prototype._addRemoteICECandidate = function(peer, data){
 			console.log(e);
 		});
 	}catch(e) {console.log(e);}
+}
+
+RTC.prototype._unsubscribeAll = function(){
+	while(this.subscriptions.length){
+		this.node.stopListening(this.subscriptions.pop());
+	}
+}
+
+RTC.prototype._onClose = function(){
+
 }
 
 RTC.prototype._onDataChannel = function(datachannel){
