@@ -22,6 +22,7 @@ var rtc = require('./services/rtc/rtc');
 var Promethe = require('./services/promethe/promethe');
 var watchdog = require('./services/watchdog/watchdog');
 var discover = require('./services/discover/discover');
+var qei = require('./services/qei/qei');
 
 var WebSocket = window.WebSocket || window.MozWebSocket;
 
@@ -289,7 +290,8 @@ var diya = {
 		rtc: rtc,
 		Promethe: Promethe,
 		watchdog: watchdog,
-		discover: discover
+		discover: discover,
+		qei: qei
 }
 
 module.exports = diya;
