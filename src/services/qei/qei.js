@@ -19,12 +19,14 @@ var util = require('util');
 
 var Message = require('../message');
 
-
+/**
+ *  callback : function called after model updated
+ * */
 function QEI(node, callback, sampling){
 	var that = this;
 	this.node = node;
 	
-	this.sampling = sampling || 10; /* max num of pts displayed */
+	this.sampling = sampling || 10; /* max num of pts stored */
 	this.callback = callback || function(res){}; /* callback, usually after getModel */
 
 	node.get({
@@ -39,7 +41,7 @@ function QEI(node, callback, sampling){
 		}, function(data){
 			that.dataModel= {};
 			// console.log(JSON.stringify(that.dataModel));
-			that.getDataModelFromRecv(data);
+			that._getDataModelFromRecv(data);
 			// console.log(JSON.stringify(that.dataModel));
 			
 			/// that.updateChart(this.dataModel);
@@ -49,7 +51,7 @@ function QEI(node, callback, sampling){
 					service: "qei",
 					func: "SubscribeQei"
 				}, function(res) {
-					that.getDataModelFromRecv(res.data);
+					that._getDataModelFromRecv(res.data);
 					that.callback(that.dataModel);
 					});
 	});
@@ -58,6 +60,9 @@ function QEI(node, callback, sampling){
 	return this;
 }
 
+QEI.prototype.getDataModel = function(){
+	return this.dataModel;
+}
 QEI.prototype.getSampling = function(numSamples){
 	return this.sampling;
 }
@@ -71,7 +76,7 @@ QEI.prototype.setSampling = function(numSamples){
  * @param  {Object} data data received from DiyaNode by websocket
  * @return {[type]}     [description]
  */
-QEI.prototype.getDataModelFromRecv = function(data){
+QEI.prototype._getDataModelFromRecv = function(data){
 	var dataModel=this.dataModel;
 	/*\
 	|*|
@@ -142,8 +147,8 @@ QEI.prototype.getDataModelFromRecv = function(data){
 						dataModel[n].data=[];
 					}
 
-					/* update dataFrame */
-					dataModel[n].frame=data[n].frame;
+					/* update data range */
+					dataModel[n].range=data[n].range;
 
 					if(data[n].data.length > 0) {
 						/* decode data to Float32Array*/
@@ -183,8 +188,8 @@ QEI.prototype.getDataModelFromRecv = function(data){
 						dataModel[n].data=[];
 					}
 
-					/* update dataFrame */
-					dataModel[n].frame=data[n].frame;
+					/* update data range */
+					dataModel[n].range=data[n].range;
 
 					if(data[n].data.length > 0) {
 						/* decode data to Float32Array*/
