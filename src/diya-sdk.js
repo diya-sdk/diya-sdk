@@ -92,7 +92,8 @@ function Diya(addr){
 			if(!msg.result || msg.result != 'closed'){
 				registeredListeners[msg.subId](msg.data);
 			}else{
-				//If the subscription was closed, then remove the handler
+				//If the subscription was closed, call listener with null data, then remove the handler
+				registeredListeners[msg.subId](null);
 				delete registeredListeners[msg.subId];
 			}
 

@@ -29,6 +29,7 @@ function Channel(name, open_cb){
 
 	this.channel = undefined;
 	this.onopen = open_cb;
+	this.closed = false;
 }
 
 Channel.prototype.setChannel = function(datachannel){
@@ -38,13 +39,24 @@ Channel.prototype.setChannel = function(datachannel){
 	if(that.onopen) that.onopen(that);
 }
 
+Channel.prototype.close = function(){
+	this.closed = true;
+}
+
 Channel.prototype.setOnMessage = function(onmessage){
 	this.channel.onmessage = onmessage;
 }
 
 Channel.prototype.send = function(msg){
-	if(this.channel.readyState === 'open') this.channel.send(msg);
-	else console.log('[rtc.channel.write] warning : webrtc datachannel state = '+this.channel.readyState);
+	if(this.closed) return false;
+	else if(this.channel.readyState === 'open'){
+		this.channel.send(msg);
+		return true;
+	}
+	else{
+		console.log('[rtc.channel.write] warning : webrtc datachannel state = '+this.channel.readyState);
+		return false;
+	}
 }
 
 function RTC(node){
@@ -68,24 +80,40 @@ RTC.prototype.use = function(name_regex, onopen_callback){
 }
 
 RTC.prototype.disconnect = function(){
+	while(this.usedChannels.length){
+		this.usedChannels.pop().close();
+	}
+
 	for(var promID in this.peers){
 		this.peers[promID].close();
 		delete this.peers[promID];
 	}
+
+	if(typeof this.onclose === 'function') this.onclose();
 }
 
 RTC.prototype.connect = function(){
 	var that = this;
+	var foundChannels = false;
 
 	var sub = this.node.listen({
 		service: 'rtc',
 		func: 'ListChannels'
 	},
 	function(data){
-		//Match received channels with requested channels
-		var channels = that._matchChannels(data.channels);
-		//Initiate a new Connection
-		that._doConnect(channels);		
+		if(data){
+			if(data.channels && data.channels.length > 0){
+				foundChannels = true;
+				//Match received channels with requested channels
+				var channels = that._matchChannels(data.channels);
+				//Initiate a new Connection
+				that._doConnect(channels);
+			}
+		}else{
+			if(!foundChannels){
+				that.disconnect();
+			}
+		}
 	});
 
 	this.subscriptions.push(sub);
@@ -174,9 +202,10 @@ RTC.prototype._createPeer = function(data){
 	peer.oniceconnectionstatechange = function(){
 		if(peer.iceConnectionState === 'connected'){
 			//Unregister listeners
-			//that._unsubscribeAll();
+			that._unsubscribeAll();
 		}else if(peer.iceConnectionState === 'disconnected'){
-			//try reconnect
+			//notify user
+			that.disconnect();
 		}
 	}
 
@@ -223,10 +252,6 @@ RTC.prototype._unsubscribeAll = function(){
 	while(this.subscriptions.length){
 		this.node.stopListening(this.subscriptions.pop());
 	}
-}
-
-RTC.prototype._onClose = function(){
-
 }
 
 RTC.prototype._onDataChannel = function(datachannel){
