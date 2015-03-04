@@ -65,8 +65,8 @@ function QEI(node, callback, sampling){
  * 	time: [FLOAT, ...],
  * 	"senseurXX": {
  * 			data:[FLOAT, ...],
+ * 			qualityIndex:[FLOAT, ...],
  * 			range: [FLOAT, FLOAT],
- *      threshold: FLOAT,
  * 			unit: FLOAT
  * 		},
  *   ... ("senseursYY")
@@ -83,7 +83,7 @@ QEI.prototype.updateQualityIndex = function(){
 	var dm = this.dataModel;
 	
 	for(var d in dm) {
-		if(d=='time' ||Â !dm[d].data) continue;
+		if(d=='time' || !dm[d].data) continue;
 	
 		if(!dm[d].qualityIndex || dm[d].data.length != dm[d].qualityIndex.length)
 			dm[d].qualityIndex = new Array(dm[d].data.length);
@@ -93,8 +93,8 @@ QEI.prototype.updateQualityIndex = function(){
 			});
 	}
 }
-QEI.prototype.getDataThreshold = function(){
-	return this.dataModel.threshold;
+QEI.prototype.getDataconfortRange = function(){
+	return this.dataModel.confortRange;
 }
 QEI.prototype.getSampling = function(numSamples){
 	return this.sampling;
@@ -107,7 +107,7 @@ QEI.prototype.setSampling = function(numSamples){
 var checkQuality = function(data, qualityConfig){
 	var quality;
 	if(data && qualityConfig) {
-		if(data>qualityConfig.threshold)
+		if(data>qualityConfig.confortRange[1] || data<qualityConfig.confortRange[0])
 			quality=0;
 		else
 			quality=1.0
@@ -194,10 +194,12 @@ QEI.prototype._getDataModelFromRecv = function(data){
 
 					/* update data range */
 					dataModel[n].range=data[n].range;
+					/* update data label */
+					dataModel[n].label=data[n].label;
 					/* update data unit */
 					dataModel[n].unit=data[n].unit;
-					/* update data threshold */
-					dataModel[n].qualityConfig={threshold: data[n].threshold};
+					/* update data confortRange */
+					dataModel[n].qualityConfig={confortRange: data[n].confortRange};
 
 					if(data[n].data.length > 0) {
 						/* decode data to Float32Array*/
@@ -240,10 +242,12 @@ QEI.prototype._getDataModelFromRecv = function(data){
 
 					/* update data range */
 					dataModel[n].range=data[n].range;
+					/* update data label */
+					dataModel[n].label=data[n].label;
 					/* update data unit */
 					dataModel[n].unit=data[n].unit;
-					/* update data threshold */
-					dataModel[n].qualityConfig={threshold: data[n].threshold};
+					/* update data confortRange */
+					dataModel[n].qualityConfig={confortRange: data[n].confortRange};
 
 					if(data[n].data.length > 0) {
 						/* decode data to Float32Array*/
