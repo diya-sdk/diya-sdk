@@ -59,9 +59,42 @@ function QEI(node, callback, sampling){
 	console.log("DiyaSDK - QEI: created");
 	return this;
 }
-
+/**
+ * Get dataModel : 
+ * {
+ * 	time: [FLOAT, ...],
+ * 	"senseurXX": {
+ * 			data:[FLOAT, ...],
+ * 			range: [FLOAT, FLOAT],
+ *      threshold: FLOAT,
+ * 			unit: FLOAT
+ * 		},
+ *   ... ("senseursYY")
+ * }
+ */
 QEI.prototype.getDataModel = function(){
 	return this.dataModel;
+}
+QEI.prototype.getDataRange = function(){
+	return this.dataModel.range;
+}
+QEI.prototype.updateQualityIndex = function(){
+	var that=this;
+	var dm = this.dataModel;
+	
+	for(var d in dm) {
+		if(d=='time' || !dm[d].data) continue;
+	
+		if(!dm[d].qualityIndex || dm[d].data.length != dm[d].qualityIndex.length)
+			dm[d].qualityIndex = new Array(dm[d].data.length);
+		
+		dm[d].data.forEach(function(v,i) {
+				dm[d].qualityIndex[i] = checkQuality(v,dm[d].qualityConfig);
+			});
+	}
+}
+QEI.prototype.getDataThreshold = function(){
+	return this.dataModel.threshold;
 }
 QEI.prototype.getSampling = function(numSamples){
 	return this.sampling;
@@ -70,6 +103,18 @@ QEI.prototype.setSampling = function(numSamples){
 	this.sampling = numSamples;
 }
 
+
+var checkQuality = function(data, qualityConfig){
+	var quality;
+	if(data && qualityConfig) {
+		if(data>qualityConfig.threshold)
+			quality=0;
+		else
+			quality=1.0
+		return quality;
+	}
+	return 1.0;
+}
 
 /**
  * Update internal model with received data
@@ -127,7 +172,7 @@ QEI.prototype._getDataModelFromRecv = function(data){
 	};
 	
 	if(data && data.header) {
-		// console.log('rcvdata '+JSON.stringify(data));
+		//~ console.log('rcvdata '+JSON.stringify(data));
 		// if(!data.header.sampling) data.header.sampling=1;
 		
 		/** case 1 : 1 value received added to dataModel */
@@ -149,6 +194,10 @@ QEI.prototype._getDataModelFromRecv = function(data){
 
 					/* update data range */
 					dataModel[n].range=data[n].range;
+					/* update data unit */
+					dataModel[n].unit=data[n].unit;
+					/* update data threshold */
+					dataModel[n].qualityConfig={threshold: data[n].threshold};
 
 					if(data[n].data.length > 0) {
 						/* decode data to Float32Array*/
@@ -169,7 +218,8 @@ QEI.prototype._getDataModelFromRecv = function(data){
 						if(data[n].size != 0) console.log("Size mismatch received data (no data versus size="+data[n].size+")");
 						dataModel[n].data = [];
 					}
-					// console.log('mydata '+JSON.stringify(dataModel[n].data));
+					this.updateQualityIndex();
+					//~ console.log('mydata '+JSON.stringify(dataModel[n].data));
 				}
 			}
 		}
@@ -190,6 +240,10 @@ QEI.prototype._getDataModelFromRecv = function(data){
 
 					/* update data range */
 					dataModel[n].range=data[n].range;
+					/* update data unit */
+					dataModel[n].unit=data[n].unit;
+					/* update data threshold */
+					dataModel[n].qualityConfig={threshold: data[n].threshold};
 
 					if(data[n].data.length > 0) {
 						/* decode data to Float32Array*/
