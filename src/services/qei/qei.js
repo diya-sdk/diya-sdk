@@ -219,7 +219,7 @@ QEI.prototype._getDataModelFromRecv = function(data){
 		}
 	}
 	else {
-		console.err("No Data to read or header is missing !");
+		console.log("No Data to read or header is missing !");
 	}
 	return this.dataModel;
 }
