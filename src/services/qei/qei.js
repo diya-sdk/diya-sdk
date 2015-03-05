@@ -83,7 +83,7 @@ QEI.prototype.updateQualityIndex = function(){
 	var dm = this.dataModel;
 	
 	for(var d in dm) {
-		if(d=='time' || !dm[d].data) continue;
+		if(d=='time' || !dm[d].data) continue;
 	
 		if(!dm[d].qualityIndex || dm[d].data.length != dm[d].qualityIndex.length)
 			dm[d].qualityIndex = new Array(dm[d].data.length);

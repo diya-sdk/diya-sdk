@@ -1,7 +1,13 @@
 var RTC = require('../rtc/rtc');
 
 function Promethe(session){
+	var that = this;
+
 	this.rtc = new RTC.RTC(session);
+	
+	this.rtc.onclose = function(){
+		if(typeof that.onclose === 'function') that.onclose();
+	}
 }
 
 Promethe.prototype.use = function(regex, callback){
@@ -61,8 +67,8 @@ Promethe.prototype._negociateNeuron = function(channel, callback){
 		channel.frequency = 33;
 
 		channel._run = function(){
-			channel.send(channel._buffer);
-			setTimeout(channel._run, channel.frequency);
+			if(channel.send(channel._buffer))
+				setTimeout(channel._run, channel.frequency);
 		}
 
 		channel._run();
