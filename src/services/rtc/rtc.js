@@ -102,8 +102,6 @@ RTC.prototype.connect = function(){
 	},
 	function(data){
 		if(data){
-			console.log("data");
-			console.log(data);
 			if(data.channels && data.channels.length > 0){
 				foundChannels = true;
 				//Match received channels with requested channels
