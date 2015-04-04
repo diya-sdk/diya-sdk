@@ -16,11 +16,8 @@
 var message = require('./services/message');
 
 //Services
-var auth = require('./services/auth/auth');
-var timer = require('./services/timer/timer');
 var rtc = require('./services/rtc/rtc');
 var Promethe = require('./services/promethe/promethe');
-var watchdog = require('./services/watchdog/watchdog');
 var discover = require('./services/discover/discover');
 var qei = require('./services/qei/qei');
 
@@ -187,23 +184,39 @@ function Diya(addr){
 		}
 	};
 
-	this.get = function(params, callback){
+	this.get = function(params, callback, timeout){
 		var msg = createMessage(params);
 		if(msg === null) return ;
 
 		msg.reqId = consumeNextReqId();
 		pendingRequests[msg.reqId] = callback;
 
+		//Timeout after which the request will be discarded
+		if(timeout && timeout > 0){
+			setTimeout(function(){
+				if(pendingRequests[msg.reqId]){
+					delete pendingRequests[msg.reqId];
+				}
+			}, timeout);
+		}
+
 		send(msg);
 	}
 
-	this.listen = function(params, callback){
+	this.listen = function(params, callback, timeout){
 		var msg = createMessage(params);
 		if(msg === null) return ;
 
 		msg.subId = consumeNextSubscriptionId();
 		registeredListeners[msg.subId] = callback;
-		
+
+		//Timeout after which the subscription is automatically invalidated
+		if(timeout && timeout > 0){
+			setTimeout(function(){
+				that.stopListening(msg.subId);	
+			}, timeout);
+		}
+
 		send(msg);
 
 		return msg.subId;
@@ -214,6 +227,9 @@ function Diya(addr){
 	}
 
 	this.stopListening = function(subId){
+
+		if(!registeredListeners[subId]) return ;
+
 		msg = {
 			func: 'Unsubscribe',
 			data: {
@@ -222,6 +238,8 @@ function Diya(addr){
 		}
 
 		send(msg);
+
+		delete registeredListeners[subId];
 	}
 
 	this.connected = function(){
@@ -276,11 +294,8 @@ function DiyaClient(addr, user, password){
 var diya = {
 		DiyaClient: DiyaClient,
 		Diya: Diya,
-		auth: auth,
-		timer: timer,
 		rtc: rtc,
 		Promethe: Promethe,
-		watchdog: watchdog,
 		discover: discover,
 		qei: qei
 }

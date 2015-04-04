@@ -102,12 +102,12 @@ RTC.prototype.connect = function(){
 	},
 	function(data){
 		if(data){
-			if(data.channels && data.channels.length > 0){
+			if(data.promID !== undefined && data.channels && data.channels.length > 0){
 				foundChannels = true;
 				//Match received channels with requested channels
 				var channels = that._matchChannels(data.channels);
 				//Initiate a new Connection
-				that._doConnect(channels);
+				that._doConnect(data.promID, channels);
 			}
 		}else{
 			if(!foundChannels){
@@ -142,7 +142,7 @@ RTC.prototype._matchChannels = function(receivedChannels){
 	return channels;
 };
 
-RTC.prototype._doConnect = function(channels){
+RTC.prototype._doConnect = function(promID, channels){
 	var that = this;
 
 	console.log(channels);
@@ -150,7 +150,10 @@ RTC.prototype._doConnect = function(channels){
 	var sub = this.node.listen({
 		service: 'rtc',
 		func: 'Connect',
-		obj: channels
+		obj: channels,
+		data: {
+			promID: promID
+		}
 	},
 	function(data){
 		that._handleNegociationMessage(data);
@@ -176,8 +179,6 @@ RTC.prototype._createPeer = function(data){
 	var peer = new RTCPeerConnection(servers, {mandatory: [{DtlsSrtpKeyAgreement: true}, {EnableDtlsSrtp: true}]});
 
 	peer.setRemoteDescription(new RTCSessionDescription({sdp: data.sdp, type: data.type}));
-
-	console.log("create answer");
 
 	peer.createAnswer(function(session_description){
 		peer.setLocalDescription(session_description);
