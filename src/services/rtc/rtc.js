@@ -91,7 +91,7 @@ Peer.prototype._connect = function(){
 	});
 
 	setTimeout(function(){
-		that.rtc.reconnect();
+		if(that.peer && that.peer.iceConnectionState !== 'connected') that.rtc.reconnect();
 	}, 10000);
 }
 
