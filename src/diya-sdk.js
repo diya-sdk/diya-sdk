@@ -97,7 +97,8 @@ function Diya(addr){
 
 		}else{
 			//No pending request for this subId, ignoring event
-			console.log('msg.subId doesn\'t match any registered listeners, Ignoring msg ! '+msg);
+			console.log('msg.subId doesn\'t match any registered listeners, Ignoring msg ! ');
+			console.log(msg);
 			return ;
 		}
 	}
