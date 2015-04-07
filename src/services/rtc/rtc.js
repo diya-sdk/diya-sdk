@@ -68,7 +68,7 @@ function Peer(rtc, id, channels){
 	this.rtc = rtc;
 	this.peer = null;
 
-
+	this.connected = false;
 	this.closed = false;
 
 	this._connect();
@@ -91,7 +91,10 @@ Peer.prototype._connect = function(){
 	});
 
 	setTimeout(function(){
-		if(that.peer && that.peer.iceConnectionState !== 'connected') that.rtc.reconnect();
+		if(!that.connected){
+			that.rtc.reconnect();
+		}else{
+		}
 	}, 10000);
 }
 
@@ -137,6 +140,7 @@ Peer.prototype._createPeer = function(data){
 	peer.oniceconnectionstatechange = function(){
 		console.log(peer.iceConnectionState);
 		if(peer.iceConnectionState === 'connected'){
+			that.connected = true;  
 			that.rtc.node.stopListening(this.sub);
 		}else if(peer.iceConnectionState === 'disconnected'){
 			if(!that.closed) that.rtc.reconnect();
@@ -156,6 +160,7 @@ Peer.prototype._createPeer = function(data){
 	};
 
 	peer.ondatachannel = function(evt){
+		that.connected = true;
 		that.rtc._onDataChannel(evt.channel);
 	};
 }
@@ -175,6 +180,7 @@ Peer.prototype._addRemoteICECandidate = function(data){
 Peer.prototype.close = function(){
 	this.rtc.node.stopListening(this.sub);
 	if(this.peer) this.peer.close();
+	this.connected = false;
 	this.closed = true;
 }
 
@@ -227,7 +233,10 @@ RTC.prototype.connect = function(){
 
 			if(data.eventType === 'PeerConnected'){
 				if(!that.peers[data.promID]){
-					that.peers[data.promID] = new Peer(that, data.promID, that._matchChannels(data.channels));
+					var channels = that._matchChannels(data.channels);
+					if(channels.length > 0){
+						that.peers[data.promID] = new Peer(that, data.promID, channels);
+					}
 				}
 			}
 			else if(data.eventType === 'PeerClosed'){
