@@ -68,6 +68,9 @@ function Peer(rtc, id, channels){
 	this.rtc = rtc;
 	this.peer = null;
 
+
+	this.closed = false;
+
 	this._connect();
 }
 
@@ -86,6 +89,10 @@ Peer.prototype._connect = function(){
 	function(data){
 		that._handleNegociationMessage(data);
 	});
+
+	setTimeout(function(){
+		that.reconnect();
+	}, 10000);
 }
 
 Peer.prototype._handleNegociationMessage = function(msg){
@@ -132,13 +139,7 @@ Peer.prototype._createPeer = function(data){
 		if(peer.iceConnectionState === 'connected'){
 			that.rtc.node.stopListening(this.sub);
 		}else if(peer.iceConnectionState === 'disconnected'){
-			that.close();
-			//Try to reconnect after 1 sec
-			setTimeout(function(){
-				console.log("try reconnecting");
-				that._connect();
-			}, 1000);
-			
+			if(!that.closed) that.rtc.reconnect();
 		}
 	}
 
@@ -174,6 +175,7 @@ Peer.prototype._addRemoteICECandidate = function(data){
 Peer.prototype.close = function(){
 	this.rtc.node.stopListening(this.sub);
 	if(this.peer) this.peer.close();
+	this.closed = true;
 }
 
 
@@ -194,6 +196,12 @@ function RTC(node){
 
 RTC.prototype.use = function(name_regex, onopen_callback){
 	this.requestedChannels.push({regex: name_regex, cb: onopen_callback});
+}
+
+RTC.prototype.reconnect = function(){
+	console.log("reconnecting...");
+	this.disconnect();
+	this.connect();
 }
 
 RTC.prototype.disconnect = function(){
@@ -218,7 +226,9 @@ RTC.prototype.connect = function(){
 		if(data.eventType && data.promID !== undefined){
 
 			if(data.eventType === 'PeerConnected'){
-				that.peers[data.promID] = new Peer(that, data.promID, that._matchChannels(data.channels));
+				if(!that.peers[data.promID]){
+					that.peers[data.promID] = new Peer(that, data.promID, that._matchChannels(data.channels));
+				}
 			}
 			else if(data.eventType === 'PeerClosed'){
 				if(that.peers[data.promID]) that._closePeer(data.promID);
