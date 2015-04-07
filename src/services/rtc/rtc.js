@@ -132,7 +132,13 @@ Peer.prototype._createPeer = function(data){
 		if(peer.iceConnectionState === 'connected'){
 			that.rtc.node.stopListening(this.sub);
 		}else if(peer.iceConnectionState === 'disconnected'){
-			that.rtc._closePeer(that.id);
+			that.close();
+			//Try to reconnect after 1 sec
+			setTimeout(function(){
+				console.log("try reconnecting");
+				that._connect();
+			}, 1000);
+			
 		}
 	}
 
