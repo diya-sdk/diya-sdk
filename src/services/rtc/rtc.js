@@ -91,7 +91,7 @@ Peer.prototype._connect = function(){
 	});
 
 	setTimeout(function(){
-		if(!that.connected){
+		if(!that.connected && !that.closed){
 			that.rtc.reconnect();
 		}else{
 		}
@@ -205,9 +205,11 @@ RTC.prototype.use = function(name_regex, onopen_callback){
 }
 
 RTC.prototype.reconnect = function(){
+	var that = this;
+		
+	that.disconnect();
+	that.connect();
 	console.log("reconnecting...");
-	this.disconnect();
-	this.connect();
 }
 
 RTC.prototype.disconnect = function(){
@@ -216,6 +218,8 @@ RTC.prototype.disconnect = function(){
 		this._closePeer(promID);
 	}
 
+	this.node.stopListening(this.sub);
+
 	if(typeof this.onclose === 'function') this.onclose();
 }
 
@@ -223,7 +227,7 @@ RTC.prototype.connect = function(){
 	var that = this;
 	var foundChannels = false;
 
-	var sub = this.node.listen({
+	this.sub = this.node.listen({
 		service: 'rtc',
 		func: 'ListenPeers'
 	},
