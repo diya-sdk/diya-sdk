@@ -10,20 +10,14 @@
 		console.log("Client authenticated !");
 
 		node.get({
-			service: 'timer',
-			func: 'GetTime'
+			service: 'update',
+			func: 'ListPackages'
 		}, function(data){
-
-			});
-
-
-		node.listen({
-			service: 'timer',
-			func: 'SubscribeTimer'
-		}, 
-		function(res){
-			console.log(res.currentTime);
+			console.log(data.packages); 
+			
 		});
+
+
 	}
 
 
