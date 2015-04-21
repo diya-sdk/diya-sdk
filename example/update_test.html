@@ -13,10 +13,36 @@
 			service: 'update',
 			func: 'ListPackages'
 		}, function(data){
-			console.log(data.packages); 
+			if(data.packages) 
+				console.log(data.packages); 
+			if(data.error)
+				console.log(data.error);
 			
 		});
-
+		
+		node.get({
+			service: 'update',
+			func: 'UpdateAll'
+		}, function(data){
+			if(data.packages) 
+				console.log(data.packages); 
+			if(data.error)
+				console.log("Error in updateAll: "+data.error);
+		});
+		
+		node.get({
+			service: 'update',
+			func: 'InstallPackage',
+			data:{
+				package: 'diya-node'
+			}
+		}, function(data){
+			if(data.packages) 
+				console.log(data.packages); 
+			if(data.error)
+				console.log(data.error);
+			
+		}); 
 
 	}
 
