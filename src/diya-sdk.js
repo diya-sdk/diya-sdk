@@ -31,6 +31,8 @@ function Diya(addr){
 	var that = this;
 	var socket;	
 
+	var DEBUG = false;
+
 	var close_cb = null;
 
 	var pendingRequests = [];
@@ -251,6 +253,9 @@ function Diya(addr){
 		socket.close();
 	}
 	
+	this.debug = function(value){
+		DEBUG = value;
+	}
 }
 
 

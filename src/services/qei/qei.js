@@ -45,6 +45,7 @@ function QEI(node, callback, sampling){
 			// console.log(JSON.stringify(that.dataModel));
 			
 			/// that.updateChart(this.dataModel);
+			that._updateLevels(that.dataModel);
 			that.callback(that.dataModel);
 
 			node.listen({
@@ -52,6 +53,7 @@ function QEI(node, callback, sampling){
 					func: "SubscribeQei"
 				}, function(res) {
 					that._getDataModelFromRecv(res.data);
+					that._updateLevels(that.dataModel);
 					that.callback(that.dataModel);
 					});
 	});
@@ -93,6 +95,7 @@ QEI.prototype.updateQualityIndex = function(){
 			});
 	}
 }
+
 QEI.prototype.getDataconfortRange = function(){
 	return this.dataModel.confortRange;
 }
@@ -101,6 +104,63 @@ QEI.prototype.getSampling = function(numSamples){
 }
 QEI.prototype.setSampling = function(numSamples){
 	this.sampling = numSamples;
+}
+
+
+
+QEI.prototype._updateConfinementLevel = function(model){
+	var co2 = model['CO2'].data[model['CO2'].data.length - 1];
+	var voct = model['VOCt'].data[model['VOCt'].data.length - 1];
+	var confinement = Math.max(co2, voct);
+
+	if(confinement < 800){
+		return 3;
+	}
+	if(confinement < 1600){
+		return 2;
+	}
+	if(confinement < 2400){
+		return 1;
+	}
+	if(confinement < 3000){
+		return 0;
+	}
+}
+
+QEI.prototype._updateAirQualityLevel = function(confinement, model){
+	var fineDustQualityIndex = model['Fine Dust'].qualityIndex[model['Fine Dust'].qualityIndex.length-1];
+	var ozoneQualityIndex = model['Ozone'].qualityIndex[model['Ozone'].qualityIndex.length-1];
+
+	var qualityIndex = fineDustQualityIndex + ozoneQualityIndex;
+	if(qualityIndex < 2) return confinement - 1;
+	else return confinement;
+}
+
+QEI.prototype._updateEnvQualityLevel = function(airQuality, model){
+	var humidityQualityIndex = model['Humidity'].qualityIndex[model['Humidity'].qualityIndex.length-1];
+	var temperatureQualityIndex = model['Temperature'].qualityIndex[model['Temperature'].qualityIndex.length-1];
+
+	var qualityIndex = humidityQualityIndex + temperatureQualityIndex;
+	if(qualityIndex < 2) return airQuality - 1;
+	else return airQuality;	
+}
+
+QEI.prototype._updateLevels = function(model){
+	this.confinement = this.computeConfinementLevel(model);
+	this.airQuality = this.computeAirQualityLevel(this.confinement, model);
+	this.envQuality = this.computeEnvQualityLevel(this.airQuality, model);
+}
+
+QEI.prototype.getConfinementLevel = function(){
+	return this.confinement;
+}
+
+QEI.prototype.getAirQualityLevel = function(){
+	return this.airQuality;
+}
+
+QEI.prototype.getEnvQualityLevel = function(){
+	return this.envQuality;
 }
 
 
