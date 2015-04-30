@@ -146,9 +146,9 @@ QEI.prototype._updateEnvQualityLevel = function(airQuality, model){
 }
 
 QEI.prototype._updateLevels = function(model){
-	this.confinement = this.computeConfinementLevel(model);
-	this.airQuality = this.computeAirQualityLevel(this.confinement, model);
-	this.envQuality = this.computeEnvQualityLevel(this.airQuality, model);
+	this.confinement = this._updateConfinementLevel(model);
+	this.airQuality = this._updateAirQualityLevel(this.confinement, model);
+	this.envQuality = this._updateEnvQualityLevel(this.airQuality, model);
 }
 
 QEI.prototype.getConfinementLevel = function(){
