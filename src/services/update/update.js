@@ -46,7 +46,7 @@ Update.prototype.updateAll = function(callback){
 		if(data.packages) 
 			callback(null,data.packages); 
 		if(data.error)
-			callback("Error in updateAll: "+data.error,null);
+			callback(data.error,null);
 	}); 
 }
 	
@@ -55,22 +55,31 @@ Update.prototype.installPackage = function(pkg, callback){
 	if ((pkg === 'Undefined') || (typeof pkg !== 'string') || (pkg.length < 2)){
 		callback('undefinedPackage',null);
 	}
-			
-	this.node.get({
-		service: 'update',
-		func: 'InstallPackage',
-		data:{
-			package: pkg,
+	else {
+	
+		var INVALID_PARAMETERS_REGEX = /^-|[^\s]\s+[^\s]|-$/;
+		var testNamePkg= INVALID_PARAMETERS_REGEX.test(pkg);
+		if (testNamePkg)
+			callback("InvalidParameters",null);
+		else{
+				
+			this.node.get({
+				service: 'update',
+				func: 'InstallPackage',
+				data:{
+					package: pkg,
+				}
+			}, function(data){
+				if(data.packages) 
+					callback(null,data.packages); 
+				if(data.error)
+					callback(data.error,null);
+					
+				
+			});
 		}
-	}, function(data){
-		if(data.packages) 
-			callback(null,data.packages); 
-		if(data.error)
-			callback(data.error,null);
-			
-		
-		
-	});
+	}
+	
 }
 		
 		
