@@ -1,55 +1,59 @@
 <script type="text/javascript" src="../dist/diya-sdk.js"></script>
 <script>
 
-
+	var update = null;
+	
 	function onClientAuthenticationFailure(){
 		console.log("Cannot authenticate client !");
 	}
 
 	function onClientAuthenticated(node){
+		
 		console.log("Client authenticated !");
-
-		node.get({
-			service: 'update',
-			func: 'ListPackages'
-		}, function(data){
-			if(data.packages) 
-				console.log(data.packages); 
-			if(data.error)
-				console.log(data.error);
-			
-		});
-		
-		node.get({
-			service: 'update',
-			func: 'UpdateAll'
-		}, function(data){
-			if(data.packages) 
-				console.log(data.packages); 
-			if(data.error)
-				console.log("Error in updateAll: "+data.error);
-		});
-		
-		node.get({
-			service: 'update',
-			func: 'InstallPackage',
-			data:{
-				package: 'diya-node'
-			}
-		}, function(data){
-			if(data.packages) 
-				console.log(data.packages); 
-			if(data.error)
-				console.log(data.error);
-			
-		}); 
-
+		update = new diya.update.Update(node);
 	}
-
-
+		
+	function listPkgs(){	
+		update.listPackages(listCb);
+		
+		function listCb(errList,ListPkgs){
+			if (errList)
+				console.log(errList);
+			else
+				console.log(ListPkgs);
+		}
+	}
+		
+	function updateAll(){	
+		
+		update.updateAll(function (errUpdateAll,InfoPkgs){
+			if (errUpdateAll)
+				console.log(errUpdateAll);
+			else
+				console.log(InfoPkgs);
+		});
+	}
+		
+	function installPkg(pkg){	
+		update.installPackage(pkg,installPkgCb);
+		
+		function installPkgCb(errInstallPkg,InfoPkg){
+			if (errInstallPkg)
+				console.log(errInstallPkg);
+			else
+				console.log(InfoPkg);
+		}
+	} 
+		
+		
+	
 	var client = new diya.DiyaClient("ws://localhost:1234", "admin", "pass");
 
 	client.createSession(onClientAuthenticated, onClientAuthenticationFailure);
 
 
 </script>
+<button onclick="listPkgs()">List All Packages</button>
+<button onclick="updateAll()">Update All Packages</button>
+<button onclick="installPkg('Texmaker ')"> Install Package</button>
+
