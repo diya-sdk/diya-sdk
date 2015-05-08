@@ -252,6 +252,7 @@ function Diya(addr){
 
 	this.disconnect = function(){
 		socket.close();
+		closeAll();
 	}
 	
 	this.debug = function(value){
