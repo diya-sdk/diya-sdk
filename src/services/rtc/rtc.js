@@ -183,7 +183,9 @@ Peer.prototype._addRemoteICECandidate = function(data){
 
 Peer.prototype.close = function(){
 	this.rtc.node.stopListening(this.sub);
-	if(this.peer) this.peer.close();
+	if(this.peer) try{
+		this.peer.close();
+	}catch(e){}
 	this.connected = false;
 	this.closed = true;
 }
