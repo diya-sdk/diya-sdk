@@ -50,7 +50,11 @@ Channel.prototype.setOnMessage = function(onmessage){
 Channel.prototype.send = function(msg){
 	if(this.closed) return false;
 	else if(this.channel.readyState === 'open'){
-		this.channel.send(msg);
+		try{
+			this.channel.send(msg);
+		}catch(e){
+			console.log('[rtc.channel.write] exception occured while sending data');
+		}
 		return true;
 	}
 	else{
@@ -245,6 +249,7 @@ RTC.prototype.connect = function(){
 			}
 			else if(data.eventType === 'PeerClosed'){
 				if(that.peers[data.promID]) that._closePeer(data.promID);
+				if(typeof this.onclose === 'function') this.onclose();
 			}
 		}
 
