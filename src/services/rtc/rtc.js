@@ -249,7 +249,7 @@ RTC.prototype.connect = function(){
 			}
 			else if(data.eventType === 'PeerClosed'){
 				if(that.peers[data.promID]) that._closePeer(data.promID);
-				if(typeof this.onclose === 'function') this.onclose();
+				if(typeof that.onclose === 'function') that.onclose();
 			}
 		}
 
