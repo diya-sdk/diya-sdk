@@ -141,9 +141,6 @@ function Diya(addr){
 		while(registeredListeners.length){
 			registeredListeners.pop();
 		}
-
-		console.log(close_cb);
-
 		if(typeof close_cb === 'function'){
 			close_cb();
 		}
