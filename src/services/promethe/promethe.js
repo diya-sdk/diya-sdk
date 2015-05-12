@@ -65,7 +65,7 @@ Promethe.prototype._negociateNeuron = function(channel, callback){
 		};
 		
 		channel.writeAll = function(values){
-			if(!Array.isArray(values) || values.length !== channel.size)
+			if(!Array.isArray(values) || values.length !== channel.size)
 				return false;
 			
 			for (var i = 0; i<values.length; i++){
