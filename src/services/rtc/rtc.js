@@ -50,7 +50,11 @@ Channel.prototype.setOnMessage = function(onmessage){
 Channel.prototype.send = function(msg){
 	if(this.closed) return false;
 	else if(this.channel.readyState === 'open'){
-		this.channel.send(msg);
+		try{
+			this.channel.send(msg);
+		}catch(e){
+			console.log('[rtc.channel.write] exception occured while sending data');
+		}
 		return true;
 	}
 	else{
@@ -179,7 +183,9 @@ Peer.prototype._addRemoteICECandidate = function(data){
 
 Peer.prototype.close = function(){
 	this.rtc.node.stopListening(this.sub);
-	if(this.peer) this.peer.close();
+	if(this.peer) try{
+		this.peer.close();
+	}catch(e){}
 	this.connected = false;
 	this.closed = true;
 }
@@ -244,7 +250,10 @@ RTC.prototype.connect = function(){
 				}
 			}
 			else if(data.eventType === 'PeerClosed'){
-				if(that.peers[data.promID]) that._closePeer(data.promID);
+				if(that.peers[data.promID]){
+					that._closePeer(data.promID);
+					if(typeof that.onclose === 'function') that.onclose();
+				}
 			}
 		}
 

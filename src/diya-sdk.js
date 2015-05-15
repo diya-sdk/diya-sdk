@@ -141,9 +141,6 @@ function Diya(addr){
 		while(registeredListeners.length){
 			registeredListeners.pop();
 		}
-
-		console.log(close_cb);
-
 		if(typeof close_cb === 'function'){
 			close_cb();
 		}
@@ -252,6 +249,7 @@ function Diya(addr){
 
 	this.disconnect = function(){
 		socket.close();
+		closeAll();
 	}
 	
 	this.debug = function(value){

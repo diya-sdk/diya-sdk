@@ -56,20 +56,31 @@ Promethe.prototype._negociateNeuron = function(channel, callback){
 
 		channel.setOnValue = function(onvalue_cb){
 			channel.setOnMessage(onvalue_cb);
-		}
+		};
 
 		channel.write = function(index, value){
 			if(index < 0 || index > channel.size || isNaN(value)) return false;
 			channel._buffer[index] = value;
 			return true;
-		}
+		};
+		
+		channel.writeAll = function(values){
+			if(!Array.isArray(values) || values.length !== channel.size)
+				return false;
+			
+			for (var i = 0; i<values.length; i++){
+				if(isNaN(values[i])) return false;
+				channel._buffer[i] = values[i];
+			}
+			return true;
+		};
 
 		channel.frequency = 33;
 
 		channel._run = function(){
 			if(channel.send(channel._buffer))
 				setTimeout(channel._run, channel.frequency);
-		}
+		};
 
 		channel._run();
 
