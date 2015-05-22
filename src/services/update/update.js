@@ -23,6 +23,27 @@ function Update(node){
 	return this;
 }
 
+Update.prototype.statusLockApt = function(callback){
+	
+	/*this.node.get({
+			service: 'update',
+			func: 'LockStatus'
+		},function(data){
+			if(data.lockStatus) 
+				callback(null,data.lockStatus); 
+	});*/
+	
+	this.node.listen({
+			service: 'update',
+			func: 'SubscribeLockStatus'
+		}, 
+		function(res){
+			callback(null,res.lockStatus);
+			console.log(res.lockStatus);
+		});
+
+}
+
 Update.prototype.listPackages = function(callback){
 
 	this.node.get({
