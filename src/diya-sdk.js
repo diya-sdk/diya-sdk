@@ -1,309 +1,276 @@
-/* Diya-client
- *
- * Copyright (c) 2014, Partnering Robotics, All rights reserved.
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; version
- *  3.0 of the License This library is distributed in the hope
- * that it will be useful, but WITHOUT ANY WARRANTY; without even
- * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- * PURPOSE. See the GNU Lesser General Public License for more details.
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library.
- */
+var Q = require('q');
 
+//////////////////////////////////////////////////////////////
+/////////////////// Logging utility methods //////////////////
+//////////////////////////////////////////////////////////////
 
-var message = require('./services/message');
+var DEBUG = true;
+var Logger = {
+	log: function(message){
+		if(DEBUG) console.log(message);
+	},
 
-//Services
-var rtc = require('./services/rtc/rtc');
-var Promethe = require('./services/promethe/promethe');
-var discover = require('./services/discover/discover');
-var qei = require('./services/qei/qei');
-var update = require('./services/update/update');
-
-var WebSocket = window.WebSocket || window.MozWebSocket;
-
-
-
- 
-
-function Diya(addr){
-	var that = this;
-	var socket;	
-
-	var DEBUG = false;
-
-	var close_cb = null;
-
-	var pendingRequests = [];
-	var registeredListeners = [];
-
-	var nextReqId = -1;
-	function consumeNextReqId(){
-		nextReqId++;
-		return nextReqId;
-	}
-
-	var nextSubscriptionId = -1;
-	function consumeNextSubscriptionId(){
-		nextSubscriptionId++;
-		return nextSubscriptionId;
-	}
-	
-	function dispatch(msg){
-
-		if(msg.reqId !== undefined){
-			dispatchRequest(msg);
-		}else if(msg.subId !== undefined){
-			dispatchEvent(msg);
-		}
-		//If the msg doesn't have a reqId, it cannot be matched to a pending request
-		else {
-			console.log('missing reqId or subId. Ignoring msg : ');
-			console.log(msg);
-			return ;
-		}
-
-		
-	}
-
-	function dispatchRequest(msg){
-		//If msg.reqId corresponds to a pending request, execute the response callback
-		if(typeof pendingRequests[msg.reqId] === 'function'){
-			console.log(msg);
-
-			//execute the response callback, pass the message data as argument
-			pendingRequests[msg.reqId](msg.data);
-			delete pendingRequests[msg.reqId];
-		}else{
-			//No pending request for this reqId, ignoring response
-			console.log('msg.reqId doesn\'t match any pending request, Ignoring msg ! '+msg);
-			return ;
-		}
-	}
-
-	function dispatchEvent(msg){
-		//If msg.subId corresponds to a registered listener, execute the event callback
-		if(typeof registeredListeners[msg.subId] === 'function'){
-			console.log(msg);
-
-			//execute the event callback, pass the message data as argument
-			if(!msg.result || msg.result != 'closed'){
-				registeredListeners[msg.subId](msg.data);
-			}else{
-				//If the subscription was closed, call listener with null data, then remove the handler
-				registeredListeners[msg.subId](null);
-				delete registeredListeners[msg.subId];
-			}
-
-
-		}else{
-			//No pending request for this subId, ignoring event
-			console.log('msg.subId doesn\'t match any registered listeners, Ignoring msg ! ');
-			console.log(msg);
-			return ;
-		}
-	}
-	
-	
-	function send(msg){
-		if(socket.readyState === WebSocket.CLOSING || socket.readyState === WebSocket.CLOSED){
-			console.log("diya-SDK : cannot send message -> socket closed");
-		}
-		try{
-			data = JSON.stringify(msg);
-			socket.send(data);
-		}catch(e){
-			console.log('malformed JSON, ignoring msg...');
-		}
-	}	
-	
-	function handleMessage(incomingMessage){
-		var msg;
-
-		try{
-			msg = JSON.parse(incomingMessage.data);
-		}catch(e){
-			console.log("malformed JSON");
-			 
-			return ;
-		}
-		
-		dispatch(msg);
-
-	};
-	
-	function closeAll(){
-		while(pendingRequests.length){
-			pendingRequests.pop();
-		}
-		while(registeredListeners.length){
-			registeredListeners.pop();
-		}
-		if(typeof close_cb === 'function'){
-			close_cb();
-		}
-	}
-
-	function createMessage(params){
-		if(!params.service) return null;
-		else return {
-			service: params.service,
-			func: params.func ? params.func : undefined,
-			obj: params.obj ? params.obj : undefined,
-			data: params.data ? params.data : undefined
-		}
-	}
-
-
-	///////////////////////////////////
-	//////////Public API///////////////
-	///////////////////////////////////
-	
-	this.connect = function(callback, args){
-		try{
-			socket = new WebSocket(addr);
-
-			socket.onerror = function(e){
-				callback("Cannot Connect", null);
-			}
-			
-			socket.onopen = function(){
-				callback(null, args);
-			};
-			
-			socket.onmessage = function(incomingMessage){
-				handleMessage(incomingMessage);
-			}
-			
-			socket.onclose = function(){
-				closeAll();
-			}
-		}catch(e){
-			console.log("can't connect to "+addr);
-		}
-	};
-
-	this.get = function(params, callback, timeout){
-		var msg = createMessage(params);
-		if(msg === null) return ;
-
-		msg.reqId = consumeNextReqId();
-		pendingRequests[msg.reqId] = callback;
-
-		//Timeout after which the request will be discarded
-		if(timeout && timeout > 0){
-			setTimeout(function(){
-				if(pendingRequests[msg.reqId]){
-					delete pendingRequests[msg.reqId];
-				}
-			}, timeout);
-		}
-
-		send(msg);
-	}
-
-	this.listen = function(params, callback, timeout){
-		var msg = createMessage(params);
-		if(msg === null) return ;
-
-		msg.subId = consumeNextSubscriptionId();
-		registeredListeners[msg.subId] = callback;
-
-		//Timeout after which the subscription is automatically invalidated
-		if(timeout && timeout > 0){
-			setTimeout(function(){
-				that.stopListening(msg.subId);	
-			}, timeout);
-		}
-
-		send(msg);
-
-		return msg.subId;
-	}
-
-	this.closeCallback = function(cb){
-		close_cb = cb;
-	}
-
-	this.stopListening = function(subId){
-
-		if(!registeredListeners[subId]) return ;
-
-		msg = {
-			func: 'Unsubscribe',
-			data: {
-				subId: subId
-			}
-		}
-
-		send(msg);
-
-		delete registeredListeners[subId];
-	}
-
-	this.connected = function(){
-		return ! (socket.readyState === WebSocket.CLOSING || socket.readyState === WebSocket.CLOSED);
-	}
-
-	this.disconnect = function(){
-		socket.close();
-		closeAll();
-	}
-	
-	this.debug = function(value){
-		DEBUG = value;
+	error: function(message){
+		if(DEBUG) console.error(message);
 	}
 }
 
+//////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
 
-function DiyaClient(addr, user, password){
 
+function DiyaNode(addr){
+	this._addr = addr;
+	this._socket = null;
+
+	this._nextId = 0;
+
+	this._pendingMessages = [];
+}
+
+////////////////////////////////////////////////////
+////////////////// Public API //////////////////////
+////////////////////////////////////////////////////
+
+DiyaNode.prototype.connect = function(WSocket){
+	var that = this;
+	var deferred = Q.defer();
+
+	if(!WSocket) WSocket = window.WebSocket;
+	this._socket = new WSocket(this._addr);
+
+	this._socket.onopen = function(){
+		deferred.resolve();
+		that._socket.onclose = that._onclose.bind(that);
+		that._socket.onmessage = that._onmessage.bind(that);
+	}
+	this._socket.onerror = function(err){
+		if(deferred.promise.isFulfilled()){
+			Logger.error("[WS] error : "+err);
+		}else {
+			deferred.reject(err);
+		}
+	}
+
+	return deferred.promise;
+};
+
+
+DiyaNode.prototype.request = function(params, callback, timeout){
 	var that = this;
 
-	function createNode(){
-		var node = new diya.Diya(addr);
-		//nodes.push(node);
+	var message = this._createMessage(params, "Request");
+	message.id = this._generateId();
+	this._appendMessage(message, callback);
 
-		return node;
+	if(!isNaN(timeout) && timeout > 0){
+		setTimeout(function(){
+			var handler = that._removeMessage(message.id);
+			if(handler) that._notifyListener(handler, 'Timeout exceeded ('+timeout+'ms) !');
+		}, timeout);
 	}
 
-	this.setAddress = function(address){
-		addr = address;
+	if(!this._send(message)){
+		this._removeMessage(message.id);
+		Logger.error('Cannot send request !');
+		return false;
 	}
 
-	this.createSession = function(onconnected, onfailure){
-		var node = createNode();
+	return true;
+};
 
-		node.connect(function(err){
-			if(err){
-				onfailure(err);
-			}else{
-				node.get({
-					service: 'auth',
-					func: 'Authenticate',
-					data: {user: user, password: password}
-				},
-				function(res){
-					if(res.authenticated || (res.error && res.error === 'ServiceNotFound')) onconnected(node);
-					else onfailure();
-				});
+DiyaNode.prototype.subscribe = function(params, callback){
+	var message = this._createMessage(params, "Subscription");
+	message.id = this._generateId();
+	this._appendMessage(message, callback);
+
+	if(!this._send(message)){
+		this._removeMessage(message.id);
+		Logger.error('Cannot send subscription !');
+		return -1;
+	}
+
+	return message.id;
+};
+
+DiyaNode.prototype.unsubscribe = function(subid){
+	if(this._pendingMessages[subid] && this._pendingMessages[subid].type === "Subscription"){
+		this._removeMessage(subid);
+	}
+};
+
+///////////////////////////////////////////////////////////
+//////////////////// Internal methods /////////////////////
+///////////////////////////////////////////////////////////
+
+DiyaNode.prototype._appendMessage = function(message, callback){
+	this._pendingMessages[message.id] = {
+		callback: callback,
+		type: message.type,
+		target: message.target
+	};
+};
+
+DiyaNode.prototype._removeMessage = function(messageId){
+	var handler = this._pendingMessages[messageId];
+	if(handler){
+		delete this._pendingMessages[messageId];
+		return handler;
+	}else{
+		return null;
+	}
+};
+
+DiyaNode.prototype._clearMessages = function(err, data){
+	for(var messageId in this._pendingMessages){
+		var handler = this._removeMessage(messageId);
+		this._notifyListener(handler, err, data);
+	}
+};
+
+DiyaNode.prototype._getMessageHandler = function(messageId){
+	var handler = this._pendingMessages[messageId];
+	return handler ? handler : null;
+};
+
+DiyaNode.prototype._notifyListener = function(handler, error, data){
+	if(handler && typeof handler.callback === 'function') {
+		error = error ? error : null;
+		data = data ? data : null;
+		handler.callback(error, data);
+	}
+};
+
+DiyaNode.prototype._send = function(message){
+	try{
+		var data = JSON.stringify(message);
+	}catch(err){
+		Logger.error('Cannot serialize message');
+		return false;
+	}
+
+	try{
+		this._socket.send(data);
+	}catch(err){
+		Logger.error('Cannot send message');
+		return false;
+	}
+
+	return true;
+}
+
+///////////////////////////////////////////////////////////////
+/////////////////// Socket event handlers /////////////////////
+///////////////////////////////////////////////////////////////
+
+DiyaNode.prototype._onmessage = function(evt){
+	try{
+		var message = JSON.parse(evt.data);
+	}catch(err){
+		Logger.error("[WS] cannot parse message, dropping...");
+		return ;
+	}
+
+	if(isNaN(message.id)) {
+		this._handleInternalMessage(message);
+	}else{
+		var handler = this._getMessageHandler(message.id);
+		if(handler){
+			switch(handler.type){
+				case "Request":
+					this._handleRequest(handler, message);
+					break;
+				case "Subscription":
+					this._handleSubscription(handler, message);
+					break;
 			}
-		});	
+		}
 	}
-	
+};
+
+DiyaNode.prototype._onclose = function(){
+	Logger.log("[WS] connection closed !");
+	this._clearMessages();
+	if(typeof this.onclose === 'function') this.onclose();
+};
+
+/////////////////////////////////////////////////////////////
+/////////////// Protocol event handlers /////////////////////
+/////////////////////////////////////////////////////////////
+
+DiyaNode.prototype._handleInternalMessage = function(message){
+	switch(message.type){
+		case "PeerConnected":
+			this._handlePeerConnected(message);
+			break;
+		case "PeerDisconnected":
+			this._handlePeerDisconnected(message);
+			break;
+	}
+};
+
+DiyaNode.prototype._handlePeerConnected = function(message){
+	//TODO
+};
+
+DiyaNode.prototype._handlePeerDisconnected = function(message){
+	if(message.peerId === undefined){
+		Logger.error("Missing arguments for PeerDisconnected Message, dropping...");
+		return ;
+	}
+
+	//Go through all pending messages and notify the ones that are targeted
+	//at the disconnected peer that it disconnected and therefore the command
+	//cannot be fulfilled
+	for(var messageId in this._pendingMessages){
+		var handler = this._getMessageHandler(messageId);
+		if(handler && handler.target === message.peerId) {
+			this._removeMessage(messageId);
+			this._notifyListener(handler, null, null);
+		}
+	}
+};
+
+DiyaNode.prototype._handleRequest = function(handler, message){
+	this._removeMessage(message.id);
+	this._notifyListener(handler, message.error, message.data);
+};
+
+DiyaNode.prototype._handleSubscription = function(handler, message){
+	//remove subscription if it was closed from node
+	if(message.result === "closed") this._removeMessage(message.id);
+	this._notifyListener(handler, message.error, message.data ? message.data : null);
+};
+
+///////////////////////////////////////////////////////////////
+////////////////////// Utility methods ////////////////////////
+///////////////////////////////////////////////////////////////
+
+DiyaNode.prototype._createMessage = function(params, type){
+	if(!params || !type || !params.service || (type !== "Request" && type !== "Subscription")){
+		return null;
+	}
+
+	return {
+		type: type,
+		service: params.service,
+		target: params.target,
+		token: params.token,
+		func: params.func,
+		obj: params.obj,
+		data: params.data
+	}
+};
+
+DiyaNode.prototype._generateId = function(){
+	var id = this._nextId;
+	this._nextId++;
+	return id;
+};
+
+
+
+module.exports = {
+	DiyaNode: DiyaNode
 }
-
-
-var diya = {
-		DiyaClient: DiyaClient,
-		Diya: Diya,
-		rtc: rtc,
-		Promethe: Promethe,
-		discover: discover,
-		qei: qei,
-		update: update
-}
-
-module.exports = diya;
