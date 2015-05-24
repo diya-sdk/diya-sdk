@@ -4,10 +4,10 @@
   "description": "SDK for accessing Diya One services",
   "main": "src/diya-sdk.js",
   "scripts": {
-    "build-debug": "browserify src/diya-sdk.js -d --s diya > dist/diya-sdk.js",
-    "build-min": "browserify src/diya-sdk.js --s diya | uglifyjs -c > dist/diya-sdk.min.js",
+    "build-debug": "browserify src/diya-sdk.js -d --s d1 > dist/diya-sdk.js",
+    "build-min": "browserify src/diya-sdk.js --s d1 | uglifyjs -c > dist/diya-sdk.min.js",
     "build": "npm run build-debug && npm run build-min",
-    "watch": "watchify src/diya-sdk.js -d --s diya -o dist/diya-sdk.js -v"
+    "watch": "watchify src/diya-sdk.js -d --s d1 -o dist/diya-sdk.js -v"
   },
   "author": "Sylvain Mahé <sylv.mahe@gmail.com> (https://github.com/nilpotence)",
   "license": "MIT",

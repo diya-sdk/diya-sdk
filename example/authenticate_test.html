@@ -1,64 +1,27 @@
 <script type="text/javascript" src="../dist/diya-sdk.js"></script>
 <script>
 
-	var dn = new diya.DiyaNode("ws://localhost:1500");
+	d1.connect("ws://localhost:1500").then(function(){
+		console.log("Connected !");
 
-	dn.connect()
-	.then(onConnected)
-	.catch(onConnectionFailure);
-
-
-	function onConnected(){
-		console.log("Connected");
-
-		dn.request({
-			target: "RobotOne",
-			service: "auth",
-			func: "Authenticate",
-			data: {
-				user: "admin",
-				password: "pass"
-			}
-		}, function(err, data){
-			if(err){
-				onAuthenticationFailure(err);
-			}else{
-				if(data.authenticated){
-					onAuthenticated(data.token);
-				}else {
-					onAuthenticationFailure('Wrong user or password !');
-				}
-			}
+		d1(/.*/).each(function(peer){
+			console.log(peer);
 		});
 
-	}
+		d1("RobotOne").auth("admin", "pass", function(peerId, isAuthenticated){
+			console.log("Authentication to "+peerId+" successful !");
 
-	function onConnectionFailure(err) {
-		console.error(error);
-	}
-
-	function onAuthenticated(token){
-		console.log("Authenticated");
-		console.log("Token = "+token);
-
-		subscribeTimer(token);
-	}
-
-	function onAuthenticationFailure(err){
-		console.log("Cannot authenticate : "+err);
-	}
-
-	function subscribeTimer(token){
-		dn.subscribe({
-			target: "RobotOne",
-			service: "timer",
-			func: "SubscribeTimer",
-			token: token
-		}, function(err, data){
-			if(data && data.currentTime) console.log(data.currentTime);
-			else if(err === null && data === null) console.log("subscription closed");
+			d1("RobotOne").subscribe({
+				service: "timer",
+				func: "SubscribeTimer"
+			}, function(peerId, err, data){
+				if(data && data.currentTime) console.log(data.currentTime);
+			});
 		});
-	}
+
+	});
+
+
 
 
 </script>
