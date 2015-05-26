@@ -11,10 +11,7 @@
 		d1("RobotOne").auth("admin", "pass", function(peerId, isAuthenticated){
 			console.log("Authentication to "+peerId+" successful !");
 
-			d1("RobotOne").subscribe({
-				service: "timer",
-				func: "SubscribeTimer"
-			}, function(peerId, err, data){
+			this.time(true, function(peerId, err, data){
 				if(data && data.currentTime) console.log(data.currentTime);
 			});
 		});
