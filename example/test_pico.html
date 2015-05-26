@@ -1,0 +1,191 @@
+<script type="text/javascript" src="../dist/diya-sdk.js"></script>
+<script>
+
+	var pico = null;
+
+	function onClientAuthenticationFailure(){
+		console.log("Cannot authenticate client !");
+	}
+
+	function onClientAuthenticated(node){
+		console.log("Client authenticated !");
+		pico = new diya.pico.pico(node);
+	}
+
+	function power(){
+		pico.power();
+	}
+/*
+	function zoom(){
+		pico.zoom();
+	}
+	function back(){
+		pico.back();
+	}
+	function up(){
+		pico.up();
+	}
+	function left(){		
+		pico.left();
+	}
+	function ok(){
+		pico.ok();
+	}
+	function right(){
+		pico.right();
+	}
+	function down(){
+		pico.down();
+	}
+	function prev(){
+		pico.prev();
+	}
+	function play(){
+		pico.play();
+	}
+	function next(){
+		pico.next();
+	}
+	function lumiDown(){
+		pico.lumiDown();
+	}
+	function lumiUp(){
+		pico.lumiUp();
+	}
+	function volDown(){
+		pico.volDown();
+	}
+	function mute(){
+		pico.mute();
+	}
+	function volUp(){
+		pico.volUp();
+	}
+
+*/		
+	var client = new diya.DiyaClient("ws://localhost:1234", "admin", "pass");
+	client.createSession(onClientAuthenticated, onClientAuthenticationFailure);
+
+
+</script>
+
+
+<button onclick="power()">power</button>
+<!-- <button onclick="zoom()">zoom</button>
+<button onclick="back"> back</button>
+-->
+
+
+<style>
+	h1{
+		color: red;
+		width: 100%;
+		text-align: right;
+	}
+</style>
+
+<h1>Hello World</h1>
+<p>blablabla</p>
+
+
+
+
+
+
+
+
+
+<!--
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <link rel="stylesheet" href="style.css" />
+        <title>telecommande</title>
+    </head>
+
+
+
+<div id="power" type="power">
+
+  <div label= "power">
+    <input type="submit" value="power"/> 
+
+  </div>
+
+
+
+  <div label= "zoom">
+   <button type="button" onclick="fopen()">zoom</button>
+
+  </div>
+
+  <div label= "back">
+    <button type="button" onclick="fopen()">back</button>
+
+  </div>
+
+
+<div label= "up">
+    <button type="button" onclick="fopen()">up</button>
+  </div>
+
+<div label= "left">
+
+    <button type="button" onclick="fopen()">left</button>
+  </div>
+
+<div label= "ok">
+    <button type="button" onclick="fopen()">ok</button>
+  </div>
+
+<div label= "right">
+    <button type="button" onclick="fopen()">right</button>
+  </div>
+
+<div label= "down">
+    <button type="button" onclick="fopen()">down</button>
+  </div>
+
+<div label= "prev">
+    <button type="button" onclick="fopen()">prev</button>
+  </div>
+
+<div label= "play">
+    <button type="button" onclick="fopen()">play</button>
+  </div>
+
+<div label= "next">
+    <button type="button" onclick="fopen()">next</button>
+  </div>
+
+<div label= "lumiDown">
+    <button type="button" onclick="fopen()">lumiDown</button>
+  </div>
+
+<div label= "lumiUp">
+    <button type="button" onclick="fopen()">lumiUp</button>
+  </div>
+
+
+<div label= "volDown">
+    <button type="button" onclick="fopen()">volDown</button>
+  </div>
+
+<div label= "mute">
+    <button type="button" onclick="fopen()">mute</button>
+  </div>
+
+<div label= "volUp">
+    <button type="button" onclick="fopen()">volUp  </button>
+
+  </div>
+
+
+</html>
+
+
+
+</div>
+-->
+
