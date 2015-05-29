@@ -36,17 +36,17 @@ pico.prototype.power = function(){
 		
 	}); 
 }
-/*	
+
 pico.prototype.zoom = function(callback){
 
 	this.node.get({
 		service: 'pico',
 		func: 'Zoom'
 	}, function(data){
-		if(data.pico) 
+		/*if(data.pico) 
 			callback(null,data.pico); 
 		if(data.error)
-			callback(data.error,null);
+			callback(data.error,null);*/
 		
 	}); 
 }
@@ -58,11 +58,11 @@ pico.prototype.back = function(callback){
 		service: 'pico',
 		func: 'Back'
 	}, function(data){
-		if(data.pico) 
+		/*if(data.pico) 
 			callback(null,data.pico); 
 		if(data.error)
 			callback(data.error,null);
-		
+		*/
 	}); 
 }
 
@@ -73,11 +73,11 @@ pico.prototype.up = function(callback){
 		service: 'pico',
 		func: 'Up'
 	}, function(data){
-		if(data.pico) 
+	/*	if(data.pico) 
 			callback(null,data.pico); 
 		if(data.error)
 			callback(data.error,null);
-		
+	*/	
 	}); 
 }
 
@@ -88,11 +88,11 @@ pico.prototype.left = function(callback){
 		service: 'pico',
 		func: 'Left'
 	}, function(data){
-		if(data.pico) 
+	/*	if(data.pico) 
 			callback(null,data.pico); 
 		if(data.error)
 			callback(data.error,null);
-		
+	*/	
 	}); 
 }
 
@@ -210,11 +210,11 @@ pico.prototype.lumiUp = function(callback){
 	}); 
 }
 
-pico.prototype.volDown = function(callback){
+pico.prototype.volumeDown = function(callback){
 
 	this.node.get({
 		service: 'pico',
-		func: 'VolDown'
+		func: 'VolumeDown'
 	}, function(data){
 		if(data.pico) 
 			callback(null,data.pico); 
@@ -223,6 +223,7 @@ pico.prototype.volDown = function(callback){
 		
 	}); 
 }
+
 
 pico.prototype.mute = function(callback){
 
@@ -238,10 +239,11 @@ pico.prototype.mute = function(callback){
 	}); 
 }
 
-pico.prototype.volUp = function(callback){
+pico.prototype.volumeUp = function(callback){
 
 	this.node.get({
-		service: 'VolUp'
+		service: 'pico',
+		func: 'VolumeUp'
 	}, function(data){
 		if(data.pico) 
 			callback(null,data.pico); 
@@ -250,7 +252,7 @@ pico.prototype.volUp = function(callback){
 		
 	}); 
 }
-*/
+
 
 		
 		

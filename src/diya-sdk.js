@@ -21,7 +21,7 @@ var Promethe = require('./services/promethe/promethe');
 var discover = require('./services/discover/discover');
 var qei = require('./services/qei/qei');
 var update = require('./services/update/update');
-var pico = require('./services/pico/pico');
+var pico = require('./services/pico/pico'); //lien fait service(cote serv)
 
 var WebSocket = window.WebSocket || window.MozWebSocket;
 
