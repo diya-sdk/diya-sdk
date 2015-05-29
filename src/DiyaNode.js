@@ -1,4 +1,6 @@
 var Q = require('q');
+var EventEmitter = require('node-event-emitter');
+var inherits = require('inherits');
 
 //////////////////////////////////////////////////////////////
 /////////////////// Logging utility methods //////////////////
@@ -21,17 +23,16 @@ var Logger = {
 
 
 function DiyaNode(addr){
+	EventEmitter.call(this);
+
 	this._addr = addr;
 	this._socket = null;
-
 	this._nextId = 0;
-
 	this._connectionDeferred = null;
-
 	this._pendingMessages = [];
-
 	this._peers = [];
 }
+inherits(DiyaNode, EventEmitter);
 
 ////////////////////////////////////////////////////
 ////////////////// Public API //////////////////////
@@ -221,7 +222,7 @@ DiyaNode.prototype._onmessage = function(evt){
 DiyaNode.prototype._onclose = function(){
 	Logger.log("[WS] connection closed !");
 	this._clearMessages();
-	if(typeof this.onclose === 'function') this.onclose();
+	this.emit('close');
 };
 
 /////////////////////////////////////////////////////////////
@@ -254,6 +255,7 @@ DiyaNode.prototype._handleHandshake = function(message){
 
 	if(this._connectionDeferred && !this._connectionDeferred.promise.isFulfilled()){
 		this._connectionDeferred.resolve();
+		this.emit('open');
 		this._connectionDeferred = null;
 	}
 };

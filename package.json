@@ -14,7 +14,8 @@
   "dependencies": {
     "c3": "^0.4.9",
     "q": "^1.4.1",
-    "node-event-emitter": "0.0.1"
+    "node-event-emitter": "0.0.1",
+    "inherits": "~2.0.1"
   },
   "devDependencies": {
     "browserify": "^5.12.0",

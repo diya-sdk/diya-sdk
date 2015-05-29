@@ -1,4 +1,6 @@
 var Q = require('q');
+var EventEmitter = require('node-event-emitter');
+var inherits = require('inherits');
 
 var DiyaNode = require('./DiyaNode');
 
@@ -49,10 +51,12 @@ d1.connect = function(addr){
 
 
 function DiyaSelector(selector){
+	EventEmitter.call(this);
 	this.length = 0;
 	if(selector.constructor.name === 'String') this._selectString(selector);
 	else if(selector.constructor.name === 'RegExp') this._selectRegExp(selector);
 }
+inherits(DiyaSelector, EventEmitter);
 
 DiyaSelector.prototype._selectString = function(selector){
 	var that = this;

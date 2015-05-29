@@ -1,11 +1,15 @@
 DiyaSelector = require('../../DiyaSelector').DiyaSelector;
+EventEmitter = require('node-event-emitter');
+inherits = require('inherits');
 
 
 var RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
 var RTCIceCandidate = window.RTCIceCandidate || window.mozRTCIceCandidate || window.webkitRTCIceCandidate;
 var RTCSessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription || window.webkitRTCSessionDescription;
 
+
 function Channel(dnId, name, open_cb){
+	EventEmitter.call(this);
 	this.name = name;
 	this.dnId = dnId;
 
@@ -13,18 +17,19 @@ function Channel(dnId, name, open_cb){
 	this.onopen = open_cb;
 	this.closed = false;
 }
+inherits(Channel, EventEmitter);
 
 Channel.prototype.setChannel = function(datachannel){
+	var that = this;
 	this.channel = datachannel;
+	this.channel.onmessage = function(message){
+		that.emit('message', message);
+	};
 	if(typeof this.onopen === 'function') this.onopen(this.dnId, this);
 };
 
 Channel.prototype.close = function(){
 	this.closed = true;
-};
-
-Channel.prototype.setOnMessage = function(onmessage){
-	this.channel.onmessage = onmessage;
 };
 
 Channel.prototype.send = function(msg){

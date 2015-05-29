@@ -1,35 +1,28 @@
 <script type="text/javascript" src="../dist/diya-sdk.js"></script>
 <script>
 
-	var rtc;
+	d1.connect("ws://localhost:1500").then(function(){
+		console.log("Connected !");
+	});
 
 	function connectRTC(){
-		d1.connect("ws://localhost:1500").then(function(){
-			console.log("Connected !");
 
-			d1(/.*/).each(function(peer){
-				console.log(peer);
-			});
+		d1(/.*/).each(function(peer){
+			console.log(peer);
+		});
 
-			d1("RobotOne").auth("admin", "pass", function(peerId, isAuthenticated){
-				console.log("Authentication to "+peerId+" successful !");
+		d1("RobotOne").auth("admin", "pass", function(peerId, isAuthenticated){
+			console.log("Authentication to "+peerId+" successful !");
 
-				rtc = this.rtc().use(/^info\.led$/, function(dn, channel){
-					console.log(dn);
-					console.log(channel.name);
-
-					channel.setOnMessage(function(msg){
-
-					});
-
-				}).connect();
-			});
-
+			this.rtc().use(/^info\.led$/, function(dn, channel){
+				console.log(dn);
+				console.log(channel.name);
+			}).connect();
 		});
 	}
 
 	function disconnectRTC(){
-		rtc.disconnect();
+		//rtc.disconnect();
 	}
 
 

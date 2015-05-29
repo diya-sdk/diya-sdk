@@ -8,7 +8,7 @@ DiyaSelector.prototype.time = function(loop, callback){
 		}, callback);
 	}else{
 		this.request({
-			service: 'time',
+			service: 'timer',
 			func: 'GetTime'
 		}, callback);
 	}
