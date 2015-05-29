@@ -63,8 +63,12 @@ DiyaNode.prototype.connect = function(WSocket){
 DiyaNode.prototype.request = function(params, callback, timeout){
 	var that = this;
 
+	if(!params.service) {
+		Logger.error('No service defined for request !');
+		return ;
+	}
+
 	var message = this._createMessage(params, "Request");
-	message.id = this._generateId();
 	this._appendMessage(message, callback);
 
 	if(!isNaN(timeout) && timeout > 0){
@@ -84,8 +88,12 @@ DiyaNode.prototype.request = function(params, callback, timeout){
 };
 
 DiyaNode.prototype.subscribe = function(params, callback){
+	if(!params.service){
+		Logger.error('No service defined for subscription !');
+		return ;
+	}
+
 	var message = this._createMessage(params, "Subscription");
-	message.id = this._generateId();
 	this._appendMessage(message, callback);
 
 	if(!this._send(message)){
@@ -97,9 +105,23 @@ DiyaNode.prototype.subscribe = function(params, callback){
 	return message.id;
 };
 
-DiyaNode.prototype.unsubscribe = function(subid){
-	if(this._pendingMessages[subid] && this._pendingMessages[subid].type === "Subscription"){
-		this._removeMessage(subid);
+DiyaNode.prototype.unsubscribe = function(subId){
+	if(this._pendingMessages[subId] && this._pendingMessages[subId].type === "Subscription"){
+		var subscription = this._removeMessage(subId);
+
+		var message = this._createMessage({
+			target: subscription.target,
+			data: {
+				subId: subId
+			}
+		}, "Unsubscribe");
+
+		if(!this._send(message)){
+			Logger.error('Cannot send unsubscribe !');
+			return false;
+		}
+
+		return true;
 	}
 };
 
@@ -288,12 +310,13 @@ DiyaNode.prototype._handleSubscription = function(handler, message){
 ///////////////////////////////////////////////////////////////
 
 DiyaNode.prototype._createMessage = function(params, type){
-	if(!params || !type || !params.service || (type !== "Request" && type !== "Subscription")){
+	if(!params || !type || (type !== "Request" && type !== "Subscription" && type !== "Unsubscribe")){
 		return null;
 	}
 
 	return {
 		type: type,
+		id: this._generateId(),
 		service: params.service,
 		target: params.target,
 		token: params.token,

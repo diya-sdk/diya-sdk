@@ -91,8 +91,14 @@ DiyaSelector.prototype._select = function(selectorFunction){
 	}
 };
 
+
+//////////////////////////////////////////////////////////
+////////////////////// Public API ////////////////////////
+//////////////////////////////////////////////////////////
+
+
 DiyaSelector.prototype.each = function(cb){
-	for(var i=0; i<this.length; i++) cb(this[i]);
+	for(var i=0; i<this.length; i++) cb.bind(this)(this[i]);
 	return this;
 };
 
@@ -101,22 +107,28 @@ DiyaSelector.prototype.request = function(params, callback, timeout){
 		params.target = peer.id;
 		params.token = tokens[peer.id];
 		peer.handler.request(params, function(err, data){
-			callback(peer.id, err, data);
+			if(typeof callback === 'function') callback(peer.id, err, data);
 		}, timeout);
 	});
 };
 
-DiyaSelector.prototype.subscribe = function(params, callback){
-	var subIds = [];
-	this.each(function(peer){
+DiyaSelector.prototype.subscribe = function(params, callback, subIds){
+	return this.each(function(peer){
 		params.target = peer.id;
 		params.token = tokens[peer.id];
 		var subId = peer.handler.subscribe(params, function(err, data){
 			callback(peer.id, err, data);
 		});
-		subIds.push({subId: subId, peerId: peer.id});
+		if(Array.isArray(subIds))
+			subIds[peer.id] = subId;
 	});
-	return subIds;
+};
+
+DiyaSelector.prototype.unsubscribe = function(subIds){
+	return this.each(function(peer){
+		var subId = subIds[peer.id];
+		if(subId) peer.handler.unsubscribe(subId);
+	});
 };
 
 DiyaSelector.prototype.auth = function(user, password, callback, timeout){
