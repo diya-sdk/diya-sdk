@@ -15,13 +15,13 @@
 var util = require('util');
 var Message = require('../message');
 
-function pico(node){	
+function pico(node){
 	var that = this;
 	this.node = node;
 	return this;
 }
 
-// 
+//
 
 pico.prototype.power = function(){
 
@@ -29,12 +29,12 @@ pico.prototype.power = function(){
 		service: 'pico',
 		func: 'Power'
 	}, function(data){
-		/*if(data.pico) 
-			callback(null,data.pico); 
+		/*if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);*/
-		
-	}); 
+
+	});
 }
 
 pico.prototype.zoom = function(callback){
@@ -43,12 +43,12 @@ pico.prototype.zoom = function(callback){
 		service: 'pico',
 		func: 'Zoom'
 	}, function(data){
-		/*if(data.pico) 
-			callback(null,data.pico); 
+		/*if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);*/
-		
-	}); 
+
+	});
 }
 
 
@@ -58,12 +58,12 @@ pico.prototype.back = function(callback){
 		service: 'pico',
 		func: 'Back'
 	}, function(data){
-		/*if(data.pico) 
-			callback(null,data.pico); 
+		/*if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
 		*/
-	}); 
+	});
 }
 
 
@@ -73,12 +73,12 @@ pico.prototype.up = function(callback){
 		service: 'pico',
 		func: 'Up'
 	}, function(data){
-	/*	if(data.pico) 
-			callback(null,data.pico); 
+	/*	if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-	*/	
-	}); 
+	*/
+	});
 }
 
 
@@ -88,12 +88,12 @@ pico.prototype.left = function(callback){
 		service: 'pico',
 		func: 'Left'
 	}, function(data){
-	/*	if(data.pico) 
-			callback(null,data.pico); 
+	/*	if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-	*/	
-	}); 
+	*/
+	});
 }
 
 
@@ -103,12 +103,12 @@ pico.prototype.ok = function(callback){
 		service: 'pico',
 		func: 'Ok'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+	/*	if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+		*/
+	});
 }
 
 
@@ -118,12 +118,12 @@ pico.prototype.right = function(callback){
 		service: 'pico',
 		func: 'Right'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+	/*	if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+		*/
+	});
 }
 
 
@@ -133,12 +133,12 @@ pico.prototype.down = function(callback){
 		service: 'pico',
 		func: 'Down'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+	/*	if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+		*/
+	});
 }
 
 pico.prototype.prev = function(callback){
@@ -147,12 +147,12 @@ pico.prototype.prev = function(callback){
 		service: 'pico',
 		func: 'Prev'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+	/*	if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+		*/
+	});
 }
 
 pico.prototype.play = function(callback){
@@ -161,12 +161,12 @@ pico.prototype.play = function(callback){
 		service: 'pico',
 		func: 'Play'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+	/*	if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+		*/
+	});
 }
 pico.prototype.next = function(callback){
 
@@ -174,12 +174,12 @@ pico.prototype.next = function(callback){
 		service: 'pico',
 		func: 'Next'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+/*		if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+	*/
+	});
 }
 
 pico.prototype.lumiDown = function(callback){
@@ -188,12 +188,12 @@ pico.prototype.lumiDown = function(callback){
 		service: 'pico',
 		func: 'LumiDown'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+/*		if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+	*/
+	});
 }
 
 pico.prototype.lumiUp = function(callback){
@@ -202,12 +202,12 @@ pico.prototype.lumiUp = function(callback){
 		service: 'pico',
 		func: 'LumiUp'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+	/*	if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+		*/
+	});
 }
 
 pico.prototype.volumeDown = function(callback){
@@ -216,12 +216,12 @@ pico.prototype.volumeDown = function(callback){
 		service: 'pico',
 		func: 'VolumeDown'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+		/*if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+	*/
+	});
 }
 
 
@@ -231,12 +231,12 @@ pico.prototype.mute = function(callback){
 		service: 'pico',
 		func: 'Mute'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+	/*	if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+		*/
+	});
 }
 
 pico.prototype.volumeUp = function(callback){
@@ -245,19 +245,19 @@ pico.prototype.volumeUp = function(callback){
 		service: 'pico',
 		func: 'VolumeUp'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+	/*	if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+		*/
+	});
 }
 
 
-		
-		
+
+
 var exp = {
 		pico: pico
 }
 
-module.exports = exp; 
+module.exports = exp;
