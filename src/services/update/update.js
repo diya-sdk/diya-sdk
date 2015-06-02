@@ -23,6 +23,27 @@ function Update(node){
 	return this;
 }
 
+Update.prototype.statusLockApt = function(callback){
+	
+	/*this.node.get({
+			service: 'update',
+			func: 'LockStatus'
+		},function(data){
+			if(data.lockStatus) 
+				callback(null,data.lockStatus); 
+	});*/
+	
+	this.node.listen({
+			service: 'update',
+			func: 'SubscribeLockStatus'
+		}, 
+		function(res){
+			callback(null,res.lockStatus);
+			console.log(res.lockStatus);
+		});
+
+}
+
 Update.prototype.listPackages = function(callback){
 
 	this.node.get({
@@ -66,6 +87,38 @@ Update.prototype.installPackage = function(pkg, callback){
 			this.node.get({
 				service: 'update',
 				func: 'InstallPackage',
+				data:{
+					package: pkg,
+				}
+			}, function(data){
+				if(data.packages) 
+					callback(null,data.packages); 
+				if(data.error)
+					callback(data.error,null);
+					
+				
+			});
+		}
+	}
+	
+}
+
+Update.prototype.removePackage = function(pkg, callback){
+		
+	if ((pkg === 'Undefined') || (typeof pkg !== 'string') || (pkg.length < 2)){
+		callback('undefinedPackage',null);
+	}
+	else {
+	
+		var INVALID_PARAMETERS_REGEX = /^[+ -]|[^\s]\s+[^\s]|[+ -]$/;
+		var testNamePkg= INVALID_PARAMETERS_REGEX.test(pkg);
+		if (testNamePkg)
+			callback("InvalidParameters",null);
+		else{
+				
+			this.node.get({
+				service: 'update',
+				func: 'RemovePackage',
 				data:{
 					package: pkg,
 				}
