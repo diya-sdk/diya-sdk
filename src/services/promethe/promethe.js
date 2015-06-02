@@ -4,7 +4,7 @@ function Promethe(session){
 	var that = this;
 
 	this.rtc = new RTC.RTC(session);
-	
+
 	this.rtc.onclose = function(){
 		if(typeof that.onclose === 'function') that.onclose();
 	}
@@ -28,7 +28,7 @@ Promethe.prototype.disconnect = function(){
 
 Promethe.prototype._negociateNeuron = function(channel, callback){
 	channel.setOnMessage(function(message){
-		
+
 		var view = new DataView(message.data);
 
 		var typeChar = String.fromCharCode(view.getUint8(0));
@@ -61,28 +61,42 @@ Promethe.prototype._negociateNeuron = function(channel, callback){
 		channel.write = function(index, value){
 			if(index < 0 || index > channel.size || isNaN(value)) return false;
 			channel._buffer[index] = value;
+			channel._requestSend();
 			return true;
 		};
-		
+
 		channel.writeAll = function(values){
 			if(!Array.isArray(values) || values.length !== channel.size)
 				return false;
-			
+
 			for (var i = 0; i<values.length; i++){
 				if(isNaN(values[i])) return false;
 				channel._buffer[i] = values[i];
 			}
-			return true;
+			channel._requestSend();
 		};
 
-		channel.frequency = 33;
+		channel._lastSendTimestamp = 0;
+		channel._sendRequested = false;
 
-		channel._run = function(){
-			if(channel.send(channel._buffer))
-				setTimeout(channel._run, channel.frequency);
+		channel.frequency = 30;
+
+		channel._requestSend = function(){
+			var elapsedTime = new Date().getTime() - channel._lastSendTimestamp;
+			var period = 1000 / channel.frequency;
+			if(elapsedTime >= period){
+				channel._doSend();
+			}else if(!channel._sendRequested){
+				channel._sendRequested = true;
+				setTimeout(channel._doSend, period - elapsedTime);
+			}
 		};
 
-		channel._run();
+		channel._doSend = function(){
+			channel._sendRequested = false;
+			channel._lastSendTimestamp = new Date().getTime();
+			channel.send(channel._buffer);
+		};
 
 		callback(channel);
 

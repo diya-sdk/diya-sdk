@@ -23,43 +23,67 @@ var Message = require('../message');
  *  callback : function called after model updated
  * */
 function QEI(node, callback, sampling){
-	var that = this;
-	this.node = node;
+    var that = this;
+    this.node = node;
+    
+    this.sampling = sampling || 10; /* max num of pts stored */
+    this.callback = callback || function(res){}; /* callback, usually after getModel */
+    
+    node.get({
+	service: "qei",
+	func: "DataRequest",
+	data: {
+	    type:"msgInit",
+	    sampling: 1,
+	    requestedData: "all"
+	    /* no time range specified */
+	}
+    }, function(data){
+	that.dataModel= {};
+	// console.log(JSON.stringify(that.dataModel));
+	that._getDataModelFromRecv(data);
+	// console.log(JSON.stringify(that.dataModel));
 	
-	this.sampling = sampling || 10; /* max num of pts stored */
-	this.callback = callback || function(res){}; /* callback, usually after getModel */
+	/// that.updateChart(this.dataModel);
+	that._updateLevels(that.dataModel);
+	that.callback(that.dataModel);
 
-	node.get({
+	that.timedRequest = function() {
+	    node.get({
 		service: "qei",
 		func: "DataRequest",
 		data: {
-			type:"msgInit",
-			sampling: 1,
-			requestedData: "all"
-			/* no time range specified */
-			}
-		}, function(data){
-			that.dataModel= {};
-			// console.log(JSON.stringify(that.dataModel));
-			that._getDataModelFromRecv(data);
-			// console.log(JSON.stringify(that.dataModel));
-			
-			/// that.updateChart(this.dataModel);
-			that._updateLevels(that.dataModel);
-			that.callback(that.dataModel);
+		    type:"msgInit",
+		    sampling: 1,
+		    requestedData: "all"
+		    /* no time range specified */
+		}
+	    }, function(data){
+		that.dataModel= {};
+		// console.log(JSON.stringify(that.dataModel));
+		that._getDataModelFromRecv(data);
+		// console.log(JSON.stringify(that.dataModel));
+		
+		/// that.updateChart(this.dataModel);
+		that._updateLevels(that.dataModel);
+		that.callback(that.dataModel);
+	    });
+	    setTimeout(that.timedRequest,3000);
+	};
+	setTimeout(that.timedRequest());
 
-			node.listen({
-					service: "qei",
-					func: "SubscribeQei"
-				}, function(res) {
-					that._getDataModelFromRecv(res.data);
-					that._updateLevels(that.dataModel);
-					that.callback(that.dataModel);
-					});
+	node.listen({
+	    service: "qei",
+	    func: "SubscribeQei"
+	}, function(res) {
+	    that._getDataModelFromRecv(res.data);
+	    that._updateLevels(that.dataModel);
+	    that.callback(that.dataModel);
 	});
+    });
 
-	console.log("DiyaSDK - QEI: created");
-	return this;
+    console.log("DiyaSDK - QEI: created");
+    return this;
 }
 /**
  * Get dataModel : 
@@ -69,7 +93,8 @@ function QEI(node, callback, sampling){
  * 			data:[FLOAT, ...],
  * 			qualityIndex:[FLOAT, ...],
  * 			range: [FLOAT, FLOAT],
- * 			unit: FLOAT
+ * 			unit: string,
+ *      label: string
  * 		},
  *   ... ("senseursYY")
  * }
