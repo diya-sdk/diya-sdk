@@ -156,31 +156,3 @@ DiyaSelector.prototype.auth = function(user, password, callback, timeout){
 };
 
 module.exports = d1;
-
-
-///////////////////////////////////////////////
-/*
-d1.connect("ws://partneringportal.fr/api");
-d1.connect("ws://10.42.0.1:1234");
-
-d1("RobotOne").auth("admin", "pass");
-
-d1("RobotOne").request({
-	service: "timer",
-	func: "SubscribeTimer"
-}, function(err, data){
-
-});
-
-d1("cofely.*").install("libmayartc");
-d1("cofely.*").update("diya-node");
-d1("cofely.*").updateAll("diya-node");
-
-var rtc = d1("cofely.d1p1").rtc()
-	.use("ctrl.info", onInfoNeuron)
-	.use("ctrl.force", onForceNeuron)
-	.onclose(onclose)
-
-rtc.connect();
-rtc.close();
-*/

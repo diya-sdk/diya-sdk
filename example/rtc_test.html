@@ -15,9 +15,22 @@
 			console.log("Authentication to "+peerId+" successful !");
 
 			this.rtc().use(/^info\.led$/, function(dn, channel){
-				console.log(dn);
-				console.log(channel.name);
+				console.log(dn+" -> "+channel.name);
+
+				channel.on('value', function(array){
+					console.log(array);
+				});
+			}).use(/^ctrl\.force$/, function(dn, channel){
+				console.log(dn+" -> "+channel.name);
+				var ff = 0;
+
+				setInterval(function(){
+					channel.write(0, ff);
+					ff = (ff+1)%2;
+				}, 500);
+
 			}).connect();
+
 		});
 	}
 

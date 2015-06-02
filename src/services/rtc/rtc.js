@@ -13,6 +13,8 @@ function Channel(dnId, name, open_cb){
 	this.name = name;
 	this.dnId = dnId;
 
+	this.frequency = 20;
+
 	this.channel = undefined;
 	this.onopen = open_cb;
 	this.closed = false;
@@ -22,17 +24,53 @@ inherits(Channel, EventEmitter);
 Channel.prototype.setChannel = function(datachannel){
 	var that = this;
 	this.channel = datachannel;
-	this.channel.onmessage = function(message){
-		that.emit('message', message);
-	};
-	if(typeof this.onopen === 'function') this.onopen(this.dnId, this);
+	this._negociate();
+
 };
 
 Channel.prototype.close = function(){
 	this.closed = true;
 };
 
-Channel.prototype.send = function(msg){
+Channel.prototype.write = function(index, value){
+	if(index < 0 || index > this.size || isNaN(value)) return false;
+	this._buffer[index] = value;
+	this._requestSend();
+	return true;
+};
+
+Channel.prototype.writeAll = function(values){
+	if(!Array.isArray(values) || values.length !== this.size)
+        return false;
+
+    for (var i = 0; i<values.length; i++){
+        if(isNaN(values[i])) return false;
+        this._buffer[i] = values[i];
+    }
+    this._requestSend();
+};
+
+
+Channel.prototype._requestSend = function(){
+	var that = this;
+
+	var elapsedTime = new Date().getTime() - this._lastSendTimestamp;
+	var period = 1000 / this.frequency;
+	if(elapsedTime >= period){
+		doSend();
+	}else if(!this._sendRequested){
+		this._sendRequested = true;
+		setTimeout(doSend, period - elapsedTime);
+	}
+
+	function doSend(){
+		that._sendRequested = false;
+		that._lastSendTimestamp = new Date().getTime();
+		that._send(that._buffer);
+	}
+};
+
+Channel.prototype._send = function(msg){
 	if(this.closed) return false;
 	else if(this.channel.readyState === 'open'){
 		try{
@@ -47,6 +85,43 @@ Channel.prototype.send = function(msg){
 		return false;
 	}
 };
+
+Channel.prototype._negociate = function(){
+	var that = this;
+
+	this.channel.onmessage = function(message){
+		var view = new DataView(message.data);
+
+		var typeChar = String.fromCharCode(view.getUint8(0));
+		if(typeChar === 'O'){
+			//Input
+			that.type = 'input'; //Promethe Output = Client Input
+		}else if(typeChar === 'I'){
+			//Output
+			that.type = 'output'; //Promethe Input = Client Output
+		}else{
+			//Error
+		}
+
+		var size = view.getInt32(1,true);
+		if(size != undefined){
+			that.size = size;
+			that._buffer = new Float32Array(size);
+		}else{
+			//error
+		}
+
+		that.channel.onmessage = that._onMessage.bind(that);
+
+		if(typeof that.onopen === 'function') that.onopen(that.dnId, that);
+	}
+};
+
+Channel.prototype._onMessage = function(message){
+	var valArray = new Float32Array(message.data);
+	this.emit('value', valArray);
+}
+
 
 //////////////////////////////////////////////////////////////////
 ///////////////////// RTC Peer implementation ////////////////////
