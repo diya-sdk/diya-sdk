@@ -14,13 +14,15 @@
 		d1("RobotOne").auth("admin", "pass", function(peerId, isAuthenticated){
 			console.log("Authentication to "+peerId+" successful !");
 
-			this.rtc().use(/^info\.led$/, function(dn, channel){
+			this.rtc()
+			.use(/^info\.led$/, function(dn, channel){
 				console.log(dn+" -> "+channel.name);
 
 				channel.on('value', function(array){
 					console.log(array);
 				});
-			}).use(/^ctrl\.force$/, function(dn, channel){
+			})
+			.use(/^ctrl\.force$/, function(dn, channel){
 				console.log(dn+" -> "+channel.name);
 				var ff = 0;
 
@@ -34,9 +36,6 @@
 		});
 	}
 
-	function disconnectRTC(){
-		//rtc.disconnect();
-	}
 
 
 </script>

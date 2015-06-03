@@ -128,9 +128,9 @@ Channel.prototype._onMessage = function(message){
 //////////////////////////////////////////////////////////////////
 
 
-function Peer(dn, rtc, id, channels){
-	this.dn = d1(dn.id);
-	this.dnId = dn.id;
+function Peer(dnId, rtc, id, channels){
+	this.dn = d1(dnId);
+	this.dnId = dnId;
 	this.id = id;
 	this.channels = channels;
 	this.rtc = rtc;
@@ -283,9 +283,9 @@ function RTC(selector){
 	var that = this;
 	this.selector = selector;
 
-	selector.each(function(dn){
-		that[dn.id] = {
-			dn: dn,
+	selector.each(function(dnId){
+		that[dnId] = {
+			dnId: dnId,
 			usedChannels: [],
 			requestedChannels: [],
 			peers: []
@@ -297,9 +297,9 @@ function RTC(selector){
 RTC.prototype.disconnect = function(){
 	var that = this;
 
-	this.selector.each(function(dn){
-		for(var promID in that[dn.id].peers){
-			that._closePeer(dn.id, promID);
+	this.selector.each(function(dnId){
+		for(var promID in that[dnId].peers){
+			that._closePeer(dnId, promID);
 		}
 	});
 
@@ -309,8 +309,8 @@ RTC.prototype.disconnect = function(){
 
 RTC.prototype.use = function(name_regex, onopen_callback){
 	var that = this;
-	this.selector.each(function(dn){
-		that[dn.id].requestedChannels.push({regex: name_regex, cb: onopen_callback});
+	this.selector.each(function(dnId){
+		that[dnId].requestedChannels.push({regex: name_regex, cb: onopen_callback});
 	});
 	return this;
 };
@@ -324,6 +324,7 @@ RTC.prototype.connect = function(){
 		service: 'rtc',
 		func: 'ListenPeers'
 	}, function(dnId, err, data){
+		
 
 		if(data && data.eventType && data.promID !== undefined){
 
@@ -331,7 +332,7 @@ RTC.prototype.connect = function(){
 				if(!that[dnId].peers[data.promID]){
 					var channels = that._matchChannels(dnId, data.channels);
 					if(channels.length > 0){
-						that[dnId].peers[data.promID] = new Peer(that[dnId].dn, that, data.promID, channels);
+						that[dnId].peers[data.promID] = new Peer(dnId, that, data.promID, channels);
 					}
 				}
 			}
@@ -344,7 +345,7 @@ RTC.prototype.connect = function(){
 
 		}
 
-	}, this.subIds);
+	}, {subIds: this.subIds});
 
 	return this;
 };

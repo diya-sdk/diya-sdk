@@ -50,14 +50,18 @@ DiyaNode.prototype.connect = function(WSocket){
 		that._socket.onmessage = that._onmessage.bind(that);
 	}
 	this._socket.onerror = function(err){
-		if(this._connectionDeferred.promise.isFulfilled()){
+		if(that._connectionDeferred.promise.isFulfilled()){
 			Logger.error("[WS] error : "+err);
 		}else {
-			this._connectionDeferred.reject(err);
+			that._connectionDeferred.reject(err);
 		}
 	}
 
 	return this._connectionDeferred.promise;
+};
+
+DiyaNode.prototype.close = function(){
+	if(this._socket) this._socket.close();
 };
 
 
@@ -268,6 +272,8 @@ DiyaNode.prototype._handlePeerConnected = function(message){
 
 	//Add peer to the list of reachable peers
 	this._peers.push(message.peerId);
+
+	this.emit('peer-connected', message.peerId);
 };
 
 DiyaNode.prototype._handlePeerDisconnected = function(message){
@@ -283,7 +289,7 @@ DiyaNode.prototype._handlePeerDisconnected = function(message){
 		var handler = this._getMessageHandler(messageId);
 		if(handler && handler.target === message.peerId) {
 			this._removeMessage(messageId);
-			this._notifyListener(handler, null, null);
+			this._notifyListener(handler, 'PeerDisconnected', null);
 		}
 	}
 
@@ -294,6 +300,8 @@ DiyaNode.prototype._handlePeerDisconnected = function(message){
 			break;
 		}
 	}
+
+	this.emit('peer-disconnected', message.peerId);
 };
 
 DiyaNode.prototype._handleRequest = function(handler, message){
@@ -303,7 +311,10 @@ DiyaNode.prototype._handleRequest = function(handler, message){
 
 DiyaNode.prototype._handleSubscription = function(handler, message){
 	//remove subscription if it was closed from node
-	if(message.result === "closed") this._removeMessage(message.id);
+	if(message.result === "closed") {
+		this._removeMessage(message.id);
+		message.error = 'SubscriptionClosed';
+	}
 	this._notifyListener(handler, message.error, message.data ? message.data : null);
 };
 
