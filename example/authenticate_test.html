@@ -8,17 +8,30 @@
 			console.log(peer);
 		});
 
-		d1("RobotOne").auth("admin", "pass", function(peerId, isAuthenticated){
+		d1(/Robot.*/).auth("admin", "pass", function(peerId, isAuthenticated){
 			console.log("Authentication to "+peerId+" successful !");
-
-			this.time(true, function(peerId, err, data){
-				if(data && data.currentTime) console.log(data.currentTime);
-			});
 		});
 
+
+
 	});
+
+
+	function startTimer(){
+		d1(/Robot*/).time(true, function(peerId, err, data){
+
+			console.log(peerId);
+			console.log(err);
+			console.log(data);
+			console.log('=========');
+			if(data && data.currentTime) console.log(data.currentTime);
+
+		});
+	}
 
 
 
 
 </script>
+
+<input type="button" onclick="startTimer()" value="start timer"/>

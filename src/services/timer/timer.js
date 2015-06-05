@@ -5,7 +5,7 @@ DiyaSelector.prototype.time = function(loop, callback){
 		this.subscribe({
 			service: 'timer',
 			func: 'SubscribeTimer',
-		}, callback);
+		}, callback, {auto: true});
 	}else{
 		this.request({
 			service: 'timer',

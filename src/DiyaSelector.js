@@ -30,48 +30,62 @@ function DiyaSelector(selector){
 	EventEmitter.call(this);
 
 	this._selector = selector;
+	this._listenerCount = 0;
+	this._listenCallback = null;
 }
 inherits(DiyaSelector, EventEmitter);
 
 
+function match(selector, str){
+	if(selector.constructor.name === 'String'){
+		return matchString(selector, str);
+	}else if(selector.constructor.name === 'RegExp'){
+		return matchRegExp(selector, str);
+	}else if(Array.isArray(selector)){
+		return matchArray(selector, str);
+	}
+	return false;
+}
+
+function matchString(selector, str){
+	return selector === str;
+}
+
+function matchRegExp(selector, str){
+	return str.match(selector);
+}
+
+function matchArray(selector, str){
+	for(var i=0;i<selector.length; i++){
+		if(selector[i] === str) return true;
+	}
+	return false;
+}
+
+
 DiyaSelector.prototype._select = function(selectorFunction){
+	var that = this;
+
 	if(!connection) return [];
+	return connection.peers().filter(function(peerId){
+		return match(that._selector, peerId);
+	});
+};
 
-	if(this._selector.constructor.name === 'String'){
-		return this._selectString();
-	}else if(this._selector.constructor.name === 'RegExp'){
-		return this._selectRegExp();
-	}else if(Array.isArray(this._selector)){
-		return this._selectArray();
+DiyaSelector.prototype._listenConnection = function(){
+	if(this._listenerCount === 0){
+		this._listenCallback = this._handlePeerConnected.bind(this);
+		connection.on('peer-connected', this._listenCallback);
 	}
-
-	return [];
+	this._listenerCount++;
 };
 
-DiyaSelector.prototype._selectString = function(){
-	var peers = connection.peers();
-
-	for(var i=0;i<peers.length; i++){
-		if(peers[i] === this._selector) return [ peers[i] ];
+DiyaSelector.prototype._handlePeerConnected = function(peerId){
+	if(match(this._selector, peerId)) {
+		console.log("match");
+		this.emit('peer-connected', peerId);
 	}
-	return [];
 };
-
-DiyaSelector.prototype._selectRegExp = function(){
-	return connection.peers().filter(function(peer){
-		return peer.match(this._selector);
-	}, this);
-};
-
-DiyaSelector.prototype._selectArray = function(){
-	return connection.peers().filter(function(peer){
-		for(var i=0;i<this._selector.length; i++){
-			if(this._selector[i] === peer) return true;
-		}
-		return false;
-	}, this);
-};
-
 
 //////////////////////////////////////////////////////////
 ////////////////////// Public API ////////////////////////
@@ -111,8 +125,9 @@ DiyaSelector.prototype.subscribe = function(params, callback, options){
 
 	//send subscription to all selected peer
 	this.each(doSubscribe);
-	if(options.auto){
-		connection.on('peer-connected', doSubscribe);
+	if(options && options.auto){
+		this._listenConnection();
+		this.on('peer-connected', doSubscribe);
 	}
 	return this;
 };
@@ -122,6 +137,11 @@ DiyaSelector.prototype.unsubscribe = function(subIds){
 		var subId = subIds[peerId];
 		if(subId) connection.unsubscribe(subId);
 	});
+	this._listenerCount--;
+	if(this._listenerCount === 0){
+		connection.removeListener('peer-connected', this._listenCallback);
+		this._listenCallback = null;
+	}
 };
 
 DiyaSelector.prototype.auth = function(user, password, callback, timeout){
