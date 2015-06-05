@@ -163,6 +163,10 @@ DiyaNode.prototype._clearMessages = function(err, data){
 	}
 };
 
+DiyaNode.prototype._clearPeers = function(){
+	while(this._peers.length) this.emit('peer-disconnected', this._peers.pop());
+}
+
 DiyaNode.prototype._getMessageHandler = function(messageId){
 	var handler = this._pendingMessages[messageId];
 	return handler ? handler : null;
@@ -226,6 +230,7 @@ DiyaNode.prototype._onmessage = function(evt){
 DiyaNode.prototype._onclose = function(){
 	Logger.log("[WS] connection closed !");
 	this._clearMessages();
+	this._clearPeers();
 	this.emit('close');
 };
 
