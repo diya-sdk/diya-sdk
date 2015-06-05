@@ -92,9 +92,13 @@ DiyaSelector.prototype._handlePeerConnected = function(peerId){
 //////////////////////////////////////////////////////////
 
 
+DiyaSelector.prototype.listen = function(){
+	this._listenConnection();
+	return this;
+};
+
 DiyaSelector.prototype.each = function(cb){
 	var peers = this._select();
-
 	for(var i=0; i<peers.length; i++) cb.bind(this)(peers[i]);
 	return this;
 };
