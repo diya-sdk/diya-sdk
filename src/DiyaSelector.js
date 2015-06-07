@@ -6,7 +6,7 @@ var DiyaNode = require('./DiyaNode');
 
 var connection = null;
 var connectionEvents = new EventEmitter();
-var tokens = [];
+var token = null;
 
 function d1(selector){
 	return new DiyaSelector(selector);
@@ -20,6 +20,7 @@ d1.connect = function(addr){
 	//Close already existing connections
 	if(connection !== null){
 		connectionEvents.emit('close');
+		token = null;
 		connection.close();
 	}
 
@@ -31,8 +32,13 @@ d1.connect = function(addr){
 
 d1.disconnect = function(){
 	if(connection){
+		token = null;
 		connection.close();
 	}
+};
+
+d1.deauthenticate = function(){
+	token = null;
 };
 
 function DiyaSelector(selector){
@@ -158,7 +164,7 @@ DiyaSelector.prototype.request = function(params, callback, timeout){
 
 	return this.each(function(peerId){
 		params.target = peerId;
-		params.token = tokens[peerId];
+		params.token = token;
 		connection.request(params, function(err, data){
 			if(typeof callback === 'function') callback(peerId, err, data);
 		}, timeout);
@@ -169,7 +175,7 @@ DiyaSelector.prototype.subscribe = function(params, callback, options){
 
 	function doSubscribe(peerId){
 		params.target = peerId;
-		params.token = tokens[peerId];
+		params.token = token;
 		var subId = connection.subscribe(params, function(err, data){
 			callback(peerId, err, data);
 		});
@@ -205,12 +211,19 @@ DiyaSelector.prototype.auth = function(user, password, callback, timeout){
 			password: password
 		}
 	}, function(peerId, err, data){
-		if(!err && data.authenticated && data.token){
-			tokens[peerId] = data.token;
+
+		if(err === 'ServiceNotFound'){
+			callback(peerId, true);
+			return ;
+		}
+
+		if(!err && data && data.authenticated && data.token){
+			token = data.token;
 			callback(peerId, true);
 		}else {
 			callback(peerId, false);
 		}
+
 	}, timeout);
 };
 
