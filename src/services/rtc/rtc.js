@@ -283,14 +283,7 @@ function RTC(selector){
 	var that = this;
 	this.selector = selector;
 
-	selector.each(function(dnId){
-		that[dnId] = {
-			dnId: dnId,
-			usedChannels: [],
-			requestedChannels: [],
-			peers: []
-		}
-	});
+	this.requestedChannels = [];
 }
 
 
@@ -308,10 +301,7 @@ RTC.prototype.disconnect = function(){
 };
 
 RTC.prototype.use = function(name_regex, onopen_callback){
-	var that = this;
-	this.selector.each(function(dnId){
-		that[dnId].requestedChannels.push({regex: name_regex, cb: onopen_callback});
-	});
+	this.requestedChannels.push({regex: name_regex, cb: onopen_callback});
 	return this;
 };
 
@@ -324,7 +314,13 @@ RTC.prototype.connect = function(){
 		service: 'rtc',
 		func: 'ListenPeers'
 	}, function(dnId, err, data){
-		
+
+		if(!that[dnId]) that._createDiyaNode(dnId);
+
+		if(err === 'SubscriptionClosed' || err === 'PeerDisconnected'){
+			that._closeDiyaNode(dnId);
+			return ;
+		}
 
 		if(data && data.eventType && data.promID !== undefined){
 
@@ -345,9 +341,30 @@ RTC.prototype.connect = function(){
 
 		}
 
-	}, {subIds: this.subIds});
+	}, {subIds: this.subIds, auto: true});
 
 	return this;
+};
+
+RTC.prototype._createDiyaNode = function(dnId){
+	var that = this;
+
+	this[dnId] = {
+		dnId: dnId,
+		usedChannels: [],
+		requestedChannels: [],
+		peers: []
+	}
+
+	this.requestedChannels.forEach(function(c){that[dnId].requestedChannels.push(c)});
+};
+
+RTC.prototype._closeDiyaNode = function(dnId){
+	for(var promID in this[dnId].peers){
+		this._closePeer(dnId, promID);
+	}
+
+	delete this[dnId];
 };
 
 RTC.prototype._closePeer = function(dnId, promID){

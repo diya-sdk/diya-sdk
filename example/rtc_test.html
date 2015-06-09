@@ -1,8 +1,13 @@
 <script type="text/javascript" src="../dist/diya-sdk.js"></script>
 <script>
 
+	var rtc = null;
+
 	d1.connect("ws://localhost:1500").then(function(){
 		console.log("Connected !");
+		d1("RobotOne").auth("admin", "pass", function(peerId, isAuthenticated){
+			console.log("Authentication to "+peerId+" successful !");
+		});
 	});
 
 	function connectRTC(){
@@ -11,29 +16,28 @@
 			console.log(peer);
 		});
 
-		d1("RobotOne").auth("admin", "pass", function(peerId, isAuthenticated){
-			console.log("Authentication to "+peerId+" successful !");
+		rtc = d1("RobotOne").rtc()
+		.use(/^info\.led$/, function(dn, channel){
+			console.log(dn+" -> "+channel.name);
 
-			this.rtc()
-			.use(/^info\.led$/, function(dn, channel){
-				console.log(dn+" -> "+channel.name);
+			channel.on('value', function(array){
+				console.log(array);
+			});
+		})
+		.use(/^ctrl\.force$/, function(dn, channel){
+			console.log(dn+" -> "+channel.name);
+			var ff = 0;
 
-				channel.on('value', function(array){
-					console.log(array);
-				});
-			})
-			.use(/^ctrl\.force$/, function(dn, channel){
-				console.log(dn+" -> "+channel.name);
-				var ff = 0;
+			setInterval(function(){
+				channel.write(0, ff);
+				ff = (ff+1)%2;
+			}, 500);
 
-				setInterval(function(){
-					channel.write(0, ff);
-					ff = (ff+1)%2;
-				}, 500);
+		}).connect();
+	}
 
-			}).connect();
-
-		});
+	function disconnectRTC(){
+		if(rtc) rtc.disconnect();
 	}
 
 
