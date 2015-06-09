@@ -22,15 +22,18 @@ var Logger = {
 //////////////////////////////////////////////////////////////
 
 
-function DiyaNode(addr){
+function DiyaNode(){
 	EventEmitter.call(this);
 
-	this._addr = addr;
+	this._status = 'closed';
+	this._addr = null;
 	this._socket = null;
 	this._nextId = 0;
 	this._connectionDeferred = null;
+	this._disconnectionDeferred = null;
 	this._pendingMessages = [];
 	this._peers = [];
+	this._reconnectTimeout = 1000;
 }
 inherits(DiyaNode, EventEmitter);
 
@@ -38,30 +41,57 @@ inherits(DiyaNode, EventEmitter);
 ////////////////// Public API //////////////////////
 ////////////////////////////////////////////////////
 
-DiyaNode.prototype.connect = function(WSocket){
+DiyaNode.prototype.connect = function(addr, WSocket){
 	var that = this;
-	this._connectionDeferred = Q.defer();
 
-	if(!WSocket) WSocket = window.WebSocket;
-	this._socket = new WSocket(this._addr);
+	if(this._status === 'opened' && this._addr === addr) return Q();
 
-	this._socket.onopen = function(){
+	return this.close().then(function(){
+
+		that._addr = addr;
+
+		that._connectionDeferred = Q.defer();
+
+		if(!WSocket) WSocket = window.WebSocket;
+		that._WSocket = WSocket;
+
+		that._socket = new WSocket(that._addr);
+
 		that._socket.onclose = that._onclose.bind(that);
 		that._socket.onmessage = that._onmessage.bind(that);
-	}
-	this._socket.onerror = function(err){
-		if(that._connectionDeferred.promise.isFulfilled()){
-			Logger.error("[WS] error : "+err);
-		}else {
-			that._connectionDeferred.reject(err);
-		}
-	}
 
-	return this._connectionDeferred.promise;
+		that._socket.onerror = function(err){
+			Logger.error("[WS] error : "+err);
+		}
+
+		return that._connectionDeferred.promise;
+	});
 };
 
 DiyaNode.prototype.close = function(){
-	if(this._socket) this._socket.close();
+	if(this._disconnectionDeferred) return this._disconnectionDeferred.promise;
+
+
+	else if(this._socket && this._status === 'opened'){
+		this._disconnectionDeferred = new Q.defer();
+		this._socket.close();
+		return this._disconnectionDeferred.promise;
+	}
+
+	else if(this._status === 'closed'){
+		return Q();
+	}
+
+	else{
+		return Q();
+	}
+
+
+
+};
+
+DiyaNode.prototype.isConnected = function(){
+	return (this._socket && this._socket.readyState == this._WSocket.OPEN && this._status === 'opened');
 };
 
 
@@ -228,10 +258,30 @@ DiyaNode.prototype._onmessage = function(evt){
 };
 
 DiyaNode.prototype._onclose = function(){
-	Logger.log("[WS] connection closed !");
+	var that = this;
+
 	this._clearMessages();
 	this._clearPeers();
-	this.emit('close');
+	this._status = 'closed';
+
+	if(this._connectionDeferred){
+		this._connectionDeferred.reject();
+		this._connectionDeferred = null;
+	}
+
+	//if close was requested, resolve promise
+	if(this._disconnectionDeferred){
+		this._disconnectionDeferred.resolve();
+		this._disconnectionDeferred = null;
+	}
+	//Otherwise, try to reconnect
+	else{
+		setTimeout(function(){
+			that.connect(that._addr);
+		}, that._reconnectTimeout);
+	}
+
+	this.emit('close', this._addr);
 };
 
 /////////////////////////////////////////////////////////////
@@ -260,11 +310,13 @@ DiyaNode.prototype._handleHandshake = function(message){
 
 	for(var i=0;i<message.peers.length; i++){
 		this._peers.push(message.peers[i]);
+		this.emit('peer-connected', message.peers[i]);
 	}
 
 	if(this._connectionDeferred && !this._connectionDeferred.promise.isFulfilled()){
 		this._connectionDeferred.resolve();
-		this.emit('open');
+		this.emit('open', this._addr);
+		this._status = 'opened';
 		this._connectionDeferred = null;
 	}
 };

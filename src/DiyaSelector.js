@@ -4,7 +4,7 @@ var inherits = require('inherits');
 
 var DiyaNode = require('./DiyaNode');
 
-var connection = null;
+var connection = new DiyaNode();
 var connectionEvents = new EventEmitter();
 var token = null;
 
@@ -12,29 +12,26 @@ function d1(selector){
 	return new DiyaSelector(selector);
 }
 
+
 d1.DiyaNode = DiyaNode;
 d1.DiyaSelector = DiyaSelector;
 
 d1.connect = function(addr){
-
-	//Close already existing connections
-	if(connection !== null){
-		connectionEvents.emit('close');
-		token = null;
-		connection.close();
-	}
-
-	connection = new DiyaNode(addr);
-	return connection.connect().then(function(){
-		connectionEvents.emit('open');
-	});
+	return connection.connect(addr);
 };
 
 d1.disconnect = function(){
-	if(connection){
-		token = null;
-		connection.close();
-	}
+	token = null;
+	return connection.close();
+};
+
+d1.currentServer = function(){
+	return connection._addr;
+}
+
+d1.on = function(event, callback){
+	connection.on(event, callback);
+	return d1;
 };
 
 d1.deauthenticate = function(){
@@ -47,6 +44,7 @@ function DiyaSelector(selector){
 	this._selector = selector;
 	this._listenerCount = 0;
 	this._listenCallback = null;
+	this._callbackAttached = false;
 }
 inherits(DiyaSelector, EventEmitter);
 
@@ -103,32 +101,24 @@ DiyaSelector.prototype._removeConnectionListener = function(){
 };
 
 DiyaSelector.prototype._attachListenCallback = function(){
-	var that = this;
 
 	this._connectedCallback = this._handlePeerConnected.bind(this);
 	this._disconnectedCallback = this._handlePeerDisconnected.bind(this);
 
-	this._attachCallback = function(){
-		connection.on('peer-connected', that._connectedCallback);
-		connection.on('peer-disconnected', that._disconnectedCallback);
+	connection.on('peer-connected', this._connectedCallback);
+	connection.on('peer-disconnected', this._disconnectedCallback);
 
+	if(connection.isConnected()){
 		var peers = connection.peers();
 		for(var i=0;i<peers.length; i++){
 			connection.emit('peer-connected', peers[i]);
 		}
 	}
-
-	if(connection) this._attachCallback();
-	connectionEvents.on('open', this._attachCallback);
 };
 
 DiyaSelector.prototype._detachListenCallback = function(){
-	if(connection){
-		connection.removeListener('peer-connected', this._connectedCallback);
-		connection.removeListener('peer-disconnected', this._disconnectedCallback);
-	}
-
-	connectionEvents.removeListener('open', this._attachCallback);
+	connection.removeListener('peer-connected', this._connectedCallback);
+	connection.removeListener('peer-disconnected', this._disconnectedCallback);
 };
 
 DiyaSelector.prototype._handlePeerConnected = function(peerId){
