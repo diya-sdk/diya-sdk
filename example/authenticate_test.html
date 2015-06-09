@@ -1,14 +1,14 @@
 <script type="text/javascript" src="../dist/diya-sdk.js"></script>
 <script>
 
-	d1.connect("ws://localhost:1500").then(function(){
+	d1.connect("ws://localhost:1236").then(function(){
 		console.log("Connected !");
 
 		d1(/.*/).each(function(peer){
 			console.log(peer);
 		});
 
-		d1(/Robot.*/).auth("admin", "pass", function(peerId, isAuthenticated){
+		d1(/.*/).auth("admin", "pass", function(peerId, isAuthenticated){
 			console.log("Authentication to "+peerId+" successful !");
 		});
 
