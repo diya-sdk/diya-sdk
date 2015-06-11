@@ -26,7 +26,33 @@ function QEI(node, callback, sampling){
     var that = this;
     this.node = node;
     
-    this.sampling = sampling || 10; /* max num of pts stored */
+    /*** structure of data config ***
+	 criteria :
+	    time:
+	       deb: {[/],time} (/ means most recent)
+	       end: {[/], time} (/ means most oldest)
+	    robot: {ArrayOf ID or ["all"]}
+	    place: {ArrayOf ID or ["all"]}
+	 operator: {[last], max, moy, sd} -( maybe moy should be default
+	 ...
+
+	 sensors : {[all] or ArrayOf SensorName}
+	 
+	 sampling: {[all] or int}
+    */
+    this.dataConfig = {
+	criteria: {
+	    time: {
+		deb: {},
+		end: {} 
+	    },
+	    robot: {},
+	    place: {} 
+	},
+	operator: 'last',
+	sensors: {},
+	sampling: sampling
+    };
     this.callback = callback || function(res){}; /* callback, usually after getModel */
     
     node.get({
@@ -34,9 +60,7 @@ function QEI(node, callback, sampling){
 	func: "DataRequest",
 	data: {
 	    type:"msgInit",
-	    sampling: 1,
-	    requestedData: "all"
-	    /* no time range specified */
+	    reqConfig: that.dataConfig
 	}
     }, function(data){
 	that.dataModel= {};
@@ -57,10 +81,8 @@ function QEI(node, callback, sampling){
 		service: "qei",
 		func: "DataRequest",
 		data: {
-		    type:"msgInit",
-		    sampling: "all",
-		    requestedData: "all"
-		    /* no time range specified */
+		    type:"splReq",
+		    dataConfig: that.dataConfig
 		}
 	    }, function(data){
 		console.log(JSON.stringify(data));
@@ -74,7 +96,6 @@ function QEI(node, callback, sampling){
 		that._updateLevels(that.dataModel);
 		that.callback(that.dataModel);
 	    });
-	    console.log("marco");
 	    setTimeout(that.timedRequest,3000);
 	};
 	setTimeout(that.timedRequest(),3000);
@@ -127,18 +148,30 @@ QEI.prototype.updateQualityIndex = function(){
 	    dm[d].qualityIndex[i] = checkQuality(v,dm[d].qualityConfig);
 	});
     }
-}
+};
 
 QEI.prototype.getDataconfortRange = function(){
     return this.dataModel.confortRange;
-}
-QEI.prototype.getSampling = function(numSamples){
-    return this.sampling;
-}
+};
+QEI.prototype.getDataConfig = function(){
+    return this.dataConfig;
+};
+QEI.prototype.getDataOperator = function(){
+    return this.dataConfig.operator;
+};
+/**
+ * TO BE IMPLEMENTED
+ * @param  {String}  newOperator : {[last], max, moy, sd}
+ */
+QEI.prototype.setDataOperator = function(newOperator){
+    this.dataConfig.operator = newOperator;
+};
+QEI.prototype.getDataSampling = function(){
+    return this.dataConfig.sampling;
+};
 QEI.prototype.setSampling = function(numSamples){
-    this.sampling = numSamples;
-}
-
+    this.dataConfig.sampling = numSamples;
+};
 
 
 QEI.prototype._updateConfinementLevel = function(model){
@@ -158,7 +191,7 @@ QEI.prototype._updateConfinementLevel = function(model){
     if(confinement < 3000){
 	return 0;
     }
-}
+};
 
 QEI.prototype._updateAirQualityLevel = function(confinement, model){
     var fineDustQualityIndex = model['Fine Dust'].qualityIndex[model['Fine Dust'].qualityIndex.length-1];
