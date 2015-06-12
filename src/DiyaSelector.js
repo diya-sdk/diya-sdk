@@ -111,7 +111,7 @@ DiyaSelector.prototype._attachListenCallback = function(){
 	if(connection.isConnected()){
 		var peers = connection.peers();
 		for(var i=0;i<peers.length; i++){
-			connection.emit('peer-connected', peers[i]);
+			this._handlePeerConnected(peers[i]);
 		}
 	}
 };
@@ -183,11 +183,12 @@ DiyaSelector.prototype.subscribe = function(params, callback, options){
 };
 
 DiyaSelector.prototype.unsubscribe = function(subIds){
-	return this.each(function(peerId){
+	this.each(function(peerId){
 		var subId = subIds[peerId];
 		if(subId) connection.unsubscribe(subId);
 	});
 	this._removeConnectionListener();
+	return this;
 };
 
 DiyaSelector.prototype.auth = function(user, password, callback, timeout){
