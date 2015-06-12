@@ -45,7 +45,7 @@ function QEI(node, callback, sampling){
 		deb: {},
 		end: {} 
 	    },
-	    robot: [1],
+	    robot: [2],
 	    place: [1,2] 
 	},
 	operator: 'last',
@@ -66,7 +66,12 @@ function QEI(node, callback, sampling){
 	console.log("init: data : "+JSON.stringify(data));
 
 	// TODO : add init loop process
-	// TODO : add check errors function before processing msg
+
+	if(data.error) {
+	    // TODO : add check errors function before processing msg
+	    console.log("Data request failed : "+data.error);
+	    return;
+	}
 	
 	that._getDataModelFromRecv(data);
 	console.log(JSON.stringify(that.dataModel));
