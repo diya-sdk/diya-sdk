@@ -59,7 +59,11 @@ function QEI(node, callback, sampling){
 	func: "DataRequest",
 	data: {
 	    type:"msgInit",
-	    dataConfig: that.dataConfig
+	    dataConfig: {
+		operator: 'last',
+		sensors: {},
+		sampling: 1 //sampling
+	    }
 	}
     }, function(data){
 	that.dataModel= {};
@@ -67,22 +71,20 @@ function QEI(node, callback, sampling){
 
 	// TODO : add init loop process
 
-	if(data.error) {
-	    // TODO : add check errors function before processing msg
-	    console.log("Data request failed : "+data.error);
+	if(data.header.error) {
+	    // TODO : check/use err status and adapt behavior accordingly
+	    console.log("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
 	    return;
 	}
 	
 	that._getDataModelFromRecv(data);
 	console.log(JSON.stringify(that.dataModel));
 	
-	/// that.updateChart(this.dataModel);
 	that.updateQualityIndex();
 	that._updateLevels(that.dataModel);
 	that.callback(that.dataModel);
 
 	that.timedRequest = function() {
-	    console.log("timedRequest");
 	    node.get({
 		service: "qei",
 		func: "DataRequest",
@@ -92,13 +94,16 @@ function QEI(node, callback, sampling){
 		}
 	    }, function(data){
 		console.log(JSON.stringify(data));
-		// if(!data)
-		//     return;
+		if(data.header.error) {
+		    // TODO : check/use err status and adapt behavior accordingly
+		    console.log("timedRequest:\n"+JSON.stringify(data.header.dataConfig));
+		    console.log("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
+		    return;
+		}
 		// console.log(JSON.stringify(that.dataModel));
 		that._getDataModelFromRecv(data);
 		// console.log(JSON.stringify(that.dataModel));
 		
-		/// that.updateChart(this.dataModel);
 		that.updateQualityIndex();
 		that._updateLevels(that.dataModel);
 		that.callback(that.dataModel);
@@ -319,7 +324,7 @@ QEI.prototype._getDataModelFromRecv = function(data){
 	    }
 	    for (var n in data) {
 		if(n != "header" && n != "time") {
-		    // console.log(n);
+		    console.log(JSON.stringify(data[n]));
 		    if(!dataModel[n]) {
 			dataModel[n]={};
 			dataModel[n].data=[];
