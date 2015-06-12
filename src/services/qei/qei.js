@@ -1,5 +1,4 @@
 /* maya-client
- *
  * Copyright (c) 2014, Partnering Robotics, All rights reserved.
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -46,12 +45,12 @@ function QEI(node, callback, sampling){
 		deb: {},
 		end: {} 
 	    },
-	    robot: {},
-	    place: {} 
+	    robot: [1],
+	    place: [1,2] 
 	},
 	operator: 'last',
 	sensors: {},
-	sampling: sampling
+	sampling: 10 //sampling
     };
     this.callback = callback || function(res){}; /* callback, usually after getModel */
     
@@ -60,7 +59,7 @@ function QEI(node, callback, sampling){
 	func: "DataRequest",
 	data: {
 	    type:"msgInit",
-	    reqConfig: that.dataConfig
+	    dataConfig: that.dataConfig
 	}
     }, function(data){
 	that.dataModel= {};
@@ -73,10 +72,12 @@ function QEI(node, callback, sampling){
 	console.log(JSON.stringify(that.dataModel));
 	
 	/// that.updateChart(this.dataModel);
+	that.updateQualityIndex();
 	that._updateLevels(that.dataModel);
 	that.callback(that.dataModel);
 
 	that.timedRequest = function() {
+	    console.log("timedRequest");
 	    node.get({
 		service: "qei",
 		func: "DataRequest",
@@ -93,6 +94,7 @@ function QEI(node, callback, sampling){
 		// console.log(JSON.stringify(that.dataModel));
 		
 		/// that.updateChart(this.dataModel);
+		that.updateQualityIndex();
 		that._updateLevels(that.dataModel);
 		that.callback(that.dataModel);
 	    });
@@ -236,7 +238,7 @@ var checkQuality = function(data, qualityConfig){
 	if(data>qualityConfig.confortRange[1] || data<qualityConfig.confortRange[0])
 	    quality=0;
 	else
-	    quality=1.0
+	    quality=1.0;
 	return quality;
     }
     return 1.0;
@@ -359,12 +361,13 @@ QEI.prototype._getDataModelFromRecv = function(data){
 		    /* case 1 : time data transmitted, 1 value */
 		    /** TODO **/
 		}
-		else if(n != "header") {
+		else if(n != "header") { 
 		    // console.log(n);
 		    if(!dataModel[n]) {
 			dataModel[n]={};
 			dataModel[n].data=[];
 		    }
+
 
 		    /* update data range */
 		    dataModel[n].range=data[n].range;
