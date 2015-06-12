@@ -18,78 +18,38 @@ function explorer(node){
 	this.node = node;
 	return this;
 }
-/*
-DiyaSelector.prototype.explorer = function(file, callback){
-	if (file){
-		this.request({
-			service: 'explorer',
-			func: 'OpenFile',
-			data: file=file,
-		}, function(data){
-				if(data.file){
-					callback(null,data.file);
-				}
-				else if(data.error){
-					callback(data.error, null);
-				}
-			}
-		);
-	}
-	else{
-		this.request({
-			service: 'explorer',
-			func: 'ListFiles',
-		}, function(data){
-	     		if(data){
-					callback(null,data);
-				}
-				else if(data.error){
-					callback(data.error, null);
-				}
-			}
-		);
-	}
-	return this;
-};*/
 
-explorer.prototype.listFiles = function(callback){
+
+DiyaSelector.prototype.listFiles = function(file, callback){	//add a path in data to list files in THIS path
 	this.request({
 		service: 'explorer',
 		func: 'ListFiles',
-	}, function(data){
+		 data: {elt: file}
+	}, function(peerId, err, data){
      		if(data){
-				callback(null,data);
+				callback(peerId, null, data);
 			}
 			else if(data.error){
-				callback(data.error, null);
+				callback(peerId, data.error, null);
 			}
-		}
-	);
-	return this;
+		});
 };
 
-explorer.prototype.OpenFile = function(file,callback){
+DiyaSelector.prototype.openFile = function(file, type, callback){
 		this.request({
 			service: 'explorer',
 			func: 'OpenFile',
-			data: file=file,
-		}, function(data){
-				if(data.file){
-					callback(null,data.file);
-				}
-				else if(data.error){
-					callback(data.error, null);
-				}
+			data:{
+				file: file,
+				type: type
 			}
-		);
-	return this;
+		}, function(peerId, err, data){
+			callback(peerId, null, data);
+		});
+
 };
 
 
-
-DiyaSelector.prototype.explorer = function(){
-	return new explorer(this);
-};
 
 
 var exp = {

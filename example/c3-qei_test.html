@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <title> Display QEI data </title>
-  
+
   <!-- Here are all the javascripts and css that you need, you can download them or linked them like here -->
   <script type="text/javascript" src="../node_modules/c3/node_modules/d3/d3.min.js"></script>
 <!--
@@ -12,7 +12,7 @@
 -->
   <script type="text/javascript" src="../node_modules/c3/c3.min.js"></script>
   <link href="../node_modules/c3/c3.css" rel="stylesheet" type="text/css">
-  
+
 <!--
   <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/d3/3.4.11/d3.js"></script>
   <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/c3/0.1.29/c3.js"></script>
@@ -30,7 +30,7 @@
 
 <!-- You need an element with an id called "chart" to set a place where your chart will render-->
 <div id="chart"></div>
-  
+
   <script>
 
 
@@ -133,11 +133,11 @@ function onClientAuthenticated(node){
 	});
 };
 
-	
 
-	/** 
-	*		Display values 
-	*/ 
+
+	/**
+	*		Display values
+	*/
 	function printVals(res){
 
 		// console.log(JSON.stringify(res));
@@ -147,15 +147,15 @@ function onClientAuthenticated(node){
 
 		// console.log("In memory:  DC:"+JSON.stringify(displayConfig));
 		// console.log("DM: "+JSON.stringify(dataModel));
-		
+
 		/** Display model in chart */
 		updateChart(dataModel);
 		//chart.unload({ ids: ['data1', 'data2'] });
 	};
 
-	/** 
+	/**
 	*		Update chart
-	*/ 
+	*/
 	function updateChart(model, options){
 		if(!pageVisible)
 			return;
@@ -166,10 +166,10 @@ function onClientAuthenticated(node){
 			updateChart.columns.push(model[n].data);
 		}
 		for(var o in options){
-			updateChart[o]=options[o];	
+			updateChart[o]=options[o];
 		}
 		// console.log("UC: "+JSON.stringify(updateChart));
-		
+
 		chart.load(updateChart); /* update chart */
 		//chart.unload({ ids: ['data1', 'data2'] });
 	};
@@ -197,7 +197,7 @@ function onClientAuthenticated(node){
 
 					if(data[n].data.length > 0) {
 						/* decode data to Float32Array*/
-						var buf = base64DecToArr(data[n].data, 4); 
+						var buf = base64DecToArr(data[n].data, 4);
 						// console.log(JSON.stringify(buf));
 						var fArray = new Float32Array(buf);
 
@@ -284,11 +284,6 @@ function onClientAuthenticated(node){
 	client.createSession(onClientAuthenticated, onClientAuthenticationFailure);
 
 </script>
-  
+
 </body>
 </html>
-
-
-
-
-

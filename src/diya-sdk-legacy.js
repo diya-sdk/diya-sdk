@@ -306,7 +306,7 @@ var diya = {
 		discover: discover,
 		qei: qei,
 		update: update,
-        explorer: explorer,
+        explorer: explorer
 }
 
 module.exports = diya;

@@ -260,7 +260,7 @@ DiyaNode.prototype._onmessage = function(evt){
 DiyaNode.prototype._onclose = function(){
 	var that = this;
 
-	this._clearMessages();
+	this._clearMessages('PeerDisconnected');
 	this._clearPeers();
 	this._status = 'closed';
 

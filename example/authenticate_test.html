@@ -2,6 +2,7 @@
 <script>
 
 	d1.connect("ws://localhost:1234").then(function(){
+
 		console.log("Connected !");
 
 		d1(/.*/).each(function(peer){
@@ -16,7 +17,7 @@
 
 
 	function startTimer(){
-		d1(/.*/).time(false, function(peerId, err, data){
+		d1(/.*/).time(true, function(peerId, err, data){
 
 			console.log(peerId);
 			console.log(err);
@@ -25,6 +26,7 @@
 			if(data && data.currentTime) console.log(data.currentTime);
 
 		});
+
 	}
 
 

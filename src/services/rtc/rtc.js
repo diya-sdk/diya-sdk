@@ -416,6 +416,44 @@ RTC.prototype._onDataChannel = function(dnId, datachannel){
 
 
 
-DiyaSelector.prototype.rtc = function(){
-	return new RTC(this);
+DiyaSelector.prototype.rtc = function(domNode){
+	var rtc = new RTC(this);
+
+	if(domNode){
+		createNeuronsFromDOM(domNode, rtc);
+	}
+
+	return rtc;
 };
+
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+
+
+function createNeuronsFromDOM(domNode, rtc){
+	if(!domNode || !domNode.querySelectorAll) return ;
+
+
+	//Retrieve all tags which name starts with "neuron-"
+	var neuronNodeList = domNode.querySelectorAll('*');
+	var neuronNodes = [];
+	for(var i=0;i<neuronNodeList.length; i++){
+		if(isNeuronTag(neuronNodeList[i])) neuronNodes.push(neuronNodeList[i]);
+	}
+
+	//for each tag that has a name attribute, create a neuron associated with it
+	neuronNodes.forEach(function(neuronNode){
+		rtc.use(neuronNode.attributes["name"].value, function(dnId, neuron){
+			neuronNode.setNeuron(dnId, neuron);
+		});
+	});
+
+}
+
+
+function isNeuronTag(node){
+	return node.tagName.startsWith("NEURON-") &&
+		node.attributes["name"] &&
+		(typeof node.setNeuron === 'function');
+}
