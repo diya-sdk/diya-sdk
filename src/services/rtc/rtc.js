@@ -1,53 +1,76 @@
-/* maya-client
- *
- * Copyright (c) 2014, Partnering Robotics, All rights reserved.
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; version
- *  3.0 of the License. This library is distributed in the hope
- * that it will be useful, but WITHOUT ANY WARRANTY; without even
- * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- * PURPOSE. See the GNU Lesser General Public License for more details.
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library.
- */
+DiyaSelector = require('../../DiyaSelector').DiyaSelector;
+EventEmitter = require('node-event-emitter');
+inherits = require('inherits');
 
 
-
-var util = require('util');
-
-
-var Message = require('../message');
-
-/*==========================================*/
 var RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
 var RTCIceCandidate = window.RTCIceCandidate || window.mozRTCIceCandidate || window.webkitRTCIceCandidate;
 var RTCSessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription || window.webkitRTCSessionDescription;
 
-function Channel(name, open_cb){
+
+function Channel(dnId, name, open_cb){
+	EventEmitter.call(this);
 	this.name = name;
+	this.dnId = dnId;
+
+	this.frequency = 20;
 
 	this.channel = undefined;
 	this.onopen = open_cb;
 	this.closed = false;
 }
+inherits(Channel, EventEmitter);
 
 Channel.prototype.setChannel = function(datachannel){
-	this.channel = datachannel;
-
 	var that = this;
-	if(that.onopen) that.onopen(that);
-}
+	this.channel = datachannel;
+	this._negociate();
+
+};
 
 Channel.prototype.close = function(){
 	this.closed = true;
-}
+};
 
-Channel.prototype.setOnMessage = function(onmessage){
-	this.channel.onmessage = onmessage;
-}
+Channel.prototype.write = function(index, value){
+	if(index < 0 || index > this.size || isNaN(value)) return false;
+	this._buffer[index] = value;
+	this._requestSend();
+	return true;
+};
 
-Channel.prototype.send = function(msg){
+Channel.prototype.writeAll = function(values){
+	if(!Array.isArray(values) || values.length !== this.size)
+        return false;
+
+    for (var i = 0; i<values.length; i++){
+        if(isNaN(values[i])) return false;
+        this._buffer[i] = values[i];
+    }
+    this._requestSend();
+};
+
+
+Channel.prototype._requestSend = function(){
+	var that = this;
+
+	var elapsedTime = new Date().getTime() - this._lastSendTimestamp;
+	var period = 1000 / this.frequency;
+	if(elapsedTime >= period){
+		doSend();
+	}else if(!this._sendRequested){
+		this._sendRequested = true;
+		setTimeout(doSend, period - elapsedTime);
+	}
+
+	function doSend(){
+		that._sendRequested = false;
+		that._lastSendTimestamp = new Date().getTime();
+		that._send(that._buffer);
+	}
+};
+
+Channel.prototype._send = function(msg){
 	if(this.closed) return false;
 	else if(this.channel.readyState === 'open'){
 		try{
@@ -61,12 +84,59 @@ Channel.prototype.send = function(msg){
 		console.log('[rtc.channel.write] warning : webrtc datachannel state = '+this.channel.readyState);
 		return false;
 	}
-}
+};
+
+Channel.prototype._negociate = function(){
+	var that = this;
+
+	this.channel.onmessage = function(message){
+		var view = new DataView(message.data);
+
+		var typeChar = String.fromCharCode(view.getUint8(0));
+		if(typeChar === 'O'){
+			//Input
+			that.type = 'input'; //Promethe Output = Client Input
+		}else if(typeChar === 'I'){
+			//Output
+			that.type = 'output'; //Promethe Input = Client Output
+		}else{
+			//Error
+		}
+
+		var size = view.getInt32(1,true);
+		if(size != undefined){
+			that.size = size;
+			that._buffer = new Float32Array(size);
+		}else{
+			//error
+		}
+
+		that.channel.onmessage = that._onMessage.bind(that);
+
+		that.channel.onclose = that._onClose.bind(that);
+
+		if(typeof that.onopen === 'function') that.onopen(that.dnId, that);
+	}
+};
+
+Channel.prototype._onMessage = function(message){
+	var valArray = new Float32Array(message.data);
+	this.emit('value', valArray);
+};
+
+Channel.prototype._onClose = function(){
+	this.emit('close');
+};
 
 
-////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+///////////////////// RTC Peer implementation ////////////////////
+//////////////////////////////////////////////////////////////////
 
-function Peer(rtc, id, channels){
+
+function Peer(dnId, rtc, id, channels){
+	this.dn = d1(dnId);
+	this.dnId = dnId;
 	this.id = id;
 	this.channels = channels;
 	this.rtc = rtc;
@@ -78,11 +148,12 @@ function Peer(rtc, id, channels){
 	this._connect();
 }
 
-
 Peer.prototype._connect = function(){
 	var that = this;
 
-	this.sub = this.rtc.node.listen({
+	this.subIds = [];
+
+	this.dn.subscribe({
 		service: 'rtc',
 		func: 'Connect',
 		obj: this.channels,
@@ -90,20 +161,29 @@ Peer.prototype._connect = function(){
 			promID: this.id
 		}
 	},
-	function(data){
-		that._handleNegociationMessage(data);
-	});
+	function(diya, err, data){
+		if(data) that._handleNegociationMessage(data);
+	}, this.subIds);
 
 	setTimeout(function(){
 		if(!that.connected && !that.closed){
-			that.rtc.reconnect();
-		}else{
+			that._reconnect();
 		}
 	}, 10000);
-}
+};
+
+Peer.prototype._reconnect = function(){
+	this.close();
+
+	this.peer = null;
+	this.connected = false;
+	this.closed = false;
+
+	this._connect();
+};
+
 
 Peer.prototype._handleNegociationMessage = function(msg){
-
 	if(msg.eventType === 'RemoteOffer'){
 		this._createPeer(msg);
 	}else if(msg.eventType === 'RemoteICECandidate'){
@@ -116,7 +196,7 @@ var servers = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
 Peer.prototype._createPeer = function(data){
 	var that = this;
 
-	var peer = new RTCPeerConnection(servers, {mandatory: [{DtlsSrtpKeyAgreement: true}, {EnableDtlsSrtp: true}]});
+	var peer = new RTCPeerConnection(servers,  {mandatory: [{DtlsSrtpKeyAgreement: true}, {EnableDtlsSrtp: true}]});
 	this.peer = peer;
 
 	peer.setRemoteDescription(new RTCSessionDescription({sdp: data.sdp, type: data.type}));
@@ -124,10 +204,10 @@ Peer.prototype._createPeer = function(data){
 	peer.createAnswer(function(session_description){
 		peer.setLocalDescription(session_description);
 
-		that.rtc.node.get({
+		that.dn.request({
 			service: 'rtc',
 			func: 'Answer',
-			data:{
+			data: {
 				promID: data.promID,
 				peerId: data.peerId,
 				sdp: session_description.sdp,
@@ -136,26 +216,27 @@ Peer.prototype._createPeer = function(data){
 		});
 	},
 	function(err){
-		console.log("cannot create answer");
-	}, 
-	{ 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } });
-
+		console.log("RTC: cannot create answer :");
+		console.log(err);
+	},
+	{'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true}});
 
 	peer.oniceconnectionstatechange = function(){
-		console.log(peer.iceConnectionState);
+		console.log('RTC: state change('+that.id+':'+that.dnId+') : '+peer.iceConnectionState);
 		if(peer.iceConnectionState === 'connected'){
-			that.connected = true;  
-			that.rtc.node.stopListening(this.sub);
-		}else if(peer.iceConnectionState === 'disconnected'){
-			if(!that.closed) that.rtc.reconnect();
+			that.connected = true;
+			that.dn.unsubscribe(that.subIds);
 		}
-	}
+		else if(peer.iceConnectionState === 'disconnected'){
+			if(!that.closed) that._reconnect();
+		}
+	};
 
 	peer.onicecandidate = function(evt){
-		that.rtc.node.get({
+		that.dn.request({
 			service: 'rtc',
 			func: 'ICECandidate',
-			data:{
+			data: {
 				peerId: data.peerId,
 				promID: that.id,
 				candidate: evt.candidate
@@ -165,153 +246,230 @@ Peer.prototype._createPeer = function(data){
 
 	peer.ondatachannel = function(evt){
 		that.connected = true;
-		that.rtc._onDataChannel(evt.channel);
+		that.rtc._onDataChannel(that.dnId, evt.channel);
 	};
-}
+};
+
 
 Peer.prototype._addRemoteICECandidate = function(data){
 	var that = this;
 	try{
 		var candidate = new RTCIceCandidate(data.candidate);
-		this.peer.addIceCandidate(candidate,function(){
-			console.log("candidate added ("+that.peer.iceConnectionState+")");
-		},function(e){
-			console.log(e);
+		this.peer.addIceCandidate(candidate, function(){
+			console.log("RTC: candidate added("+that.id+":"+that.dnId+") : "+that.peer.iceConnectionState);
+		},function(err){
+			console.error("RTC: cannot add RemoteICECandidate :");
+			console.error(err);
 		});
-	}catch(e) {console.log(e);}
-}
+	}catch(err){
+		console.error("RTC: cannot add RemoteICECandidate : ");
+		console.error(err);
+	}
+};
 
 Peer.prototype.close = function(){
-	this.rtc.node.stopListening(this.sub);
-	if(this.peer) try{
-		this.peer.close();
-	}catch(e){}
-	this.connected = false;
-	this.closed = true;
-}
+	this.dn.unsubscribe(this.subIds);
+	if(this.peer){
+		try{
+			this.peer.close();
+		}catch(e){}
+		this.connected = false;
+		this.closed = true;
+	}
+};
+
+
+//////////////////////////////////////////////////////////////////////////////
+/////////////////////////// RTC service implementation ///////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
 
 
-/////////////////////////////////
-
-
-function RTC(node){
+function RTC(selector){
 	var that = this;
-	
-	this.node = node;
-	this.usedChannels = [];
+	this.selector = selector;
 
 	this.requestedChannels = [];
-
-	this.peers = [];
 }
+
+
+RTC.prototype.disconnect = function(){
+	var that = this;
+
+	this.selector.each(function(dnId){
+		for(var promID in that[dnId].peers){
+			that._closePeer(dnId, promID);
+		}
+	});
+
+	this.selector.unsubscribe(this.subIds);
+	return this;
+};
 
 RTC.prototype.use = function(name_regex, onopen_callback){
 	this.requestedChannels.push({regex: name_regex, cb: onopen_callback});
-}
-
-RTC.prototype.reconnect = function(){
-	var that = this;
-		
-	that.disconnect();
-	that.connect();
-	console.log("reconnecting...");
-}
-
-RTC.prototype.disconnect = function(){
-
-	for(var promID in this.peers){
-		this._closePeer(promID);
-	}
-
-	this.node.stopListening(this.sub);
-
-	if(typeof this.onclose === 'function') this.onclose();
-}
+	return this;
+};
 
 RTC.prototype.connect = function(){
 	var that = this;
-	var foundChannels = false;
 
-	this.sub = this.node.listen({
+	this.subIds = [];
+
+	this.selector.subscribe({
 		service: 'rtc',
 		func: 'ListenPeers'
-	},
-	function(data){
-			
-		if(data.eventType && data.promID !== undefined){
+	}, function(dnId, err, data){
+
+		if(!that[dnId]) that._createDiyaNode(dnId);
+
+		if(err === 'SubscriptionClosed' || err === 'PeerDisconnected'){
+			that._closeDiyaNode(dnId);
+			return ;
+		}
+
+		if(data && data.eventType && data.promID !== undefined){
 
 			if(data.eventType === 'PeerConnected'){
-				if(!that.peers[data.promID]){
-					var channels = that._matchChannels(data.channels);
+				if(!that[dnId].peers[data.promID]){
+					var channels = that._matchChannels(dnId, data.channels);
 					if(channels.length > 0){
-						that.peers[data.promID] = new Peer(that, data.promID, channels);
+						that[dnId].peers[data.promID] = new Peer(dnId, that, data.promID, channels);
 					}
 				}
 			}
 			else if(data.eventType === 'PeerClosed'){
-				if(that.peers[data.promID]){
-					that._closePeer(data.promID);
-					if(typeof that.onclose === 'function') that.onclose();
+				if(that[dnId].peers[data.promID]){
+					that._closePeer(dnId, data.promID);
+					if(typeof that.onclose === 'function') that.onclose(dnId);
 				}
 			}
+
 		}
 
-	});
-}
+	}, {subIds: this.subIds, auto: true});
 
+	return this;
+};
 
-RTC.prototype._closePeer = function(promID){
-
-	if(this.peers[promID]){
-		var p = this.peers[promID];
-		p.close();
-
-		for(var i=0; i < p.channels.length; i++){
-			delete this.usedChannels[p.channels[i]];
-		}
-
-		delete this.peers[promID];
-	}
-}
-
-RTC.prototype._matchChannels = function(receivedChannels){
+RTC.prototype._createDiyaNode = function(dnId){
 	var that = this;
 
-	//Contains all channels that will be passed to Connect as objects
+	this[dnId] = {
+		dnId: dnId,
+		usedChannels: [],
+		requestedChannels: [],
+		peers: []
+	}
+
+	this.requestedChannels.forEach(function(c){that[dnId].requestedChannels.push(c)});
+};
+
+RTC.prototype._closeDiyaNode = function(dnId){
+	for(var promID in this[dnId].peers){
+		this._closePeer(dnId, promID);
+	}
+
+	delete this[dnId];
+};
+
+RTC.prototype._closePeer = function(dnId, promID){
+	if(this[dnId].peers[promID]){
+		var p = this[dnId].peers[promID];
+		p.close();
+
+		for(var i=0;i<p.channels.length; i++){
+			delete this[dnId].usedChannels[p.channels[i]];
+		}
+
+		delete this[dnId].peers[promID];
+	}
+};
+
+RTC.prototype._matchChannels = function(dnId, receivedChannels){
+	var that = this;
+
 	var channels = [];
 
 	for(var i = 0; i < receivedChannels.length; i++){
 		var name = receivedChannels[i];
-		
-		for(var j = 0; j < that.requestedChannels.length; j++){
-			var req = that.requestedChannels[j];
-			
-			if(name && name.match(req.regex) && !that.usedChannels[name]){
-				that.usedChannels[name] = new Channel(name, req.cb);
-				channels.push(name); //prepare the connect object list
+
+		for(var j = 0; j < that[dnId].requestedChannels.length; j++){
+			var req = that[dnId].requestedChannels[j];
+
+			if(name && name.match(req.regex) && !that[dnId].usedChannels[name]){
+				that[dnId].usedChannels[name] = new Channel(dnId, name, req.cb);
+				channels.push(name);
 			}
 		}
 	}
 
-	return channels;
+	return  channels;
 };
 
-RTC.prototype._onDataChannel = function(datachannel){
+
+RTC.prototype._onDataChannel = function(dnId, datachannel){
 	console.log("Channel "+datachannel.label+" created !");
 
-	var channel = this.usedChannels[datachannel.label];
+	var channel = this[dnId].usedChannels[datachannel.label];
 	if(!channel){
 		datachannel.close();
 		return ;
 	}
 
 	channel.setChannel(datachannel);
+};
+
+
+
+DiyaSelector.prototype.rtc = function(domNode){
+	var rtc = new RTC(this);
+
+	if(domNode){
+		createNeuronsFromDOM(domNode, rtc);
+	}
+
+	return rtc;
+};
+
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+
+
+function createNeuronsFromDOM(domNode, rtc){
+	if(!domNode || !domNode.querySelectorAll) return ;
+
+
+	//Retrieve all tags which name starts with "neuron-"
+	var neuronNodeList = domNode.querySelectorAll('*');
+	var neuronNodes = [];
+	for(var i=0;i<neuronNodeList.length; i++){
+		if(isNeuronTag(neuronNodeList[i])) neuronNodes.push(neuronNodeList[i]);
+	}
+
+	//for each tag that has a name attribute, create a neuron associated with it
+	neuronNodes.forEach(function(neuronNode){
+
+		var channels = getChannels(neuronNode.attributes["name"].value);
+
+		channels.forEach(function(channelName){
+			rtc.use(channelName, function(dnId, neuron){
+				neuronNode.setNeuron(dnId, neuron);
+			});
+		})
+
+	});
+
 }
 
 
-var exp = {
-		RTC: RTC
+function isNeuronTag(node){
+	return node.tagName.startsWith("NEURON-") &&
+		node.attributes["name"] &&
+		(typeof node.setNeuron === 'function');
 }
 
-module.exports = exp; 
+function getChannels(name){
+	return name.split(",").map(function(n){return n.replace(/\s+/, "")})
+}

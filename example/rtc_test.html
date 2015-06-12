@@ -2,63 +2,47 @@
 <script>
 
 	var rtc = null;
-	var rtc2 = null;
 
-	function onClientAuthenticationFailure(){
-		console.log("Cannot authenticate client !");
-	}
-
-	function onClientAuthenticated(node){
-		console.log("Client authenticated !");
-		rtc = new diya.rtc.RTC(node);
-	}
+	d1.connect("ws://localhost:1500").then(function(){
+		console.log("Connected !");
+		d1("RobotOne").auth("admin", "pass", function(peerId, isAuthenticated){
+			console.log("Authentication to "+peerId+" successful !");
+		});
+	});
 
 	function connectRTC(){
 
-		rtc.use(/^ctrl\..*/, function(channel){
-
-			channel.setOnMessage(function(message){
-				console.log(channel.name +" : "+ message.data);
-			});
-			
+		d1(/.*/).each(function(peer){
+			console.log(peer);
 		});
 
-		rtc.connect();
-	}
+		rtc = d1("RobotOne").rtc()
+		.use(/^info\.led$/, function(dn, channel){
+			console.log(dn+" -> "+channel.name);
 
-	function onClientAuthenticated2(node){
-		console.log("Client authenticated !");
-		rtc2 = new maya.rtc.RTC(node);
-	}
-
-	function connectRTC2(){
-
-		rtc2.use(/^air\.tem.*/, function(channel){
-
-			channel.setOnMessage(function(message){
-				console.log(channel.name +" : "+ message.data);
+			channel.on('value', function(array){
+				console.log(array);
 			});
-			
-		});
+		})
+		.use(/^ctrl\.force$/, function(dn, channel){
+			console.log(dn+" -> "+channel.name);
+			var ff = 0;
 
-		rtc2.connect();
+			setInterval(function(){
+				channel.write(0, ff);
+				ff = (ff+1)%2;
+			}, 500);
+
+		}).connect();
 	}
 
-	function disconnectAll(){
-		rtc2.disconnect();
-		rtc.disconnect();
+	function disconnectRTC(){
+		if(rtc) rtc.disconnect();
 	}
-	
 
-	var client = new diya.DiyaClient("ws://localhost:1234", "admin", "pass");
-
-	client.createSession(onClientAuthenticated, onClientAuthenticationFailure);
-	//client.createSession(onClientAuthenticated2, onClientAuthenticationFailure);
 
 
 </script>
 
 <button onclick="connectRTC()">Connect</button>
-<button onclick="connectRTC2()">Connect</button>
-
-<button onclick="disconnectAll()">Disconnect All</button>
+<button onclick="disconnectRTC()">Disconnect</button>

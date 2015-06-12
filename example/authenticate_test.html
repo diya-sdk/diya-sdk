@@ -1,35 +1,37 @@
 <script type="text/javascript" src="../dist/diya-sdk.js"></script>
 <script>
 
+	d1.connect("ws://localhost:1234").then(function(){
 
-	function onClientAuthenticationFailure(){
-		console.log("Cannot authenticate client !");
-	}
+		console.log("Connected !");
 
-	function onClientAuthenticated(node){
-		console.log("Client authenticated !");
-
-		node.get({
-			service: 'timer',
-			func: 'GetTime'
-		}, function(data){
-
-			});
-
-
-		node.listen({
-			service: 'timer',
-			func: 'SubscribeTimer'
-		}, 
-		function(res){
-			console.log(res.currentTime);
+		d1(/.*/).each(function(peer){
+			console.log(peer);
 		});
+
+		d1(/.*/).auth("admin", "pass", function(peerId, isAuthenticated){
+			console.log("Authentication to "+peerId+" successful !");
+		});
+
+	});
+
+
+	function startTimer(){
+		d1(/.*/).time(true, function(peerId, err, data){
+
+			console.log(peerId);
+			console.log(err);
+			console.log(data);
+			console.log('=========');
+			if(data && data.currentTime) console.log(data.currentTime);
+
+		});
+
 	}
 
 
-	var client = new diya.DiyaClient("ws://localhost:1234", "admin", "pass");
-
-	client.createSession(onClientAuthenticated, onClientAuthenticationFailure);
 
 
 </script>
+
+<input type="button" onclick="startTimer()" value="start timer"/>
