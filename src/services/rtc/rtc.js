@@ -432,7 +432,7 @@ DiyaSelector.prototype.rtc = function(domNode){
 
 
 function createNeuronsFromDOM(domNode, rtc){
-	if(!domNode || !domNode.querySelectorAll) return ;
+	if(!domNode || !domNode.querySelectorAll) return ;
 
 
 	//Retrieve all tags which name starts with "neuron-"
