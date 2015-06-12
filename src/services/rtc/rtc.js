@@ -113,6 +113,8 @@ Channel.prototype._negociate = function(){
 
 		that.channel.onmessage = that._onMessage.bind(that);
 
+		that.channel.onclose = that._onClose.bind(that);
+
 		if(typeof that.onopen === 'function') that.onopen(that.dnId, that);
 	}
 };
@@ -120,7 +122,11 @@ Channel.prototype._negociate = function(){
 Channel.prototype._onMessage = function(message){
 	var valArray = new Float32Array(message.data);
 	this.emit('value', valArray);
-}
+};
+
+Channel.prototype._onClose = function(){
+	this.emit('close');
+};
 
 
 //////////////////////////////////////////////////////////////////
@@ -444,9 +450,15 @@ function createNeuronsFromDOM(domNode, rtc){
 
 	//for each tag that has a name attribute, create a neuron associated with it
 	neuronNodes.forEach(function(neuronNode){
-		rtc.use(neuronNode.attributes["name"].value, function(dnId, neuron){
-			neuronNode.setNeuron(dnId, neuron);
-		});
+
+		var channels = getChannels(neuronNode.attributes["name"].value);
+
+		channels.forEach(function(channelName){
+			rtc.use(channelName, function(dnId, neuron){
+				neuronNode.setNeuron(dnId, neuron);
+			});
+		})
+
 	});
 
 }
@@ -456,4 +468,8 @@ function isNeuronTag(node){
 	return node.tagName.startsWith("NEURON-") &&
 		node.attributes["name"] &&
 		(typeof node.setNeuron === 'function');
+}
+
+function getChannels(name){
+	return name.split(",").map(function(n){return n.replace(/\s+/, "")})
 }
