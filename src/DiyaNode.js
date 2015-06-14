@@ -57,12 +57,12 @@ DiyaNode.prototype.connect = function(addr, WSocket){
 
 		that._socket = new WSocket(that._addr);
 
-		that._socket.onclose = that._onclose.bind(that);
-		that._socket.onmessage = that._onmessage.bind(that);
+		that._socket.addEventListener('close',that._onclose.bind(that));
+		that._socket.addEventListener('message', that._onmessage.bind(that));
 
-		that._socket.onerror = function(err){
+		that._socket.addEventListener('error', function(err){
 			Logger.error("[WS] error : "+err);
-		}
+		});
 
 		return that._connectionDeferred.promise;
 	});

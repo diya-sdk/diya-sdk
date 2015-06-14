@@ -16,8 +16,8 @@ function d1(selector){
 d1.DiyaNode = DiyaNode;
 d1.DiyaSelector = DiyaSelector;
 
-d1.connect = function(addr){
-	return connection.connect(addr);
+d1.connect = function(addr, WSocket){
+	return connection.connect(addr, WSocket);
 };
 
 d1.disconnect = function(){
