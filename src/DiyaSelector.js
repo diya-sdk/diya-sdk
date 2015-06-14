@@ -192,7 +192,8 @@ DiyaSelector.prototype.unsubscribe = function(subIds){
 };
 
 DiyaSelector.prototype.auth = function(user, password, callback, timeout){
-	callback = callback.bind(this);
+	if(typeof callback === 'function')
+		callback = callback.bind(this);
 
 	return this.request({
 		service: 'auth',
@@ -204,15 +205,15 @@ DiyaSelector.prototype.auth = function(user, password, callback, timeout){
 	}, function(peerId, err, data){
 
 		if(err === 'ServiceNotFound'){
-			callback(peerId, true);
+			if(typeof callback === 'function') callback(peerId, true);
 			return ;
 		}
 
 		if(!err && data && data.authenticated && data.token){
 			token = data.token;
-			callback(peerId, true);
+			if(typeof callback === 'function') callback(peerId, true);
 		}else {
-			callback(peerId, false);
+			if(typeof callback === 'function') callback(peerId, false);
 		}
 
 	}, timeout);
