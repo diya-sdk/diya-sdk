@@ -44,7 +44,12 @@ inherits(DiyaNode, EventEmitter);
 DiyaNode.prototype.connect = function(addr, WSocket){
 	var that = this;
 
-	if(this._status === 'opened' && this._addr === addr) return Q();
+	if(this._addr === addr){
+		if(this._status === 'opened')
+			return Q();
+		else if(this._connectionDeferred && !this._connectionDeferred.promise.isFulfilled())
+			return this._connectionDeferred.promise;
+	}
 
 	return this.close().then(function(){
 
