@@ -11,6 +11,15 @@
  * License along with this library.
  */
 
+/**
+   Todo : 
+   check err for each data
+   improve API : getData(sensorName, dataConfig)
+                   return adapted vector for display with D3 to reduce code in IHM ?
+                 updateData(sensorName, dataConfig)
+		 set and get for the different dataConfig params
+		 
+*/
 
 
 var util = require('util');
@@ -28,8 +37,8 @@ function QEI(node, callback, sampling){
     /*** structure of data config ***
 	 criteria :
 	    time:
-	       deb: {[/],time} (/ means most recent)
-	       end: {[/], time} (/ means most oldest)
+	       deb: {[null],time} (/ means most recent) // stored a UTC in ms (num)
+	       end: {[null], time} (/ means most oldest) // stored as UTC in ms (num)
 	    robot: {ArrayOf ID or ["all"]}
 	    place: {ArrayOf ID or ["all"]}
 	 operator: {[last], max, moy, sd} -( maybe moy should be default
@@ -42,11 +51,11 @@ function QEI(node, callback, sampling){
     this.dataConfig = {
 	criteria: {
 	    time: {
-		deb: {},
-		end: {} 
+		deb: null,
+		end: null
 	    },
-	    robot: [2],
-	    place: [1,2] 
+	    robot: [1],
+	    place: [1,2]
 	},
 	operator: 'last',
 	sensors: {},
@@ -79,12 +88,20 @@ function QEI(node, callback, sampling){
 	
 	that._getDataModelFromRecv(data);
 	console.log(JSON.stringify(that.dataModel));
-	
-	that.updateQualityIndex();
+	/** TO BE REMOVED ? */
+	/*that.updateQualityIndex();
 	that._updateLevels(that.dataModel);
-	that.callback(that.dataModel);
+	that.callback(that.dataModel);*/
 
 	that.timedRequest = function() {
+	    var now = new Date();
+	    now = now.getTime();
+	    var deb_time = now - 5*60*1000;
+	    console.log("now "+now+" / deb time "+deb_time);
+	    /* that.dataConfig.criteria.time = {
+		deb: deb_time,
+		end: now
+	    };*/
 	    node.get({
 		service: "qei",
 		func: "DataRequest",
@@ -172,7 +189,7 @@ QEI.prototype.getDataOperator = function(){
     return this.dataConfig.operator;
 };
 /**
- * TO BE IMPLEMENTED
+ * TO BE IMPLEMENTED : operator management in DN-QEI
  * @param  {String}  newOperator : {[last], max, moy, sd}
  */
 QEI.prototype.setDataOperator = function(newOperator){
@@ -184,9 +201,28 @@ QEI.prototype.getDataSampling = function(){
 QEI.prototype.setSampling = function(numSamples){
     this.dataConfig.sampling = numSamples;
 };
+QEI.prototype.getDataTimeDeb = function(){
+    return new Date(this.dataConfig.criteria.time.deb);
+};
+/**
+ *  @param {Date} newTimeDeb
+ */
+QEI.prototype.setDataTimeDeb = function(newTimeDeb){
+    this.dataConfig.criteria.time.deb = newTimeDeb.getTime();
+};
+QEI.prototype.getDataTimeEnd = function(){
+    return new Date(this.dataConfig.criteria.time.end);
+};
+/**
+ *  @param {Date} newTimeEnd
+ */
+QEI.prototype.setDataTimeEnd = function(newTimeEnd){
+    this.dataConfig.criteria.time.end = newTimeEnd.getTime();
+};
 
 
 QEI.prototype._updateConfinementLevel = function(model){
+    /** check if co2 and voct are available ? */
     var co2 = model['CO2'].data[model['CO2'].data.length - 1];
     var voct = model['VOCt'].data[model['VOCt'].data.length - 1];
     var confinement = Math.max(co2, voct);
@@ -203,6 +239,8 @@ QEI.prototype._updateConfinementLevel = function(model){
     if(confinement < 3000){
 	return 0;
     }
+    /* default */
+    return 0;
 };
 
 QEI.prototype._updateAirQualityLevel = function(confinement, model){
@@ -313,7 +351,7 @@ QEI.prototype._getDataModelFromRecv = function(data){
 	//~ console.log('rcvdata '+JSON.stringify(data));
 	// if(!data.header.sampling) data.header.sampling=1;
 	
-	/** case 1 : 1 value received added to dataModel */
+	/** case 1 : 1 value received added to dataModel - deprecated ? */
 	if(data.header.sampling==1) {
 	    if(data.header.timeEnd) {
 		if(!dataModel.time) dataModel.time=[];
