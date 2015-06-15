@@ -59,7 +59,7 @@ function QEI(node, callback, sampling){
 	},
 	operator: 'last',
 	sensors: {},
-	sampling: 10 //sampling
+	sampling: null //sampling
     };
     this.callback = callback || function(res){}; /* callback, usually after getModel */
     
@@ -95,9 +95,11 @@ function QEI(node, callback, sampling){
 
 	that.timedRequest = function() {
 	    var now = new Date();
-	    now = now.getTime();
-	    var deb_time = now - 5*60*1000;
+	    var deb_time = new Date(now - 5*24*60*60*1000);
 	    console.log("now "+now+" / deb time "+deb_time);
+
+	    that.setDataTime(deb_time,now);
+	    that.setDataSampling(null);
 	    /* that.dataConfig.criteria.time = {
 		deb: deb_time,
 		end: now
@@ -172,10 +174,13 @@ QEI.prototype.updateQualityIndex = function(){
 	
 	if(!dm[d].qualityIndex || dm[d].data.length != dm[d].qualityIndex.length)
 	    dm[d].qualityIndex = new Array(dm[d].data.length);
-	
-	dm[d].data.forEach(function(v,i) {
-	    dm[d].qualityIndex[i] = checkQuality(v,dm[d].qualityConfig);
-	});
+
+	/* default value for robotId and placeId */
+	if(d=='robotId' || d=='placeId') {
+	    dm[d].data.forEach(function(v,i) {
+		dm[d].qualityIndex[i] = 1;
+	    });
+	}
     }
 };
 
@@ -184,6 +189,12 @@ QEI.prototype.getDataconfortRange = function(){
 };
 QEI.prototype.getDataConfig = function(){
     return this.dataConfig;
+};
+/**
+ * @param {Object} dataConfig config for data request
+ */
+QEI.prototype.setDataConfig = function(newDataConfig){
+    this.dataConfig=newDataConfig;
 };
 QEI.prototype.getDataOperator = function(){
     return this.dataConfig.operator;
@@ -198,27 +209,97 @@ QEI.prototype.setDataOperator = function(newOperator){
 QEI.prototype.getDataSampling = function(){
     return this.dataConfig.sampling;
 };
-QEI.prototype.setSampling = function(numSamples){
+QEI.prototype.setDataSampling = function(numSamples){
     this.dataConfig.sampling = numSamples;
 };
-QEI.prototype.getDataTimeDeb = function(){
-    return new Date(this.dataConfig.criteria.time.deb);
+QEI.prototype.getDataTime = function(){
+    return {
+	deb: new Date(this.dataConfig.criteria.time.deb),
+	end: new Date(this.dataConfig.criteria.time.deb)};
 };
 /**
- *  @param {Date} newTimeDeb
+ * Set data time criteria deb and end.
+ *  @param {Date} newTimeDeb // may be null
+ *  @param {Date} newTimeEnd // may be null
  */
-QEI.prototype.setDataTimeDeb = function(newTimeDeb){
+QEI.prototype.setDataTime = function(newTimeDeb,newTimeEnd){
     this.dataConfig.criteria.time.deb = newTimeDeb.getTime();
-};
-QEI.prototype.getDataTimeEnd = function(){
-    return new Date(this.dataConfig.criteria.time.end);
-};
-/**
- *  @param {Date} newTimeEnd
- */
-QEI.prototype.setDataTimeEnd = function(newTimeEnd){
     this.dataConfig.criteria.time.end = newTimeEnd.getTime();
 };
+/**
+ * Get robot criteria.
+ *  @return {Array[Int]} list of robot Ids
+ */
+QEI.prototype.getDataRobotId = function(){
+    return this.dataConfig.criteria.robotId;
+};
+/**
+ * Set robot criteria.
+ *  @param {Array[Int]} robotIds list of robot Ids
+ */
+QEI.prototype.setDataRobotId = function(robotIds){
+    this.dataConfig.criteria.robotId = robotIds;
+};
+/**
+ * Get place criteria.
+ *  @return {Array[Int]} list of place Ids
+ */
+QEI.prototype.getDataPlaceId = function(){
+    return this.dataConfig.criteria.placeId;
+};
+/**
+ * Set place criteria.
+ *  @param {Array[Int]} placeIds list of place Ids
+ */
+QEI.prototype.setDataRobotId = function(placeIds){
+    this.dataConfig.criteria.placeId = placeIds;
+};
+/**
+ * Get data by sensor name.
+ *  @param {Array[String]} sensorName list of sensors
+ */
+QEI.prototype.getDataByName = function(sensorNames){
+    var data=[];
+    data.push(this.dataModel['time']);
+    for(var n in sensorNames) {
+	data.push(this.dataModel[sensorNames[n]]);
+    }
+    console.log(JSON.stringify(data));
+    return data;
+};
+/**
+ * Update data given dataConfig.
+ * @param {func} callback : called after update
+ */
+QEI.prototype.updateData = function(callback, dataConfig){
+    var that=this;
+    if(!dataConfig)
+	this.setDataConfig(dataConfig);
+    this.node.get({
+	service: "qei",
+	func: "DataRequest",
+	data: {
+	    type:"splReq",
+	    dataConfig: that.dataConfig
+	}
+    }, function(data){
+	console.log(JSON.stringify(data));
+	if(data.header.error) {
+	    // TODO : check/use err status and adapt behavior accordingly
+	    console.log("timedRequest:\n"+JSON.stringify(data.header.dataConfig));
+	    console.log("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
+	    return;
+	}
+	// console.log(JSON.stringify(that.dataModel));
+	that._getDataModelFromRecv(data);
+	// console.log(JSON.stringify(that.dataModel));
+	
+	that.updateQualityIndex();
+	that._updateLevels(that.dataModel);
+	callback(); // callback func
+    });
+};
+
 
 
 QEI.prototype._updateConfinementLevel = function(model){
