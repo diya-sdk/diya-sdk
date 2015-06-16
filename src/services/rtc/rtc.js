@@ -414,7 +414,10 @@ RTC.prototype._onDataChannel = function(dnId, datachannel){
 	console.log("Channel "+datachannel.label+" created !");
 
 	var channel = this[dnId].usedChannels[datachannel.label];
+	console.log("channel found : "+channel.name);
+
 	if(!channel){
+		console.log(datachannel.label+" closed !");
 		datachannel.close();
 		return ;
 	}
@@ -453,13 +456,15 @@ function createNeuronsFromDOM(domNode, rtc){
 	//for each tag that has a name attribute, create a neuron associated with it
 	neuronNodes.forEach(function(neuronNode){
 
-		var channels = getChannels(neuronNode.attributes["name"].value);
+		var channel = getChannel(neuronNode.attributes["name"].value);
+		console.log(neuronNode.attributes["name"]);
+		console.log(channel);
 
-		channels.forEach(function(channelName){
-			rtc.use(channelName, function(dnId, neuron){
-				neuronNode.setNeuron(dnId, neuron);
-			});
-		})
+		rtc.use(channel, function(dnId, neuron){
+			console.log(neuron.name);
+			console.log(neuronNode.attributes["name"]);
+			neuronNode.setNeuron(dnId, neuron);
+		});
 
 	});
 
@@ -472,6 +477,6 @@ function isNeuronTag(node){
 		(typeof node.setNeuron === 'function');
 }
 
-function getChannels(name){
-	return name.split(",").map(function(n){return n.replace(/\s+/, "")})
+function getChannel(name){
+	return name.replace(/\s+/, "");
 }
