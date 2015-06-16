@@ -15,7 +15,7 @@
 	function power(){
 		pico.power();
 	}
-/*
+
 	function zoom(){
 		pico.zoom();
 	}
@@ -52,17 +52,17 @@
 	function lumiUp(){
 		pico.lumiUp();
 	}
-	function volDown(){
-		pico.volDown();
+	function volumeDown(){
+		pico.volumeDown();
 	}
 	function mute(){
 		pico.mute();
 	}
-	function volUp(){
-		pico.volUp();
+	function volumeUp(){
+		pico.volumeUp();
 	}
 
-*/		
+		
 	var client = new diya.DiyaClient("ws://localhost:1234", "admin", "pass");
 	client.createSession(onClientAuthenticated, onClientAuthenticationFailure);
 
@@ -70,12 +70,402 @@
 </script>
 
 
-<button onclick="power()">power</button>
-<!-- <button onclick="zoom()">zoom</button>
-<button onclick="back"> back</button>
+<!-- css  -->
+
+
+
+<style>
+#container{
+	display: flex;
+
+	flex-direction: column;
+	justify-content: space-between;
+	align-items: center;
+	flex-wrap: wrap;
+	width: 90%;
+	height: 90%;
+	/*background: blue;*/
+}
+
+#bloc1{
+	display: flex;
+	flex-direction: raw;
+	justify-content: space-between;
+	width: 50%;
+	height: 30%;
+	
+
+       /* background: red;	*/
+
+}
+
+#bloc2{
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;	
+	align-items: space-between;
+	width: 50%;
+	height: 40%;
+        background-color: #3680F9;
+	/*background: yellow;	*/
+
+}
+
+
+#bloc2_1{
+	display: flex;
+	justify-content: center;	
+	align-items: center;
+}
+
+#bloc2_2{
+	display: flex;
+	flex-direction: raw;
+	justify-content: space-between;	
+	align-items: center;
+}
+
+#bloc2_3{
+	display: flex;
+	flex-direction: raw;
+	justify-content: center;	
+	align-items: center;
+}
+
+
+
+
+#bloc3{
+	border-color: #3680F9;
+	display: flex;
+	width: 50%;
+	height: 30%;
+	flex-direction: column;
+	justify-content: center; /*ou space-between;*/
+	align-items: space-between;
+
+}
+
+
+#bloc3_1{
+	display: flex;
+	flex-direction: raw;
+	justify-content: space-between;	
+}
+
+#bloc3_2{
+	
+	display: flex;
+	flex-direction: raw;
+	justify-content: space-between;	
+	align-items: center;
+}
+
+#bloc3_3{
+	
+	display: flex; 
+	flex-direction: raw;
+	justify-content: space-between;	
+	align-items: center;
+}
+
+
+
+
+
+</style>
+
+<div id="container">
+	<div id="bloc1">
+		<div id="Power">
+			<button onclick="power()">power</button>
+		</div>
+		<div id="Zoom">
+			 <button onclick="zoom()"> zoom</button>
+		</div>
+		<div id="Back">
+			 <button onclick="back()"> back</button>
+		</div>
+	</div>
+
+
+	<div id="bloc2">
+		<div id="bloc2_1">
+			<button onclick="up()">up</button>		
+		</div>
+		<div id="bloc2_2">
+			<div id="left">
+				<button onclick="left()">left</button>
+			</div>
+			<div id="ok">				
+				<button onclick="ok()">ok</button>
+			</div>
+			<div id="right">				
+				<button onclick="right()"> right</button>
+			</div>
+		</div>
+
+		<div id="bloc2_3">
+			<button onclick="down()">down</button>		
+		</div>
+	</div>
+
+
+	<div id="bloc3">
+		<div id="bloc3_1">
+			<div id="lumiDown">
+				<button onclick="lumiDown()">lumiDown</button>
+			</div>
+			<div id="lumiUp">			
+				<button onclick="lumiUp()">lumiUp</button>
+			</div>		
+		</div>
+		<div id="bloc3_2">
+			<button onclick="prev()">prev</button>
+			<button onclick="play()">play/pause</button>
+			<button onclick="next()"> next</button>
+		</div>
+
+		<div id="bloc3_3">
+				<div id="volumeDown">
+					<button onclick="volumeDown()">volumeDown</button>
+				</div>
+				<div id="mute">
+					<button onclick="mute()">mute</button>
+				</div>
+				<div id="volumeUp">
+					<button onclick="volumeUp()">volumeUp</button>	
+				</div>
+		</div>
+	</div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--/////////		CSS		/////////-->
+
+<!--
+<div class="btn1">
+  <button onclick="power()">power</button>
+  <button onclick="back()"> back</button>
+
+</div>
+
+
+<style>
+
+.btn1 {
+    padding-top: 25px;
+    padding-right: 50px;
+    padding-bottom: 25px;
+    padding-left: 50px;
+}
+
+
+</style>
+
+
+
+
+
+<div class = "btn2">
+  
+  <button onclick="up()">up</button>
+</div>
+
+
+
+<style>
+
+.btn2 {
+    padding-top: 25px;
+    padding-right: 50px;
+    padding-bottom: 25px;
+    padding-left: 50px;
+}
+
+
+</style>o
+
+
+
+<div class = "btn3">
+  <button onclick="left()">left</button>
+  <button onclick="ok()">ok</button>
+
+  <button onclick="right()"> right</button>
+</div>
+
+
+
+<style>
+
+.btn3 {
+    padding-top: 25px;
+    padding-right: 50px;
+    padding-bottom: 25px;
+    padding-left: 50px;
+}
+
+
+</style>
+<div class = "btns">
+  <button onclick="down()"> down</button>
+  
+</div>
+ 
+
+<style>
+
+.btn4 {
+    padding-top: 25px;
+    padding-right: 50px;
+    padding-bottom: 25px;
+    padding-left: 50px;
+}
+/*================================*/
+
+
+#container{
+	display: flex;
+
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: center;
+	flex-wrap: wrap;
+	
+
+	width: 100%;
+	height: 800px;
+	background: blue;
+}
+
+#testflex{
+	flex: 1;
+	height: 400px;
+
+	background: red;	
+
+}
+
+#testflex2{
+	display: flex;
+	height: 400px;
+	flex: 3;	
+
+	flex-direction: column;
+	justify-content: space-between;	
+	align-items: center;
+
+	background: yellow;	
+
+}
+
+#testflex3{
+	width: 400px;
+	height: 400px;
+
+	background: gray;	
+
+}
+
+#testflex4{
+	width: 400px;
+	height: 400px;
+
+	background: purple;	
+
+}
+</style>
+
+<div id="container">
+	<div id="testflex">
+
+	</div>
+	<div id="testflex2">
+		<div style="width: 100px; height: 100px; background: gray;"></div>
+		<div style="width: 100px; height: 100px; background: red;"></div>
+	</div>
+</div>    
+
 -->
 
 
+
+
+
+
+
+
+
+
+
+
+<!--/////////	 	CSS		/////////-->
+
+
+
+
+
+
+<!--
+<button onclick="zoom()">zoom</button>
+<button onclick="prev()">prev</button>
+<button onclick="play()">play/pause</button>
+<button onclick="next()"> next</button>
+<button onclick="lumiDown()"> lumiDown</button>
+<button onclick="lumiUp()">lumiUp</button>
+<button onclick="volumeDown()">volumeDown</button>
+<button onclick="mute()"> mute</button>
+<button onclick="volumeUp()"> volumeUp</button>
+-->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- version 1
+<button onclick="power()">power</button>
+<button onclick="zoom()">zoom</button>
+<button onclick="back()"> back</button>
+<button onclick="up()"> up</button>
+<button onclick="left()">left</button>
+<button onclick="ok()">ok</button>
+<button onclick="right()"> right</button>
+<button onclick="down()"> down</button>
+<button onclick="prev()">prev</button>
+<button onclick="play()">play/pause</button>
+<button onclick="next()"> next</button>
+<button onclick="lumiDown()"> lumiDown</button>
+<button onclick="lumiUp()">lumiUp</button>
+<button onclick="volumeDown()">volumeDown</button>
+<button onclick="mute()"> mute</button>
+<button onclick="volumeUp()"> volumeUp</button>
+-->
+<!--
 <style>
 	h1{
 		color: red;
@@ -86,7 +476,7 @@
 
 <h1>Hello World</h1>
 <p>blablabla</p>
-
+-->
 
 
 

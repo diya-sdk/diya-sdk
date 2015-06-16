@@ -12,250 +12,251 @@
  * License along with this library.
  */
 
-var util = require('util');
-var Message = require('../message');
+DiaSelector = require('../../DiyaSelector').DiyaSelector;
 
-function pico(node){	
+function pico(node){
 	var that = this;
 	this.node = node;
 	return this;
 }
 
-// 
+//
 
-pico.prototype.power = function(){
+DiyaSelector.prototype.power = function(){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'Power'
 	}, function(data){
-		/*if(data.pico) 
-			callback(null,data.pico); 
+		/*if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);*/
-		
-	}); 
-}
-/*	
-pico.prototype.zoom = function(callback){
 
-	this.node.get({
+	});
+}
+
+DiyaSelector.prototype.zoom = function(callback){
+
+	this.request({
 		service: 'pico',
 		func: 'Zoom'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+		/*if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
-			callback(data.error,null);
-		
-	}); 
+			callback(data.error,null);*/
+
+	});
 }
 
 
-pico.prototype.back = function(callback){
+DiyaSelector.prototype.back = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'Back'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+		/*if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+		*/
+	});
 }
 
 
-pico.prototype.up = function(callback){
+DiyaSelector.prototype.up = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'Up'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+	/*	if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+	*/
+	});
 }
 
 
-pico.prototype.left = function(callback){
+DiyaSelector.prototype.left = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'Left'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+	/*	if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+	*/
+	});
 }
 
 
-pico.prototype.ok = function(callback){
+DiyaSelector.prototype.ok = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'Ok'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+	/*	if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+		*/
+	});
 }
 
 
-pico.prototype.right = function(callback){
+DiyaSelector.prototype.right = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'Right'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+	/*	if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+		*/
+	});
 }
 
 
-pico.prototype.down = function(callback){
+DiyaSelector.prototype.down = function(callback){
 
 	this.node.get({
 		service: 'pico',
 		func: 'Down'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+	/*	if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+		*/
+	});
 }
 
-pico.prototype.prev = function(callback){
+DiyaSelector.prototype.prev = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'Prev'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+	/*	if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+		*/
+	});
 }
 
-pico.prototype.play = function(callback){
+DiyaSelector.prototype.play = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'Play'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+	/*	if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+		*/
+	});
 }
-pico.prototype.next = function(callback){
+DiyaSelector.prototype.next = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'Next'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+/*		if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+	*/
+	});
 }
 
-pico.prototype.lumiDown = function(callback){
+DiyaSelector.prototype.lumiDown = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'LumiDown'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+/*		if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+	*/
+	});
 }
 
-pico.prototype.lumiUp = function(callback){
+DiyaSelector.prototype.lumiUp = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'LumiUp'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+	/*	if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+		*/
+	});
 }
 
-pico.prototype.volDown = function(callback){
+DiyaSelector.prototype.volumeDown = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
-		func: 'VolDown'
+		func: 'VolumeDown'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+		/*if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+	*/
+	});
 }
 
-pico.prototype.mute = function(callback){
 
-	this.node.get({
+DiyaSelector.prototype.mute = function(callback){
+
+	this.request({
 		service: 'pico',
 		func: 'Mute'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+	/*	if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+		*/
+	});
 }
 
-pico.prototype.volUp = function(callback){
+DiyaSelector.prototype.volumeUp = function(callback){
 
-	this.node.get({
-		service: 'VolUp'
+	this.request({
+		service: 'pico',
+		func: 'VolumeUp'
 	}, function(data){
-		if(data.pico) 
-			callback(null,data.pico); 
+	/*	if(data.pico)
+			callback(null,data.pico);
 		if(data.error)
 			callback(data.error,null);
-		
-	}); 
+		*/
+	});
 }
-*/
 
-		
-		
+
+
+
 var exp = {
 		pico: pico
 }
 
-module.exports = exp; 
+module.exports = exp;
