@@ -52,7 +52,6 @@ Channel.prototype.writeAll = function(values){
     this._requestSend();
 };
 
-
 Channel.prototype._requestSend = function(){
 	var that = this;
 
@@ -68,7 +67,9 @@ Channel.prototype._requestSend = function(){
 	function doSend(){
 		that._sendRequested = false;
 		that._lastSendTimestamp = new Date().getTime();
-		that._send(that._buffer);
+		var ret = that._send(that._buffer);
+		//If autosend is set, automatically send buffer at the given frequency
+		if(ret && that.autosend) that._requestSend();
 	}
 };
 
@@ -457,12 +458,8 @@ function createNeuronsFromDOM(domNode, rtc){
 	neuronNodes.forEach(function(neuronNode){
 
 		var channel = getChannel(neuronNode.attributes["name"].value);
-		console.log(neuronNode.attributes["name"]);
-		console.log(channel);
 
 		rtc.use(channel, function(dnId, neuron){
-			console.log(neuron.name);
-			console.log(neuronNode.attributes["name"]);
 			neuronNode.setNeuron(dnId, neuron);
 		});
 
