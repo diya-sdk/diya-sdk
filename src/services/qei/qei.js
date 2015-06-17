@@ -21,7 +21,7 @@
 		 
 */
 
-
+DiyaSelector = require('../../DiyaSelector').DiyaSelector;
 var util = require('util');
 
 
@@ -30,9 +30,11 @@ var Message = require('../message');
 /**
  *  callback : function called after model updated
  * */
-function QEI(node, callback, sampling){
+function IEQ(selector){
     var that = this;
-    this.node = node;
+    this.selector = selector;
+    this.dataModel={};
+
     
     /*** structure of data config ***
 	 criteria :
@@ -61,9 +63,12 @@ function QEI(node, callback, sampling){
 	sensors: {},
 	sampling: null //sampling
     };
-    this.callback = callback || function(res){}; /* callback, usually after getModel */
+//    this.callback = callback || function(res){}; /* callback, usually after getModel */
+
+    return this;
+
     
-    node.get({
+    this.selector.request({
 	service: "qei",
 	func: "DataRequest",
 	data: {
@@ -74,9 +79,8 @@ function QEI(node, callback, sampling){
 		sampling: 1 //sampling
 	    }
 	}
-    }, function(data){
-	that.dataModel= {};
-	console.log("init: data : "+JSON.stringify(data));
+    }, function(dnId, err, data){
+	//console.log("init: data : "+JSON.stringify(data));
 
 	// TODO : add init loop process
 
@@ -104,14 +108,14 @@ function QEI(node, callback, sampling){
 		deb: deb_time,
 		end: now
 	    };*/
-	    node.get({
+	    this.selector.request({
 		service: "qei",
 		func: "DataRequest",
 		data: {
 		    type:"splReq",
 		    dataConfig: that.dataConfig
 		}
-	    }, function(data){
+	    }, function(dnId, err, data){
 		console.log(JSON.stringify(data));
 		if(data.header.error) {
 		    // TODO : check/use err status and adapt behavior accordingly
@@ -129,9 +133,10 @@ function QEI(node, callback, sampling){
 	    });
 	    setTimeout(that.timedRequest,3000);
 	};
-	setTimeout(that.timedRequest(),3000);
+	//setTimeout(that.timedRequest(),3000);
 
-	/*	node.listen({
+	/*
+	  this.selector.subscribe({
 		service: "qei",
 		func: "SubscribeQei"
 		}, function(res) {
@@ -141,10 +146,8 @@ function QEI(node, callback, sampling){
 		});
 	*/
     });
-
-    console.log("DiyaSDK - QEI: created");
     return this;
-}
+};
 /**
  * Get dataModel : 
  * {
@@ -159,13 +162,13 @@ function QEI(node, callback, sampling){
  *   ... ("senseursYY")
  * }
  */
-QEI.prototype.getDataModel = function(){
+IEQ.prototype.getDataModel = function(){
     return this.dataModel;
-}
-QEI.prototype.getDataRange = function(){
+};
+IEQ.prototype.getDataRange = function(){
     return this.dataModel.range;
-}
-QEI.prototype.updateQualityIndex = function(){
+};
+IEQ.prototype.updateQualityIndex = function(){
     var that=this;
     var dm = this.dataModel;
     
@@ -184,35 +187,40 @@ QEI.prototype.updateQualityIndex = function(){
     }
 };
 
-QEI.prototype.getDataconfortRange = function(){
+IEQ.prototype.getDataconfortRange = function(){
     return this.dataModel.confortRange;
 };
-QEI.prototype.getDataConfig = function(){
+IEQ.prototype.getDataConfig = function(){
     return this.dataConfig;
 };
 /**
  * @param {Object} dataConfig config for data request
+ * @return {IEQ} this - immutable
  */
-QEI.prototype.setDataConfig = function(newDataConfig){
+IEQ.prototype.setDataConfig = function(newDataConfig){
     this.dataConfig=newDataConfig;
+    return this;
 };
-QEI.prototype.getDataOperator = function(){
+IEQ.prototype.getDataOperator = function(){
     return this.dataConfig.operator;
 };
 /**
- * TO BE IMPLEMENTED : operator management in DN-QEI
+ * TO BE IMPLEMENTED : operator management in DN-IEQ
  * @param  {String}  newOperator : {[last], max, moy, sd}
+ * @return {IEQ} this - immutable
  */
-QEI.prototype.setDataOperator = function(newOperator){
+IEQ.prototype.setDataOperator = function(newOperator){
     this.dataConfig.operator = newOperator;
+    return this;
 };
-QEI.prototype.getDataSampling = function(){
+IEQ.prototype.getDataSampling = function(){
     return this.dataConfig.sampling;
 };
-QEI.prototype.setDataSampling = function(numSamples){
+IEQ.prototype.setDataSampling = function(numSamples){
     this.dataConfig.sampling = numSamples;
+    return this;
 };
-QEI.prototype.getDataTime = function(){
+IEQ.prototype.getDataTime = function(){
     return {
 	deb: new Date(this.dataConfig.criteria.time.deb),
 	end: new Date(this.dataConfig.criteria.time.deb)};
@@ -222,71 +230,74 @@ QEI.prototype.getDataTime = function(){
  *  @param {Date} newTimeDeb // may be null
  *  @param {Date} newTimeEnd // may be null
  */
-QEI.prototype.setDataTime = function(newTimeDeb,newTimeEnd){
+IEQ.prototype.setDataTime = function(newTimeDeb,newTimeEnd){
     this.dataConfig.criteria.time.deb = newTimeDeb.getTime();
     this.dataConfig.criteria.time.end = newTimeEnd.getTime();
+    return this;
 };
 /**
  * Get robot criteria.
  *  @return {Array[Int]} list of robot Ids
  */
-QEI.prototype.getDataRobotId = function(){
+IEQ.prototype.getDataRobotId = function(){
     return this.dataConfig.criteria.robotId;
 };
 /**
  * Set robot criteria.
  *  @param {Array[Int]} robotIds list of robot Ids
  */
-QEI.prototype.setDataRobotId = function(robotIds){
+IEQ.prototype.setDataRobotId = function(robotIds){
     this.dataConfig.criteria.robotId = robotIds;
+    return this;
 };
 /**
  * Get place criteria.
  *  @return {Array[Int]} list of place Ids
  */
-QEI.prototype.getDataPlaceId = function(){
+IEQ.prototype.getDataPlaceId = function(){
     return this.dataConfig.criteria.placeId;
 };
 /**
  * Set place criteria.
  *  @param {Array[Int]} placeIds list of place Ids
  */
-QEI.prototype.setDataRobotId = function(placeIds){
+IEQ.prototype.setDataPlaceId = function(placeIds){
     this.dataConfig.criteria.placeId = placeIds;
+    return this;
 };
 /**
  * Get data by sensor name.
  *  @param {Array[String]} sensorName list of sensors
  */
-QEI.prototype.getDataByName = function(sensorNames){
+IEQ.prototype.getDataByName = function(sensorNames){
     var data=[];
     data.push(this.dataModel['time']);
     for(var n in sensorNames) {
 	data.push(this.dataModel[sensorNames[n]]);
     }
-    console.log(JSON.stringify(data));
     return data;
 };
 /**
  * Update data given dataConfig.
  * @param {func} callback : called after update
+ * TODO USE PROMISE
  */
-QEI.prototype.updateData = function(callback, dataConfig){
+IEQ.prototype.updateData = function(callback, dataConfig){
     var that=this;
-    if(!dataConfig)
+    if(dataConfig)
 	this.setDataConfig(dataConfig);
-    this.node.get({
+    console.log("Request: "+JSON.stringify(dataConfig));
+    this.selector.request({
 	service: "qei",
 	func: "DataRequest",
 	data: {
 	    type:"splReq",
 	    dataConfig: that.dataConfig
 	}
-    }, function(data){
-	console.log(JSON.stringify(data));
+    }, function(dnId, err, data){
 	if(data.header.error) {
 	    // TODO : check/use err status and adapt behavior accordingly
-	    console.log("timedRequest:\n"+JSON.stringify(data.header.dataConfig));
+	    console.log("UpdateData:\n"+JSON.stringify(data.header.dataConfig));
 	    console.log("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
 	    return;
 	}
@@ -296,13 +307,14 @@ QEI.prototype.updateData = function(callback, dataConfig){
 	
 	that.updateQualityIndex();
 	that._updateLevels(that.dataModel);
-	callback(); // callback func
+	callback(that); // callback func
     });
+    /** TODO USE PROMISE ? */
 };
 
 
 
-QEI.prototype._updateConfinementLevel = function(model){
+IEQ.prototype._updateConfinementLevel = function(model){
     /** check if co2 and voct are available ? */
     var co2 = model['CO2'].data[model['CO2'].data.length - 1];
     var voct = model['VOCt'].data[model['VOCt'].data.length - 1];
@@ -324,41 +336,41 @@ QEI.prototype._updateConfinementLevel = function(model){
     return 0;
 };
 
-QEI.prototype._updateAirQualityLevel = function(confinement, model){
+IEQ.prototype._updateAirQualityLevel = function(confinement, model){
     var fineDustQualityIndex = model['Fine Dust'].qualityIndex[model['Fine Dust'].qualityIndex.length-1];
     var ozoneQualityIndex = model['Ozone'].qualityIndex[model['Ozone'].qualityIndex.length-1];
 
     var qualityIndex = fineDustQualityIndex + ozoneQualityIndex;
     if(qualityIndex < 2) return confinement - 1;
     else return confinement;
-}
+};
 
-QEI.prototype._updateEnvQualityLevel = function(airQuality, model){
+IEQ.prototype._updateEnvQualityLevel = function(airQuality, model){
     var humidityQualityIndex = model['Humidity'].qualityIndex[model['Humidity'].qualityIndex.length-1];
     var temperatureQualityIndex = model['Temperature'].qualityIndex[model['Temperature'].qualityIndex.length-1];
 
     var qualityIndex = humidityQualityIndex + temperatureQualityIndex;
     if(qualityIndex < 2) return airQuality - 1;
     else return airQuality;	
-}
+};
 
-QEI.prototype._updateLevels = function(model){
+IEQ.prototype._updateLevels = function(model){
     this.confinement = this._updateConfinementLevel(model);
     this.airQuality = this._updateAirQualityLevel(this.confinement, model);
     this.envQuality = this._updateEnvQualityLevel(this.airQuality, model);
-}
+};
 
-QEI.prototype.getConfinementLevel = function(){
+IEQ.prototype.getConfinementLevel = function(){
     return this.confinement;
-}
+};
 
-QEI.prototype.getAirQualityLevel = function(){
+IEQ.prototype.getAirQualityLevel = function(){
     return this.airQuality;
-}
+};
 
-QEI.prototype.getEnvQualityLevel = function(){
+IEQ.prototype.getEnvQualityLevel = function(){
     return this.envQuality;
-}
+};
 
 
 var checkQuality = function(data, qualityConfig){
@@ -371,14 +383,14 @@ var checkQuality = function(data, qualityConfig){
 	return quality;
     }
     return 1.0;
-}
+};
 
 /**
  * Update internal model with received data
  * @param  {Object} data data received from DiyaNode by websocket
  * @return {[type]}     [description]
  */
-QEI.prototype._getDataModelFromRecv = function(data){
+IEQ.prototype._getDataModelFromRecv = function(data){
     var dataModel=this.dataModel;
     /*\
       |*|
@@ -443,7 +455,7 @@ QEI.prototype._getDataModelFromRecv = function(data){
 	    }
 	    for (var n in data) {
 		if(n != "header" && n != "time") {
-		    console.log(JSON.stringify(data[n]));
+		    //console.log(JSON.stringify(data[n]));
 		    if(!dataModel[n]) {
 			dataModel[n]={};
 			dataModel[n].data=[];
@@ -484,19 +496,13 @@ QEI.prototype._getDataModelFromRecv = function(data){
 	}
 	else {
 	    /** case 2 : history data - many values received */
-	    /** TODO  */
 	    for (var n in data) {
-		if(n == 'time') {
-		    /* case 1 : time data transmitted, 1 value */
-		    /** TODO **/
-		}
-		else if(n != "header") { 
+		if(n != "header") { 
 		    // console.log(n);
 		    if(!dataModel[n]) {
 			dataModel[n]={};
 			dataModel[n].data=[];
 		    }
-
 
 		    /* update data range */
 		    dataModel[n].range=data[n].range;
@@ -538,11 +544,12 @@ QEI.prototype._getDataModelFromRecv = function(data){
 	console.log("No Data to read or header is missing !");
     }
     return this.dataModel;
-}
+};
+
+/** create IEQ service **/
+DiyaSelector.prototype.IEQ = function(){
+	var ieq = new IEQ(this);
+	return ieq;
+};
 
 
-var exp = {
-    QEI: QEI
-}
-
-module.exports = exp; 
