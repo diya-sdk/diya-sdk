@@ -12,13 +12,13 @@
  */
 
 /**
-   Todo : 
+   Todo :
    check err for each data
    improve API : getData(sensorName, dataConfig)
                    return adapted vector for display with D3 to reduce code in IHM ?
                  updateData(sensorName, dataConfig)
 		 set and get for the different dataConfig params
-		 
+
 */
 
 DiyaSelector = require('../../DiyaSelector').DiyaSelector;
@@ -35,7 +35,7 @@ function IEQ(selector){
     this.selector = selector;
     this.dataModel={};
 
-    
+
     /*** structure of data config ***
 	 criteria :
 	    time:
@@ -47,109 +47,109 @@ function IEQ(selector){
 	 ...
 
 	 sensors : {[all] or ArrayOf SensorName}
-	 
+
 	 sampling: {[all] or int}
     */
     this.dataConfig = {
-	criteria: {
-	    time: {
-		deb: null,
-		end: null
-	    },
-	    robot: [1],
-	    place: [1,2]
-	},
-	operator: 'last',
-	sensors: {},
-	sampling: null //sampling
+		criteria: {
+		    time: {
+				deb: null,
+				end: null
+		    },
+		    robot: null,
+		    place: null
+		},
+		operator: 'last',
+		sensors: null,
+		sampling: null //sampling
     };
 //    this.callback = callback || function(res){}; /* callback, usually after getModel */
 
     return this;
 
-    
-    this.selector.request({
-	service: "qei",
-	func: "DataRequest",
-	data: {
-	    type:"msgInit",
-	    dataConfig: {
-		operator: 'last',
-		sensors: {},
-		sampling: 1 //sampling
-	    }
-	}
-    }, function(dnId, err, data){
-	//console.log("init: data : "+JSON.stringify(data));
 
-	// TODO : add init loop process
-
-	if(data.header.error) {
-	    // TODO : check/use err status and adapt behavior accordingly
-	    console.log("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
-	    return;
-	}
-	
-	that._getDataModelFromRecv(data);
-	console.log(JSON.stringify(that.dataModel));
-	/** TO BE REMOVED ? */
-	/*that.updateQualityIndex();
-	that._updateLevels(that.dataModel);
-	that.callback(that.dataModel);*/
-
-	that.timedRequest = function() {
-	    var now = new Date();
-	    var deb_time = new Date(now - 5*24*60*60*1000);
-	    console.log("now "+now+" / deb time "+deb_time);
-
-	    that.setDataTime(deb_time,now);
-	    that.setDataSampling(null);
-	    /* that.dataConfig.criteria.time = {
-		deb: deb_time,
-		end: now
-	    };*/
-	    this.selector.request({
-		service: "qei",
-		func: "DataRequest",
-		data: {
-		    type:"splReq",
-		    dataConfig: that.dataConfig
-		}
-	    }, function(dnId, err, data){
-		console.log(JSON.stringify(data));
-		if(data.header.error) {
-		    // TODO : check/use err status and adapt behavior accordingly
-		    console.log("timedRequest:\n"+JSON.stringify(data.header.dataConfig));
-		    console.log("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
-		    return;
-		}
-		// console.log(JSON.stringify(that.dataModel));
-		that._getDataModelFromRecv(data);
-		// console.log(JSON.stringify(that.dataModel));
-		
-		that.updateQualityIndex();
-		that._updateLevels(that.dataModel);
-		that.callback(that.dataModel);
-	    });
-	    setTimeout(that.timedRequest,3000);
-	};
-	//setTimeout(that.timedRequest(),3000);
-
-	/*
-	  this.selector.subscribe({
-		service: "qei",
-		func: "SubscribeQei"
-		}, function(res) {
-		that._getDataModelFromRecv(res.data);
-		that._updateLevels(that.dataModel);
-		that.callback(that.dataModel);
-		});
-	*/
-    });
-    return this;
+    // this.selector.request({
+	// service: "qei",
+	// func: "DataRequest",
+	// data: {
+	//     type:"msgInit",
+	//     dataConfig: {
+	// 	operator: 'last',
+	// 	sensors: {},
+	// 	sampling: 1 //sampling
+	//     }
+	// }
+    // }, function(dnId, err, data){
+	// //console.log("init: data : "+JSON.stringify(data));
+	//
+	// // TODO : add init loop process
+	//
+	// if(data.header.error) {
+	//     // TODO : check/use err status and adapt behavior accordingly
+	//     console.log("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
+	//     return;
+	// }
+	//
+	// that._getDataModelFromRecv(data);
+	// console.log(JSON.stringify(that.dataModel));
+	// /** TO BE REMOVED ? */
+	// /*that.updateQualityIndex();
+	// that._updateLevels(that.dataModel);
+	// that.callback(that.dataModel);*/
+	//
+	// that.timedRequest = function() {
+	//     var now = new Date();
+	//     var deb_time = new Date(now - 5*24*60*60*1000);
+	//     console.log("now "+now+" / deb time "+deb_time);
+	//
+	//     that.setDataTime(deb_time,now);
+	//     that.setDataSampling(null);
+	//     /* that.dataConfig.criteria.time = {
+	// 	deb: deb_time,
+	// 	end: now
+	//     };*/
+	//     this.selector.request({
+	// 	service: "qei",
+	// 	func: "DataRequest",
+	// 	data: {
+	// 	    type:"splReq",
+	// 	    dataConfig: that.dataConfig
+	// 	}
+	//     }, function(dnId, err, data){
+	// 	console.log(JSON.stringify(data));
+	// 	if(data.header.error) {
+	// 	    // TODO : check/use err status and adapt behavior accordingly
+	// 	    console.log("timedRequest:\n"+JSON.stringify(data.header.dataConfig));
+	// 	    console.log("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
+	// 	    return;
+	// 	}
+	// 	// console.log(JSON.stringify(that.dataModel));
+	// 	that._getDataModelFromRecv(data);
+	// 	// console.log(JSON.stringify(that.dataModel));
+	//
+	// 	that.updateQualityIndex();
+	// 	that._updateLevels(that.dataModel);
+	// 	that.callback(that.dataModel);
+	//     });
+	//     setTimeout(that.timedRequest,3000);
+	// };
+	// //setTimeout(that.timedRequest(),3000);
+	//
+	// /*
+	//   this.selector.subscribe({
+	// 	service: "qei",
+	// 	func: "SubscribeQei"
+	// 	}, function(res) {
+	// 	that._getDataModelFromRecv(res.data);
+	// 	that._updateLevels(that.dataModel);
+	// 	that.callback(that.dataModel);
+	// 	});
+	// */
+    // });
+    // return this;
 };
 /**
- * Get dataModel : 
+ * Get dataModel :
  * {
  * 	time: [FLOAT, ...],
  * 	"senseurXX": {
@@ -171,10 +171,10 @@ IEQ.prototype.getDataRange = function(){
 IEQ.prototype.updateQualityIndex = function(){
     var that=this;
     var dm = this.dataModel;
-    
+
     for(var d in dm) {
 	if(d=='time' || !dm[d].data) continue;
-	
+
 	if(!dm[d].qualityIndex || dm[d].data.length != dm[d].qualityIndex.length)
 	    dm[d].qualityIndex = new Array(dm[d].data.length);
 
@@ -304,7 +304,7 @@ IEQ.prototype.updateData = function(callback, dataConfig){
 	// console.log(JSON.stringify(that.dataModel));
 	that._getDataModelFromRecv(data);
 	// console.log(JSON.stringify(that.dataModel));
-	
+
 	that.updateQualityIndex();
 	that._updateLevels(that.dataModel);
 	callback(that); // callback func
@@ -351,7 +351,7 @@ IEQ.prototype._updateEnvQualityLevel = function(airQuality, model){
 
     var qualityIndex = humidityQualityIndex + temperatureQualityIndex;
     if(qualityIndex < 2) return airQuality - 1;
-    else return airQuality;	
+    else return airQuality;
 };
 
 IEQ.prototype._updateLevels = function(model){
@@ -439,11 +439,11 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 	// console.log("u8int : "+JSON.stringify(taBytes));
 	return buffer;
     };
-    
+
     if(data && data.header) {
 	//~ console.log('rcvdata '+JSON.stringify(data));
 	// if(!data.header.sampling) data.header.sampling=1;
-	
+
 	/** case 1 : 1 value received added to dataModel - deprecated ? */
 	if(data.header.sampling==1) {
 	    if(data.header.timeEnd) {
@@ -478,7 +478,7 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 
 			if(data[n].size != fArray.length) console.log("Mismatch of size "+data[n].size+" vs "+fArray.length);
 			if(data[n].size != 1) console.log("Expected 1 value received :"+data[n].size);
-			
+
 			if(!dataModel[n].data) dataModel[n].data=[];
 			dataModel[n].data.push(fArray[0]);
 			if(dataModel[n].data.length > this.sampling) {
@@ -497,7 +497,7 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 	else {
 	    /** case 2 : history data - many values received */
 	    for (var n in data) {
-		if(n != "header") { 
+		if(n != "header") {
 		    // console.log(n);
 		    if(!dataModel[n]) {
 			dataModel[n]={};
@@ -515,7 +515,7 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 
 		    if(data[n].data.length > 0) {
 			/* decode data to Float32Array*/
-			var buf = base64DecToArr(data[n].data, 4); 
+			var buf = base64DecToArr(data[n].data, 4);
 			// console.log(JSON.stringify(buf));
 			var fArray = new Float32Array(buf);
 
@@ -551,5 +551,3 @@ DiyaSelector.prototype.IEQ = function(){
 	var ieq = new IEQ(this);
 	return ieq;
 };
-
-
