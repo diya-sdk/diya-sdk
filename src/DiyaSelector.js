@@ -16,8 +16,8 @@ function d1(selector){
 d1.DiyaNode = DiyaNode;
 d1.DiyaSelector = DiyaSelector;
 
-d1.connect = function(addr){
-	return connection.connect(addr);
+d1.connect = function(addr, WSocket){
+	return connection.connect(addr, WSocket);
 };
 
 d1.disconnect = function(){
@@ -111,7 +111,7 @@ DiyaSelector.prototype._attachListenCallback = function(){
 	if(connection.isConnected()){
 		var peers = connection.peers();
 		for(var i=0;i<peers.length; i++){
-			connection.emit('peer-connected', peers[i]);
+			this._handlePeerConnected(peers[i]);
 		}
 	}
 };
@@ -183,15 +183,17 @@ DiyaSelector.prototype.subscribe = function(params, callback, options){
 };
 
 DiyaSelector.prototype.unsubscribe = function(subIds){
-	return this.each(function(peerId){
+	this.each(function(peerId){
 		var subId = subIds[peerId];
 		if(subId) connection.unsubscribe(subId);
 	});
 	this._removeConnectionListener();
+	return this;
 };
 
 DiyaSelector.prototype.auth = function(user, password, callback, timeout){
-	callback = callback.bind(this);
+	if(typeof callback === 'function')
+		callback = callback.bind(this);
 
 	return this.request({
 		service: 'auth',
@@ -203,15 +205,15 @@ DiyaSelector.prototype.auth = function(user, password, callback, timeout){
 	}, function(peerId, err, data){
 
 		if(err === 'ServiceNotFound'){
-			callback(peerId, true);
+			if(typeof callback === 'function') callback(peerId, true);
 			return ;
 		}
 
 		if(!err && data && data.authenticated && data.token){
 			token = data.token;
-			callback(peerId, true);
+			if(typeof callback === 'function') callback(peerId, true);
 		}else {
-			callback(peerId, false);
+			if(typeof callback === 'function') callback(peerId, false);
 		}
 
 	}, timeout);

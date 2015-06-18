@@ -3,9 +3,11 @@ EventEmitter = require('node-event-emitter');
 inherits = require('inherits');
 
 
-var RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
-var RTCIceCandidate = window.RTCIceCandidate || window.mozRTCIceCandidate || window.webkitRTCIceCandidate;
-var RTCSessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription || window.webkitRTCSessionDescription;
+if(typeof window !== 'undefined'){
+	var RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
+	var RTCIceCandidate = window.RTCIceCandidate || window.mozRTCIceCandidate || window.webkitRTCIceCandidate;
+	var RTCSessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription || window.webkitRTCSessionDescription;
+}
 
 
 function Channel(dnId, name, open_cb){
@@ -50,7 +52,6 @@ Channel.prototype.writeAll = function(values){
     this._requestSend();
 };
 
-
 Channel.prototype._requestSend = function(){
 	var that = this;
 
@@ -66,7 +67,9 @@ Channel.prototype._requestSend = function(){
 	function doSend(){
 		that._sendRequested = false;
 		that._lastSendTimestamp = new Date().getTime();
-		that._send(that._buffer);
+		var ret = that._send(that._buffer);
+		//If autosend is set, automatically send buffer at the given frequency
+		if(ret && that.autosend) that._requestSend();
 	}
 };
 
@@ -412,7 +415,10 @@ RTC.prototype._onDataChannel = function(dnId, datachannel){
 	console.log("Channel "+datachannel.label+" created !");
 
 	var channel = this[dnId].usedChannels[datachannel.label];
+	console.log("channel found : "+channel.name);
+
 	if(!channel){
+		console.log(datachannel.label+" closed !");
 		datachannel.close();
 		return ;
 	}
@@ -451,13 +457,11 @@ function createNeuronsFromDOM(domNode, rtc){
 	//for each tag that has a name attribute, create a neuron associated with it
 	neuronNodes.forEach(function(neuronNode){
 
-		var channels = getChannels(neuronNode.attributes["name"].value);
+		var channel = getChannel(neuronNode.attributes["name"].value);
 
-		channels.forEach(function(channelName){
-			rtc.use(channelName, function(dnId, neuron){
-				neuronNode.setNeuron(dnId, neuron);
-			});
-		})
+		rtc.use(channel, function(dnId, neuron){
+			neuronNode.setNeuron(dnId, neuron);
+		});
 
 	});
 
@@ -470,6 +474,6 @@ function isNeuronTag(node){
 		(typeof node.setNeuron === 'function');
 }
 
-function getChannels(name){
-	return name.split(",").map(function(n){return n.replace(/\s+/, "")})
+function getChannel(name){
+	return name.replace(/\s+/, "");
 }
