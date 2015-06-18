@@ -39,21 +39,21 @@ function IEQ(selector){
     /*** structure of data config ***
 	 criteria :
 	    time:
-	       deb: {[null],time} (/ means most recent) // stored a UTC in ms (num)
+	       beg: {[null],time} (/ means most recent) // stored a UTC in ms (num)
 	       end: {[null], time} (/ means most oldest) // stored as UTC in ms (num)
 	    robot: {ArrayOf ID or ["all"]}
 	    place: {ArrayOf ID or ["all"]}
 	 operator: {[last], max, moy, sd} -( maybe moy should be default
 	 ...
 
-	 sensors : {[all] or ArrayOf SensorName}
+	 sensors : {[null] or ArrayOf SensorName}
 
-	 sampling: {[all] or int}
+	 sampling: {[null] or int}
     */
     this.dataConfig = {
 		criteria: {
 		    time: {
-				deb: null,
+				beg: null,
 				end: null
 		    },
 		    robot: null,
@@ -69,7 +69,7 @@ function IEQ(selector){
 
 
     // this.selector.request({
-	// service: "qei",
+	// service: "ieq",
 	// func: "DataRequest",
 	// data: {
 	//     type:"msgInit",
@@ -99,17 +99,17 @@ function IEQ(selector){
 	//
 	// that.timedRequest = function() {
 	//     var now = new Date();
-	//     var deb_time = new Date(now - 5*24*60*60*1000);
-	//     console.log("now "+now+" / deb time "+deb_time);
+	//     var beg_time = new Date(now - 5*24*60*60*1000);
+	//     console.log("now "+now+" / beg time "+beg_time);
 	//
-	//     that.setDataTime(deb_time,now);
+	//     that.setDataTime(beg_time,now);
 	//     that.setDataSampling(null);
 	//     /* that.dataConfig.criteria.time = {
-	// 	deb: deb_time,
+	// 	beg: beg_time,
 	// 	end: now
 	//     };*/
 	//     this.selector.request({
-	// 	service: "qei",
+	// 	service: "ieq",
 	// 	func: "DataRequest",
 	// 	data: {
 	// 	    type:"splReq",
@@ -137,8 +137,8 @@ function IEQ(selector){
 	//
 	// /*
 	//   this.selector.subscribe({
-	// 	service: "qei",
-	// 	func: "SubscribeQei"
+	// 	service: "ieq",
+	// 	func: "SubscribeIeq"
 	// 	}, function(res) {
 	// 	that._getDataModelFromRecv(res.data);
 	// 	that._updateLevels(that.dataModel);
@@ -195,11 +195,18 @@ IEQ.prototype.getDataConfig = function(){
 };
 /**
  * @param {Object} dataConfig config for data request
- * @return {IEQ} this - immutable
+ * if dataConfig is define : set and return this
+ *   @return {IEQ} this 
+ * else
+ *   @return {Object} current dataConfig
  */
-IEQ.prototype.setDataConfig = function(newDataConfig){
-    this.dataConfig=newDataConfig;
-    return this;
+IEQ.prototype.DataConfig = function(newDataConfig){
+    if(newDataConfig) {
+	this.dataConfig=newDataConfig;
+	return this;
+    }
+    else
+	return this.dataConfig;
 };
 IEQ.prototype.getDataOperator = function(){
     return this.dataConfig.operator;
@@ -222,16 +229,16 @@ IEQ.prototype.setDataSampling = function(numSamples){
 };
 IEQ.prototype.getDataTime = function(){
     return {
-	deb: new Date(this.dataConfig.criteria.time.deb),
-	end: new Date(this.dataConfig.criteria.time.deb)};
+	beg: new Date(this.dataConfig.criteria.time.beg),
+	end: new Date(this.dataConfig.criteria.time.end)};
 };
 /**
- * Set data time criteria deb and end.
- *  @param {Date} newTimeDeb // may be null
+ * Set data time criteria beg and end.
+ *  @param {Date} newTimeBeg // may be null
  *  @param {Date} newTimeEnd // may be null
  */
-IEQ.prototype.setDataTime = function(newTimeDeb,newTimeEnd){
-    this.dataConfig.criteria.time.deb = newTimeDeb.getTime();
+IEQ.prototype.setDataTime = function(newTimeBeg,newTimeEnd){
+    this.dataConfig.criteria.time.beg = newTimeBeg.getTime();
     this.dataConfig.criteria.time.end = newTimeEnd.getTime();
     return this;
 };
@@ -285,10 +292,10 @@ IEQ.prototype.getDataByName = function(sensorNames){
 IEQ.prototype.updateData = function(callback, dataConfig){
     var that=this;
     if(dataConfig)
-	this.setDataConfig(dataConfig);
+	this.DataConfig(dataConfig);
     console.log("Request: "+JSON.stringify(dataConfig));
     this.selector.request({
-	service: "qei",
+	service: "ieq",
 	func: "DataRequest",
 	data: {
 	    type:"splReq",
@@ -433,7 +440,6 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 		    taBytes[nOutIdx] = nUint24 >>> (16 >>> nMod3 & 24) & 255;
 		}
 		nUint24 = 0;
-
 	    }
 	}
 	// console.log("u8int : "+JSON.stringify(taBytes));
@@ -472,9 +478,13 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 
 		    if(data[n].data.length > 0) {
 			/* decode data to Float32Array*/
-			var buf = base64DecToArr(data[n].data, 4);
+			var buf = base64DecToArr(data[n].data, data[n].byteCoding);
 			// console.log(JSON.stringify(buf));
-			var fArray = new Float32Array(buf);
+			var fArray=null;
+			if(data[n].byteCoding===4)
+			    fArray = new Float32Array(buf);
+			else if (data[n].byteCoding===8)
+			    fArray = new Float64Array(buf);
 
 			if(data[n].size != fArray.length) console.log("Mismatch of size "+data[n].size+" vs "+fArray.length);
 			if(data[n].size != 1) console.log("Expected 1 value received :"+data[n].size);
@@ -515,9 +525,14 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 
 		    if(data[n].data.length > 0) {
 			/* decode data to Float32Array*/
-			var buf = base64DecToArr(data[n].data, 4);
+			var buf = base64DecToArr(data[n].data, data[n].byteCoding);
 			// console.log(JSON.stringify(buf));
-			var fArray = new Float32Array(buf);
+			//console.log(JSON.stringify(data));
+			var fArray=null;
+			if(data[n].byteCoding===4)
+			    fArray = new Float32Array(buf);
+			else if (data[n].byteCoding===8)
+			    fArray = new Float64Array(buf);
 
 			if(data[n].size != fArray.length) console.log("Mismatch of size "+data[n].size+" vs "+fArray.length);
 			// /* increase size of data if necessary */
