@@ -19,41 +19,16 @@ function explorer(node){
 	return this;
 }
 
-DiyaSelector.prototype.listFiles = function(file, callback){	//add a path in data to list files in THIS path
-	this.request({
-		service: 'explorer',
-		func: 'ListFiles',
-		 data: {elt: file}
-	}, function(peerId, err, data){
-     		if(data){
-				callback(peerId, null, data);
-			}
-			else if(data.error){
-				callback(peerId, data.error, null);
-			}
-		});
-		return this;
-};
 
-DiyaSelector.prototype.openFile = function(file, type, callback){
-		this.request({
+DiyaSelector.prototype.listenViewers = function(callback){
+		this.subscribe({
 			service: 'explorer',
-			func: 'OpenFile',
-			data:{
-				file: file,
-				type: type
-			}
+			func: 'ListenViewers',
+			// data: { file: file}
+
 		}, function(peerId, err, data){
 			callback(peerId, null, data);
 		});
 
 		return this;
 };
-
-
-
-var exp = {
-		explorer: explorer
-}
-
-module.exports = exp;

@@ -27,7 +27,7 @@ DiyaSelector.prototype.power = function(){
 	this.request({
 		service: 'pico',
 		func: 'Power'
-	}, function(data){
+	}, function(peerId, err, data){
 		/*if(data.pico)
 			callback(null,data.pico);
 		if(data.error)
@@ -128,7 +128,7 @@ DiyaSelector.prototype.right = function(callback){
 
 DiyaSelector.prototype.down = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'Down'
 	}, function(data){

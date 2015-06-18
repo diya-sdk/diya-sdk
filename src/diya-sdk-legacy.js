@@ -21,7 +21,8 @@ var Promethe = require('./services/promethe/promethe');
 var discover = require('./services/discover/discover');
 var qei = require('./services/qei/qei');
 var update = require('./services/update/update');
-var explorer = ('./services/update/explorer');
+var explorer = ('./services/explorer/explorer');
+var pico = ('./services/pico/pico');
 
 
 var WebSocket = window.WebSocket || window.MozWebSocket;
@@ -306,7 +307,8 @@ var diya = {
 		discover: discover,
 		qei: qei,
 		update: update,
-        explorer: explorer
+        explorer: explorer,
+		pico: pico
 }
 
 module.exports = diya;
