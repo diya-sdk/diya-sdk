@@ -8,7 +8,7 @@ EventEmitter = require('node-event-emitter');
 function Maps(selector, map) {
 	// constant
 	// 0..1km <=> 0..1 in Promethe (also in DiyaNode)
-	this._ratioOdoToMap = 1000; // arbitrary value
+	this._ratioOdoToMap = 5000; // arbitrary value
 
 	this._map = map; // map name
 	this._selector = selector; // d1()
