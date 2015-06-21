@@ -310,8 +310,8 @@ Maps.prototype.savePlace = function (peerId, place_info, cb) {
 			data: {
 				mapId: this._diyas[peerId].mapId,
 				neuronId: _place_info.id,
-				x: _place_info.x / this._ratioOdoToMap,
-				y: _place_info.y / this._ratioOdoToMap
+				x: _place_info.x,
+				y: _place_info.y
 			}
 		}, function(peerId, err, data) {
 			if (err != null) {
