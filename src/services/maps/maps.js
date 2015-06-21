@@ -6,9 +6,7 @@ EventEmitter = require('node-event-emitter');
  * @param map {String} map's name
  */
 function Maps(selector, map) {
-	// constant
-	// 0..1km <=> 0..1 in Promethe (also in DiyaNode)
-	this._ratioOdoToMap = 5000; // arbitrary value
+
 
 	this._map = map; // map name
 	this._selector = selector; // d1()
@@ -80,7 +78,8 @@ Maps.prototype.mapIsModified = function(peerId, map_info) {console.log(peerId, m
 	return !(this._isFloatEqual(this._diyas[peerId].path.scale, map_info.scale) &&
 				this._isFloatEqual(this._diyas[peerId].path.rotate, map_info.rotate) &&
 				this._isFloatEqual(this._diyas[peerId].path.translate[0], map_info.translate[0]) &&
-				this._isFloatEqual(this._diyas[peerId].path.translate[1], map_info.translate[1]));
+				this._isFloatEqual(this._diyas[peerId].path.translate[1], map_info.translate[1]) &&
+				this._isFloatEqual(this._diyas[peerId].path.ratio, map_info.ratio));
 }
 
 /**
@@ -165,13 +164,14 @@ Maps.prototype.connect = function() {
 		var map_info = null, places_info = [];
 
 		if (data.id) { // first message from DiyaNode
-			// data : {id, name, places, rotate, scale, tx, ty}
+			// data : {id, name, places, rotate, scale, tx, ty, ratio}
 			that._diyas[peerId] = {
 				mapId: data.id,
 				path: {
 					translate: [data.tx, data.ty],
 					scale: data.scale,
-					rotate: data.rotate
+					rotate: data.rotate,
+					ratio: data.ratio
 				},
 				places: {}
 			};
@@ -181,7 +181,8 @@ Maps.prototype.connect = function() {
 				name: data.name,
 				rotate: data.rotate,
 				scale: data.scale,
-				translate: [data.tx, data.ty]
+				translate: [data.tx, data.ty],
+				ratio: data.ratio
 			}
 		}
 
@@ -198,8 +199,8 @@ Maps.prototype.connect = function() {
 				place = {
 					id: id,
 					label: place.label,
-					x: place.x * that._ratioOdoToMap,
-					y: place.y * that._ratioOdoToMap,
+					x: place.x,
+					y: place.y,
 					t: 360 * place.t
 				};
 
