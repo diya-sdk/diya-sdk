@@ -428,11 +428,11 @@ RTC.prototype._onDataChannel = function(dnId, datachannel){
 
 
 
-DiyaSelector.prototype.rtc = function(domNode){
+DiyaSelector.prototype.rtc = function(domNode, selectedNodes){
 	var rtc = new RTC(this);
 
 	if(domNode){
-		createNeuronsFromDOM(domNode, rtc);
+		createNeuronsFromDOM(domNode, selectedNodes, rtc);
 	}
 
 	return rtc;
@@ -443,7 +443,7 @@ DiyaSelector.prototype.rtc = function(domNode){
 ///////////////////////////////////////////////////////////////////////////////////
 
 
-function createNeuronsFromDOM(domNode, rtc){
+function createNeuronsFromDOM(domNode, selectedNodes, rtc){
 	if(!domNode || !domNode.querySelectorAll) return ;
 
 
@@ -451,7 +451,10 @@ function createNeuronsFromDOM(domNode, rtc){
 	var neuronNodeList = domNode.querySelectorAll('*');
 	var neuronNodes = [];
 	for(var i=0;i<neuronNodeList.length; i++){
-		if(isNeuronTag(neuronNodeList[i])) neuronNodes.push(neuronNodeList[i]);
+		if(isNeuronTag(neuronNodeList[i])){
+			neuronNodes.push(neuronNodeList[i]);
+			if(Array.isArray(selectedNodes)) selectedNodes.push(neuronNodeList[i]);
+		}
 	}
 
 	//for each tag that has a name attribute, create a neuron associated with it
