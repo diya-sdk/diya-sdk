@@ -272,7 +272,8 @@ Maps.prototype.saveMap = function (peerId, map_info, cb) {
 				scale: _map_info.scale,
 				tx: _map_info.translate[0],
 				ty: _map_info.translate[1],
-				rotate: _map_info.rotate
+				rotate: _map_info.rotate,
+				ratio: _map_info.ratio
 			}
 		}, function(peerId, err, data) {
 			if (err != null) {
