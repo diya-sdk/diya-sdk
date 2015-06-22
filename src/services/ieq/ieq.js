@@ -168,30 +168,34 @@ IEQ.prototype.getDataModel = function(){
 IEQ.prototype.getDataRange = function(){
     return this.dataModel.range;
 };
+
 IEQ.prototype.updateQualityIndex = function(){
     var that=this;
     var dm = this.dataModel;
 
     for(var d in dm) {
-	if(d=='time' || !dm[d].data) continue;
+				if(d=='time' || !dm[d].data) continue;
 
-	if(!dm[d].qualityIndex || dm[d].data.length != dm[d].qualityIndex.length)
-	    dm[d].qualityIndex = new Array(dm[d].data.length);
-
-	/* default value for robotId and placeId */
-	if(d=='robotId' || d=='placeId') {
-	    dm[d].data.forEach(function(v,i) {
-		dm[d].qualityIndex[i] = 1;
-	    });
-	}
-    }
+				/* default value for robotId and placeId */
+				if(d=='robotId' || d=='placeId') {
+						dm[d].qualityIndex=[];
+						dm[d].data.forEach(function(v,i) {
+								dm[d].qualityIndex[i] = 1;
+						});
+						continue;
+				}
+				dm[d].qualityIndex = dm[d].data.map(function(dd) {
+						if(dd>=dm[d].qualityConfig.confortRange[0] && dd<=dm[d].qualityConfig.confortRange[1])
+								return 1.0;
+						else
+								return 0.0;
+				});
+		}
 };
+
 
 IEQ.prototype.getDataconfortRange = function(){
     return this.dataModel.confortRange;
-};
-IEQ.prototype.getDataConfig = function(){
-    return this.dataConfig;
 };
 /**
  * @param {Object} dataConfig config for data request
@@ -202,75 +206,96 @@ IEQ.prototype.getDataConfig = function(){
  */
 IEQ.prototype.DataConfig = function(newDataConfig){
     if(newDataConfig) {
-	this.dataConfig=newDataConfig;
-	return this;
+				this.dataConfig=newDataConfig;
+				return this;
     }
     else
-	return this.dataConfig;
-};
-IEQ.prototype.getDataOperator = function(){
-    return this.dataConfig.operator;
+				return this.dataConfig;
 };
 /**
  * TO BE IMPLEMENTED : operator management in DN-IEQ
  * @param  {String}  newOperator : {[last], max, moy, sd}
- * @return {IEQ} this - immutable
+ * @return {IEQ} this - chainable
+ * Set operator criteria.
+ * Depends on newOperator
+ *  @param {String} newOperator 
+ *  @return this 
+ * Get operator criteria.
+ *  @return {String} operator
  */
-IEQ.prototype.setDataOperator = function(newOperator){
-    this.dataConfig.operator = newOperator;
-    return this;
+IEQ.prototype.DataOperator = function(newOperator){
+		if(newOperator) {
+				this.dataConfig.operator = newOperator;
+				return this;
+		}
+		else 
+				return this.dataConfig.operator;
 };
-IEQ.prototype.getDataSampling = function(){
-    return this.dataConfig.sampling;
-};
-IEQ.prototype.setDataSampling = function(numSamples){
-    this.dataConfig.sampling = numSamples;
-    return this;
-};
-IEQ.prototype.getDataTime = function(){
-    return {
-	beg: new Date(this.dataConfig.criteria.time.beg),
-	end: new Date(this.dataConfig.criteria.time.end)};
+/** 
+* Depends on numSamples
+* @param {int} number of samples in dataModel
+* if defined : set number of samples
+*   @return {IEQ} this
+* else
+*   @return {int} number of samples
+**/
+IEQ.prototype.DataSampling = function(numSamples){
+		if(numSamples) {
+				this.dataConfig.sampling = numSamples;
+				return this;
+		}
+		else
+				return this.dataConfig.sampling;				
 };
 /**
- * Set data time criteria beg and end.
+ * Set or get data time criteria beg and end.
+ * If param defined
  *  @param {Date} newTimeBeg // may be null
  *  @param {Date} newTimeEnd // may be null
+ *  @return {IEQ} this
+ * If no param defined:
+ *  @return {Object} Time object: fields beg and end.
  */
-IEQ.prototype.setDataTime = function(newTimeBeg,newTimeEnd){
-    this.dataConfig.criteria.time.beg = newTimeBeg.getTime();
-    this.dataConfig.criteria.time.end = newTimeEnd.getTime();
-    return this;
+IEQ.prototype.DataTime = function(newTimeBeg,newTimeEnd){
+		if(newTimeBeg || newTimeEnd) {
+				this.dataConfig.criteria.time.beg = newTimeBeg.getTime();
+				this.dataConfig.criteria.time.end = newTimeEnd.getTime();
+				return this;
+		}
+		else
+				return {
+						beg: new Date(this.dataConfig.criteria.time.beg),
+						end: new Date(this.dataConfig.criteria.time.end)};
 };
 /**
+ * Depends on robotIds
+ * Set robot criteria.
+ *  @param {Array[Int]} robotIds list of robot Ids
  * Get robot criteria.
  *  @return {Array[Int]} list of robot Ids
  */
-IEQ.prototype.getDataRobotId = function(){
-    return this.dataConfig.criteria.robotId;
+IEQ.prototype.DataRobotIds = function(robotIds){
+    if(robotIds) {
+				this.dataConfig.criteria.robot = robotIds;
+				return this;
+		}
+		else
+				return this.dataConfig.criteria.robot;
 };
 /**
- * Set robot criteria.
- *  @param {Array[Int]} robotIds list of robot Ids
- */
-IEQ.prototype.setDataRobotId = function(robotIds){
-    this.dataConfig.criteria.robotId = robotIds;
-    return this;
-};
-/**
+ * Depends on placeIds
+ * Set place criteria.
+ *  @param {Array[Int]} placeIds list of place Ids
  * Get place criteria.
  *  @return {Array[Int]} list of place Ids
  */
-IEQ.prototype.getDataPlaceId = function(){
-    return this.dataConfig.criteria.placeId;
-};
-/**
- * Set place criteria.
- *  @param {Array[Int]} placeIds list of place Ids
- */
-IEQ.prototype.setDataPlaceId = function(placeIds){
-    this.dataConfig.criteria.placeId = placeIds;
-    return this;
+IEQ.prototype.DataPlaceIds = function(placeIds){
+		if(placeIds) {
+				this.dataConfig.criteria.placeId = placeIds;
+				return this;
+		}
+		else
+				return this.dataConfig.criteria.place;				
 };
 /**
  * Get data by sensor name.
@@ -292,36 +317,38 @@ IEQ.prototype.getDataByName = function(sensorNames){
 IEQ.prototype.updateData = function(callback, dataConfig){
     var that=this;
     if(dataConfig)
-	this.DataConfig(dataConfig);
+				this.DataConfig(dataConfig);
     console.log("Request: "+JSON.stringify(dataConfig));
     this.selector.request({
-	service: "ieq",
-	func: "DataRequest",
-	data: {
-	    type:"splReq",
-	    dataConfig: that.dataConfig
-	}
+				service: "ieq",
+				func: "DataRequest",
+				data: {
+						type:"splReq",
+						dataConfig: that.dataConfig
+				}
     }, function(dnId, err, data){
-	if(data.header.error) {
-	    // TODO : check/use err status and adapt behavior accordingly
-	    console.log("UpdateData:\n"+JSON.stringify(data.header.dataConfig));
-	    console.log("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
-	    return;
-	}
-	// console.log(JSON.stringify(that.dataModel));
-	that._getDataModelFromRecv(data);
-	// console.log(JSON.stringify(that.dataModel));
+				if(data.header.error) {
+						// TODO : check/use err status and adapt behavior accordingly
+						console.log("UpdateData:\n"+JSON.stringify(data.header.dataConfig));
+						console.log("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
+						return;
+				}
+				// console.log(JSON.stringify(that.dataModel));
+				that._getDataModelFromRecv(data);
+				// console.log(JSON.stringify(that.dataModel));
+				
+				that.updateQualityIndex();
+				//that._updateLevels(that.dataModel);
 
-	that.updateQualityIndex();
-	that._updateLevels(that.dataModel);
-	callback(that); // callback func
+				callback = callback.bind(that); // bind callback with IEQ
+				callback(that.getDataModel()); // callback func
     });
     /** TODO USE PROMISE ? */
 };
 
 
 
-IEQ.prototype._updateConfinementLevel = function(model){
+IEQ.prototype._updateConfinementLevelDEPRECATED = function(model){
     /** check if co2 and voct are available ? */
     var co2 = model['CO2'].data[model['CO2'].data.length - 1];
     var voct = model['VOCt'].data[model['VOCt'].data.length - 1];
@@ -343,7 +370,7 @@ IEQ.prototype._updateConfinementLevel = function(model){
     return 0;
 };
 
-IEQ.prototype._updateAirQualityLevel = function(confinement, model){
+IEQ.prototype._updateAirQualityLevelDEPRECATED = function(confinement, model){
     var fineDustQualityIndex = model['Fine Dust'].qualityIndex[model['Fine Dust'].qualityIndex.length-1];
     var ozoneQualityIndex = model['Ozone'].qualityIndex[model['Ozone'].qualityIndex.length-1];
 
@@ -352,7 +379,7 @@ IEQ.prototype._updateAirQualityLevel = function(confinement, model){
     else return confinement;
 };
 
-IEQ.prototype._updateEnvQualityLevel = function(airQuality, model){
+IEQ.prototype._updateEnvQualityLevelDEPRECATED = function(airQuality, model){
     var humidityQualityIndex = model['Humidity'].qualityIndex[model['Humidity'].qualityIndex.length-1];
     var temperatureQualityIndex = model['Temperature'].qualityIndex[model['Temperature'].qualityIndex.length-1];
 
@@ -361,7 +388,7 @@ IEQ.prototype._updateEnvQualityLevel = function(airQuality, model){
     else return airQuality;
 };
 
-IEQ.prototype._updateLevels = function(model){
+IEQ.prototype._updateLevelsDEPRECATED = function(model){
     this.confinement = this._updateConfinementLevel(model);
     this.airQuality = this._updateAirQualityLevel(this.confinement, model);
     this.envQuality = this._updateEnvQualityLevel(this.airQuality, model);
@@ -380,7 +407,7 @@ IEQ.prototype.getEnvQualityLevel = function(){
 };
 
 
-var checkQuality = function(data, qualityConfig){
+var checkQualityDEPRECATED = function(data, qualityConfig){
     var quality;
     if(data && qualityConfig) {
 	if(data>qualityConfig.confortRange[1] || data<qualityConfig.confortRange[0])
