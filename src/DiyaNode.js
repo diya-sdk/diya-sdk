@@ -241,6 +241,7 @@ DiyaNode.prototype._send = function(message){
 		this._socket.send(data);
 	}catch(err){
 		Logger.error('Cannot send message');
+		Logger.error(err);
 		return false;
 	}
 
