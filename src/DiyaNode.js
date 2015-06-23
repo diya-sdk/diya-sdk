@@ -72,6 +72,7 @@ DiyaNode.prototype.connect = function(addr, WSocket){
 		that._socket.addEventListener('open', that._socketOpenCallback);
 		that._socket.addEventListener('close',that._socketCloseCallback);
 		that._socket.addEventListener('message', that._socketMessageCallback);
+		
 
 		that._socket.addEventListener('error', function(err){
 			Logger.error("[WS] error : "+err);
