@@ -318,7 +318,7 @@ IEQ.prototype.updateData = function(callback, dataConfig){
 	var that=this;
 	if(dataConfig)
 		this.DataConfig(dataConfig);
-	console.log("Request: "+JSON.stringify(dataConfig));
+//	console.log("Request: "+JSON.stringify(dataConfig));
 	this.selector.request({
 		service: "ieq",
 		func: "DataRequest",
