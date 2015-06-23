@@ -35,8 +35,8 @@ inherits(Maps, EventEmitter);
  * @param map {String} map's name
  * @param func {function()} callback function with return peerId, error and data ({ mapId, label, neuronId,  x, y})
  */
-Maps.getCurrentPlace = function(selector, map, func) {
-	d1(selector).request({
+DiyaSelector.prototype.getCurrentPlace = function( map, func) {
+	this.request({
 		service: 'maps',
 		func: 'GetCurrentPlace',
 		obj: [ map ],
@@ -145,11 +145,12 @@ Maps.prototype.connect = function() {
 		func: 'ListenMap',
 		obj: [ this._map ]
 	}, function(peerId, err, data) {
-		if (err) {
-			// console.log("Maps: Peer [", peerId, "]: fail to get info from map '" + that.map + "', error:", err, "!"); // mostly PeerDisconnected
+		if (err || data.error) {
+			console.log("Maps: Peer [", peerId, "]: fail to get info from map '" + that._map + "', error:", err || data.error, "!"); // mostly PeerDisconnected
 
 			// remove that peer
 			that.removePeer(peerId);//...
+			return;
 		}
 
 		if (data == null) return ;
