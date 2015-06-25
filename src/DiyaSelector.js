@@ -50,7 +50,8 @@ inherits(DiyaSelector, EventEmitter);
 
 
 function match(selector, str){
-	if(selector.constructor.name === 'String'){
+	if(!selector) return false;
+	else if(selector.constructor.name === 'String'){
 		return matchString(selector, str);
 	}else if(selector.constructor.name === 'RegExp'){
 		return matchRegExp(selector, str);

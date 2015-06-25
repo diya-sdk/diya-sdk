@@ -25,11 +25,12 @@ DiyaSelector.prototype.listFiles = function(file, callback){	//add a path in dat
 		func: 'ListFiles',
 		 data: {elt: file}
 	}, function(peerId, err, data){
-     		if(data){
+     		
+			if(data){
 				callback(peerId, null, data);
 			}
-			else if(data.error){
-				callback(peerId, data.error, null);
+			else if(err){
+				callback(peerId, err, null);
 			}
 		});
 		return this;

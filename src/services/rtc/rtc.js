@@ -119,6 +119,8 @@ Channel.prototype._negociate = function(){
 		that.channel.onclose = that._onClose.bind(that);
 
 		if(typeof that.onopen === 'function') that.onopen(that.dnId, that);
+
+		console.log('channel '+that.name+' negociated !')
 	}
 };
 
@@ -128,6 +130,7 @@ Channel.prototype._onMessage = function(message){
 };
 
 Channel.prototype._onClose = function(){
+	console.log('channel '+this.name+' closed !');
 	this.emit('close');
 };
 
@@ -412,16 +415,14 @@ RTC.prototype._matchChannels = function(dnId, receivedChannels){
 
 
 RTC.prototype._onDataChannel = function(dnId, datachannel){
-	console.log("Channel "+datachannel.label+" created !");
-
 	var channel = this[dnId].usedChannels[datachannel.label];
-	console.log("channel found : "+channel.name);
 
 	if(!channel){
-		console.log(datachannel.label+" closed !");
+		console.log("Channel "+datachannel.label+" unmatched, closing !");
 		datachannel.close();
 		return ;
 	}
+	console.log("Channel "+datachannel.label+" created !");
 
 	channel.setChannel(datachannel);
 };

@@ -73,6 +73,7 @@ DiyaNode.prototype.connect = function(addr, WSocket){
 		that._socket.addEventListener('close',that._socketCloseCallback);
 		that._socket.addEventListener('message', that._socketMessageCallback);
 
+
 		that._socket.addEventListener('error', function(err){
 			Logger.error("[WS] error : "+err);
 		});
@@ -240,6 +241,7 @@ DiyaNode.prototype._send = function(message){
 		this._socket.send(data);
 	}catch(err){
 		Logger.error('Cannot send message');
+		Logger.error(err);
 		return false;
 	}
 
@@ -313,9 +315,13 @@ DiyaNode.prototype._onmessage = function(evt){
 DiyaNode.prototype._onclose = function(){
 	var that = this;
 
-	this._socket.removeEventListener('open', this._socketOpenCallback);
-	this._socket.removeEventListener('close', this._socketCloseCallback);
-	this._socket.removeEventListener('message', this._socketMessageCallback);
+	if(this._socket && (typeof this._socket.removeEventListener === 'function')){
+		this._socket.removeEventListener('open', this._socketOpenCallback);
+		this._socket.removeEventListener('close', this._socketCloseCallback);
+		this._socket.removeEventListener('message', this._socketMessageCallback);
+	}else if(this._socket && (typeof this._socket.removeAllListeners === 'function')){
+		this._socket.removeAllListeners();
+	}
 
 	Logger.log("d1: on close");
 

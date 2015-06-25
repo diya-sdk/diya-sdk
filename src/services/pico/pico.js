@@ -252,6 +252,16 @@ DiyaSelector.prototype.volumeUp = function(callback){
 	});
 }
 
+DiyaSelector.prototype.display = function(callback){
+
+	this.request({
+		service: 'pico',
+		func: 'Display',
+		// data: req
+	}, function(data){
+
+	});
+}
 
 
 
