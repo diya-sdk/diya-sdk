@@ -70,7 +70,7 @@ Maps.prototype._isFloatEqual = function (val1, val2) {
 /**
  * check if map is modified by compare with internal list
  */
-Maps.prototype.mapIsModified = function(peerId, map_info) {console.log(peerId, map_info)
+Maps.prototype.mapIsModified = function(peerId, map_info) {
 	// double check
 	map_info.scale = Array.isArray(map_info.scale) ? map_info.scale[0] : map_info.scale
 
@@ -160,22 +160,40 @@ Maps.prototype.connect = function() {
 		}
 
 		// data.place is current place
-		data.places.push(data.place); // may be null ...
+		if (data.place !== undefined) {
+			data.places.push(data.place); // may be null ...
+		}
 
 		var map_info = null, places_info = [];
 
 		if (data.id) { // first message from DiyaNode
 			// data : {id, name, places, rotate, scale, tx, ty, ratio}
-			that._diyas[peerId] = {
-				mapId: data.id,
-				path: {
-					translate: [data.tx, data.ty],
-					scale: data.scale,
-					rotate: data.rotate,
-					ratio: data.ratio
-				},
-				places: {}
-			};
+			if (that._diyas[peerId] == null) {
+				that._diyas[peerId] = {
+					mapId: data.id,
+					path: {
+						translate: [data.tx, data.ty],
+						scale: data.scale,
+						rotate: data.rotate,
+						ratio: data.ratio
+					},
+					places: {}
+				};
+			} else {
+				that._diyas[peerId].mapId = data.id;
+
+				if (that._diyas[peerId].path == null) {
+					that._diyas[peerId].path = {};
+				}
+				that._diyas[peerId].path.translate = [data.tx, data.ty];
+				that._diyas[peerId].path.scale = data.scale;
+				that._diyas[peerId].path.rotate = data.rotate;
+				that._diyas[peerId].path.ratio = data.ratio;
+
+				if (that._diyas[peerId].places == null) {
+					that._diyas[peerId].places = {};
+				}
+			}
 
 			map_info = {
 				id: data.id,
@@ -219,6 +237,8 @@ Maps.prototype.connect = function() {
 				places_info.push(null);
 			}
 		});
+
+		if (places_info.length === 0) places_info = null;
 
 		that.emit("peer-subscribed",peerId, map_info, places_info);
 	}, options);
