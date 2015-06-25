@@ -341,7 +341,7 @@ IEQ.prototype.updateData = function(callback, dataConfig){
 		//console.log(JSON.stringify(that.dataModel));
 		that._getDataModelFromRecv(data);
 		
-		//console.log(JSON.stringify(that.getDataModel()));
+		console.log(that.getDataModel());
 		
 		that.updateQualityIndex();
 		//that._updateLevels(that.dataModel);
@@ -512,7 +512,8 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 	if(data && data.header) {
 		// if(!data.header.sampling) data.header.sampling=1;
 		/** case 1 : 1 value received added to dataModel - deprecated ? */
-		if(data.header.sampling==1) {
+
+/*		if(data.header.sampling==1) {
 			if(data.header.timeEnd) {
 				if(!dataModel.time) dataModel.time=[];
 				dataModel.time.push(data.header.timeEnd);
@@ -528,17 +529,17 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 						dataModel[n].data=[];
 					}
 
-					/* update data range */
+					// update data range *
 					dataModel[n].range=data[n].range;
-					/* update data label */
+					// update data label *
 					dataModel[n].label=data[n].label;
-					/* update data unit */
+					// update data unit *
 					dataModel[n].unit=data[n].unit;
-					/* update data confortRange */
+					// update data confortRange *
 					dataModel[n].qualityConfig={confortRange: data[n].confortRange};
 
 					if(data[n].data.length > 0) {
-						/* decode data to Float32Array*/
+						/* decode data to Float32Array*
 						var buf = base64DecToArr(data[n].data, data[n].byteCoding);
 						// console.log(JSON.stringify(buf));
 						var fArray=null;
@@ -565,58 +566,66 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 				}
 			}
 		}
-		else {
+		else { */
 			/** case 2 : history data - many values received */
 			//dataModel={}; // reset dataModel
-			for (var n in data) {
-				if(n != "header" && n != "err") {
+		for (var n in data) {
+			if(n != "header" && n != "err") {
 
-					if(data[n].err && data[n].err.st>0) {
-						console.log(n+" was in error: "+data[n].err.msg);
-						continue;
-					}
-
-					// console.log(n);
-					if(!dataModel[n]) {
-						dataModel[n]={};
-						dataModel[n].data={};
-					}
-					/* update data range */
-					dataModel[n].range=data[n].range;
-					/* update data label */
-					dataModel[n].label=data[n].label;
-					/* update data unit */
-					dataModel[n].unit=data[n].unit;
-					/* update data confortRange */
-					dataModel[n].qualityConfig={confortRange: data[n].confortRange};
-//					console.log("data : "+JSON.stringify(data[n]));
-					if(data[n].data.vals.length > 0)
-						dataModel[n].data = arrayFromBuffer(data[n].data);
-					else {
-						if(data[n].data.size != 0) console.log("Size mismatch received data (no data versus size="+data[n].data.size+")");
-						dataModel[n].data = [];
-					}
-					if(data[n].time.vals.length > 0)
-						dataModel[n].time = arrayFromBuffer(data[n].time);
-					else {
-						if(data[n].time.size != 0) console.log("Size mismatch received data (no data versus size="+data[n].time.size+")");
-						dataModel[n].time = [];
-					}
-					if(data[n].robotId.vals.length > 0)
-						dataModel[n].robotId = arrayFromBuffer(data[n].robotId);
-					else {
-						if(data[n].robotId.size != 0) console.log("Size mismatch received data (no data versus size="+data[n].robotId.size+")");
-						dataModel[n].robotId = [];
-					}
-					if(data[n].placeId.vals.length > 0)
-						dataModel[n].placeId = arrayFromBuffer(data[n].robotId);
-					else {
-						if(data[n].placeId.size != 0) console.log("Size mismatch received data (no data versus size="+data[n].placeId.size+")");
-						dataModel[n].placeId = [];
-					}
-					// dataModel[n].data = Array.from(fArray);
-					//console.log('mydata '+JSON.stringify(dataModel[n].data));
+				if(data[n].err && data[n].err.st>0) {
+					console.log(n+" was in error: "+data[n].err.msg);
+					continue;
 				}
+
+				// console.log(n);
+				if(!dataModel[n]) {
+					dataModel[n]={};
+					dataModel[n].data={};
+				}
+				/* update data range */
+				dataModel[n].range=data[n].range;
+				/* update data label */
+				dataModel[n].label=data[n].label;
+				/* update data unit */
+				dataModel[n].unit=data[n].unit;
+				/* update data confortRange/indexRange */
+				dataModel[n].qualityConfig={
+					confortRange: data[n].confortRange,
+					indexRange: data[n].indexRange
+				};
+				//					console.log("data : "+JSON.stringify(data[n]));
+				if(data[n].data.vals.length > 0)
+					dataModel[n].data = arrayFromBuffer(data[n].data);
+				else {
+					if(data[n].data.size != 0) console.log("Size mismatch received data (no data versus size="+data[n].data.size+")");
+					dataModel[n].data = [];
+				}
+				if(data[n].time.vals.length > 0)
+					dataModel[n].time = arrayFromBuffer(data[n].time);
+				else {
+					if(data[n].time.size != 0) console.log("Size mismatch received data (no data versus size="+data[n].time.size+")");
+					dataModel[n].time = [];
+				}
+				if(data[n].index.vals.length > 0)
+					dataModel[n].index = arrayFromBuffer(data[n].index);
+				else {
+					if(data[n].index.size != 0) console.log("Size mismatch received data (no data versus size="+data[n].index.size+")");
+					dataModel[n].index = [];
+				}
+				if(data[n].robotId.vals.length > 0)
+					dataModel[n].robotId = arrayFromBuffer(data[n].robotId);
+				else {
+					if(data[n].robotId.size != 0) console.log("Size mismatch received data (no data versus size="+data[n].robotId.size+")");
+					dataModel[n].robotId = [];
+				}
+				if(data[n].placeId.vals.length > 0)
+					dataModel[n].placeId = arrayFromBuffer(data[n].robotId);
+				else {
+					if(data[n].placeId.size != 0) console.log("Size mismatch received data (no data versus size="+data[n].placeId.size+")");
+					dataModel[n].placeId = [];
+				}
+				// dataModel[n].data = Array.from(fArray);
+				//console.log('mydata '+JSON.stringify(dataModel[n].data));
 			}
 		}
 	}
