@@ -347,7 +347,7 @@ DiyaNode.prototype._onclose = function(){
 	else{
 		Logger.log('d1: connection lost, try reconnecting');
 		setTimeout(function(){
-			that.connect(that._addr);
+			that.connect(that._addr, that._WSocket);
 		}, that._reconnectTimeout);
 	}
 
