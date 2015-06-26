@@ -63,90 +63,8 @@ function IEQ(selector){
 		sensors: null,
 		sampling: null //sampling
 	};
-	//	  this.callback = callback || function(res){}; /* callback, usually after getModel */
 
 	return this;
-
-
-	// this.selector.request({
-	// service: "ieq",
-	// func: "DataRequest",
-	// data: {
-	//	   type:"msgInit",
-	//	   dataConfig: {
-	//	operator: 'last',
-	//	sensors: {},
-	//	sampling: 1 //sampling
-	//	   }
-	// }
-	// }, function(dnId, err, data){
-	// //console.log("init: data : "+JSON.stringify(data));
-	//
-	// // TODO : add init loop process
-	//
-	// if(data.header.error) {
-	//	   // TODO : check/use err status and adapt behavior accordingly
-	//	   console.log("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
-	//	   return;
-	// }
-	//
-	// that._getDataModelFromRecv(data);
-	// console.log(JSON.stringify(that.dataModel));
-	// /** TO BE REMOVED ? */
-	// /*that.updateQualityIndex();
-	// that._updateLevels(that.dataModel);
-	// that.callback(that.dataModel);*/
-	//
-	// that.timedRequest = function() {
-	//	   var now = new Date();
-	//	   var beg_time = new Date(now - 5*24*60*60*1000);
-	//	   console.log("now "+now+" / beg time "+beg_time);
-	//
-	//	   that.setDataTime(beg_time,now);
-	//	   that.setDataSampling(null);
-	//	   /* that.dataConfig.criteria.time = {
-	//	beg: beg_time,
-	//	end: now
-	//	   };*/
-	//	   this.selector.request({
-	//	service: "ieq",
-	//	func: "DataRequest",
-	//	data: {
-	//		type:"splReq",
-	//		dataConfig: that.dataConfig
-	//	}
-	//	   }, function(dnId, err, data){
-	//	console.log(JSON.stringify(data));
-	//	if(data.header.error) {
-	//		// TODO : check/use err status and adapt behavior accordingly
-	//		console.log("timedRequest:\n"+JSON.stringify(data.header.dataConfig));
-	//		console.log("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
-	//		return;
-	//	}
-	//	// console.log(JSON.stringify(that.dataModel));
-	//	that._getDataModelFromRecv(data);
-	//	// console.log(JSON.stringify(that.dataModel));
-	//
-	//	that.updateQualityIndex();
-	//	that._updateLevels(that.dataModel);
-	//	that.callback(that.dataModel);
-	//	   });
-	//	   setTimeout(that.timedRequest,3000);
-	// };
-	// //setTimeout(that.timedRequest(),3000);
-	//
-	// /*
-	//	 this.selector.subscribe({
-	//	service: "ieq",
-	//	func: "SubscribeIeq"
-	//	}, function(res) {
-	//	that._getDataModelFromRecv(res.data);
-	//	that._updateLevels(that.dataModel);
-	//	that.callback(that.dataModel);
-	//	});
-	// */
-	// });
-	// return this;
 };
 /**
  * Get dataModel :
@@ -169,34 +87,6 @@ IEQ.prototype.getDataRange = function(){
 	return this.dataModel.range;
 };
 
-IEQ.prototype.updateQualityIndex = function(){
-	var that=this;
-	var dm = this.dataModel;
-
-	for(var d in dm) {
-		if(d=='time' || !dm[d].data) continue;
-
-		/* default value for robotId and placeId */
-		if(d=='robotId' || d=='placeId') {
-			dm[d].qualityIndex=[];
-			dm[d].data.forEach(function(v,i) {
-				dm[d].qualityIndex[i] = 1;
-			});
-			continue;
-		}
-		dm[d].qualityIndex = dm[d].data.map(function(dd) {
-			if(dd>=dm[d].qualityConfig.confortRange[0] && dd<=dm[d].qualityConfig.confortRange[1])
-				return 1.0;
-			else
-				return 0.0;
-		});
-	}
-};
-
-
-IEQ.prototype.getDataconfortRange = function(){
-	return this.dataModel.confortRange;
-};
 /**
  * @param {Object} dataConfig config for data request
  * if dataConfig is define : set and return this
@@ -343,9 +233,6 @@ IEQ.prototype.updateData = function(callback, dataConfig){
 		
 		console.log(that.getDataModel());
 		
-		that.updateQualityIndex();
-		//that._updateLevels(that.dataModel);
-
 		callback = callback.bind(that); // bind callback with IEQ
 		callback(that.getDataModel()); // callback func
 	});
@@ -364,53 +251,6 @@ IEQ.prototype._isDataModelWithNaN = function() {
 	} 
 };
 
-
-IEQ.prototype._updateConfinementLevelDEPRECATED = function(model){
-	/** check if co2 and voct are available ? */
-	var co2 = model['CO2'].data[model['CO2'].data.length - 1];
-	var voct = model['VOCt'].data[model['VOCt'].data.length - 1];
-	var confinement = Math.max(co2, voct);
-
-	if(confinement < 800){
-		return 3;
-	}
-	if(confinement < 1600){
-		return 2;
-	}
-	if(confinement < 2400){
-		return 1;
-	}
-	if(confinement < 3000){
-		return 0;
-	}
-	/* default */
-	return 0;
-};
-
-IEQ.prototype._updateAirQualityLevelDEPRECATED = function(confinement, model){
-	var fineDustQualityIndex = model['Fine Dust'].qualityIndex[model['Fine Dust'].qualityIndex.length-1];
-	var ozoneQualityIndex = model['Ozone'].qualityIndex[model['Ozone'].qualityIndex.length-1];
-
-	var qualityIndex = fineDustQualityIndex + ozoneQualityIndex;
-	if(qualityIndex < 2) return confinement - 1;
-	else return confinement;
-};
-
-IEQ.prototype._updateEnvQualityLevelDEPRECATED = function(airQuality, model){
-	var humidityQualityIndex = model['Humidity'].qualityIndex[model['Humidity'].qualityIndex.length-1];
-	var temperatureQualityIndex = model['Temperature'].qualityIndex[model['Temperature'].qualityIndex.length-1];
-
-	var qualityIndex = humidityQualityIndex + temperatureQualityIndex;
-	if(qualityIndex < 2) return airQuality - 1;
-	else return airQuality;
-};
-
-IEQ.prototype._updateLevelsDEPRECATED = function(model){
-	this.confinement = this._updateConfinementLevel(model);
-	this.airQuality = this._updateAirQualityLevel(this.confinement, model);
-	this.envQuality = this._updateEnvQualityLevel(this.airQuality, model);
-};
-
 IEQ.prototype.getConfinementLevel = function(){
 	return this.confinement;
 };
@@ -421,19 +261,6 @@ IEQ.prototype.getAirQualityLevel = function(){
 
 IEQ.prototype.getEnvQualityLevel = function(){
 	return this.envQuality;
-};
-
-
-var checkQualityDEPRECATED = function(data, qualityConfig){
-	var quality;
-	if(data && qualityConfig) {
-		if(data>qualityConfig.confortRange[1] || data<qualityConfig.confortRange[0])
-			quality=0;
-		else
-			quality=1.0;
-		return quality;
-	}
-	return 1.0;
 };
 
 /**
@@ -510,65 +337,6 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 
 
 	if(data && data.header) {
-		// if(!data.header.sampling) data.header.sampling=1;
-		/** case 1 : 1 value received added to dataModel - deprecated ? */
-
-/*		if(data.header.sampling==1) {
-			if(data.header.timeEnd) {
-				if(!dataModel.time) dataModel.time=[];
-				dataModel.time.push(data.header.timeEnd);
-				if(dataModel.time.length > this.sampling) {
-					dataModel.time = dataModel.time.slice(dataModel.time.length - this.sampling);
-				}
-			}
-			for (var n in data) {
-				if(n != "header" && n != "time") {
-					//console.log(JSON.stringify(data[n]));
-					if(!dataModel[n]) {
-						dataModel[n]={};
-						dataModel[n].data=[];
-					}
-
-					// update data range *
-					dataModel[n].range=data[n].range;
-					// update data label *
-					dataModel[n].label=data[n].label;
-					// update data unit *
-					dataModel[n].unit=data[n].unit;
-					// update data confortRange *
-					dataModel[n].qualityConfig={confortRange: data[n].confortRange};
-
-					if(data[n].data.length > 0) {
-						/* decode data to Float32Array*
-						var buf = base64DecToArr(data[n].data, data[n].byteCoding);
-						// console.log(JSON.stringify(buf));
-						var fArray=null;
-						if(data[n].byteCoding===4)
-							fArray = new Float32Array(buf);
-						else if (data[n].byteCoding===8)
-							fArray = new Float64Array(buf);
-
-						if(data[n].size != fArray.length) console.log("Mismatch of size "+data[n].size+" vs "+fArray.length);
-						if(data[n].size != 1) console.log("Expected 1 value received :"+data[n].size);
-
-						if(!dataModel[n].data) dataModel[n].data=[];
-						dataModel[n].data.push(fArray[0]);
-						if(dataModel[n].data.length > this.sampling) {
-							dataModel[n].data = dataModel[n].data.slice(dataModel[n].data.length - this.sampling);
-						}
-					}
-					else {
-						if(data[n].size != 0) console.log("Size mismatch received data (no data versus size="+data[n].size+")");
-						dataModel[n].data = [];
-					}
-					this.updateQualityIndex();
-					//~ console.log('mydata '+JSON.stringify(dataModel[n].data));
-				}
-			}
-		}
-		else { */
-			/** case 2 : history data - many values received */
-			//dataModel={}; // reset dataModel
 		for (var n in data) {
 			if(n != "header" && n != "err") {
 
@@ -588,9 +356,9 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 				dataModel[n].label=data[n].label;
 				/* update data unit */
 				dataModel[n].unit=data[n].unit;
-				/* update data confortRange/indexRange */
+				/* update data indexRange */
 				dataModel[n].qualityConfig={
-					confortRange: data[n].confortRange,
+					/* confortRange: data[n].confortRange, */
 					indexRange: data[n].indexRange
 				};
 				//					console.log("data : "+JSON.stringify(data[n]));
@@ -607,10 +375,10 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 					dataModel[n].time = [];
 				}
 				if(data[n].index.vals.length > 0)
-					dataModel[n].index = arrayFromBuffer(data[n].index);
+					dataModel[n].qualityIndex = arrayFromBuffer(data[n].index);
 				else {
 					if(data[n].index.size != 0) console.log("Size mismatch received data (no data versus size="+data[n].index.size+")");
-					dataModel[n].index = [];
+					dataModel[n].qualityIndex = [];
 				}
 				if(data[n].robotId.vals.length > 0)
 					dataModel[n].robotId = arrayFromBuffer(data[n].robotId);
