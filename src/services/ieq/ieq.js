@@ -90,7 +90,7 @@ IEQ.prototype.getDataRange = function(){
 /**
  * @param {Object} dataConfig config for data request
  * if dataConfig is define : set and return this
- *	 @return {IEQ} this 
+ *	 @return {IEQ} this
  * else
  *	 @return {Object} current dataConfig
  */
@@ -108,8 +108,8 @@ IEQ.prototype.DataConfig = function(newDataConfig){
  * @return {IEQ} this - chainable
  * Set operator criteria.
  * Depends on newOperator
- *	@param {String} newOperator 
- *	@return this 
+ *	@param {String} newOperator
+ *	@return this
  * Get operator criteria.
  *	@return {String} operator
  */
@@ -118,10 +118,10 @@ IEQ.prototype.DataOperator = function(newOperator){
 		this.dataConfig.operator = newOperator;
 		return this;
 	}
-	else 
+	else
 		return this.dataConfig.operator;
 };
-/** 
+/**
  * Depends on numSamples
  * @param {int} number of samples in dataModel
  * if defined : set number of samples
@@ -135,7 +135,7 @@ IEQ.prototype.DataSampling = function(numSamples){
 		return this;
 	}
 	else
-		return this.dataConfig.sampling;				
+		return this.dataConfig.sampling;
 };
 /**
  * Set or get data time criteria beg and end.
@@ -185,7 +185,7 @@ IEQ.prototype.DataPlaceIds = function(placeIds){
 		return this;
 	}
 	else
-		return this.dataConfig.criteria.place;				
+		return this.dataConfig.criteria.place;
 };
 /**
  * Get data by sensor name.
@@ -217,7 +217,6 @@ IEQ.prototype.updateData = function(callback, dataConfig){
 			dataConfig: that.dataConfig
 		}
 	}, function(dnId, err, data){
-		console.log("err "+JSON.stringify(err));
 		if(err) {
 			console.log("Recv err: "+err);
 			return;
@@ -230,9 +229,9 @@ IEQ.prototype.updateData = function(callback, dataConfig){
 		}
 		//console.log(JSON.stringify(that.dataModel));
 		that._getDataModelFromRecv(data);
-		
-		console.log(that.getDataModel());
-		
+
+		//console.log(that.getDataModel());
+
 		callback = callback.bind(that); // bind callback with IEQ
 		callback(that.getDataModel()); // callback func
 	});
@@ -248,7 +247,7 @@ IEQ.prototype._isDataModelWithNaN = function() {
 		},false);
 		dataModelNaN = dataModelNaN && sensorNan;
 		console.log(n+" with nan : "+sensorNan+" ("+dataModelNaN+") / "+this.dataModel[n].data.length);
-	} 
+	}
 };
 
 IEQ.prototype.getConfinementLevel = function(){
