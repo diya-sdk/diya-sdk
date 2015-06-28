@@ -38,11 +38,12 @@ function IEQ(selector){
 
 	/*** structure of data config ***
 		 criteria :
-		 time:
-		 beg: {[null],time} (/ means most recent) // stored a UTC in ms (num)
-		 end: {[null], time} (/ means most oldest) // stored as UTC in ms (num)
-		 robot: {ArrayOf ID or ["all"]}
-		 place: {ArrayOf ID or ["all"]}
+		   time: all 3 time criteria should not be defined at the same time. (range would be given up)
+		     beg: {[null],time} (null means most recent) // stored a UTC in ms (num)
+		     end: {[null], time} (null means most oldest) // stored as UTC in ms (num)
+		     range: {[null], time} (range of time(positive) ) // in s (num)
+		   robot: {ArrayOf ID or ["all"]}
+		   place: {ArrayOf ID or ["all"]}
 		 operator: {[last], max, moy, sd} -( maybe moy should be default
 		 ...
 
@@ -54,7 +55,8 @@ function IEQ(selector){
 		criteria: {
 			time: {
 				beg: null,
-				end: null
+				end: null,
+				range: null // in s
 			},
 			robot: null,
 			place: null
@@ -69,9 +71,11 @@ function IEQ(selector){
 /**
  * Get dataModel :
  * {
- *	time: [FLOAT, ...],
  *	"senseurXX": {
  *			data:[FLOAT, ...],
+ *			time:[FLOAT, ...],
+ *			robot:[FLOAT, ...],
+ *			place:[FLOAT, ...],
  *			qualityIndex:[FLOAT, ...],
  *			range: [FLOAT, FLOAT],
  *			unit: string,
@@ -146,16 +150,19 @@ IEQ.prototype.DataSampling = function(numSamples){
  * If no param defined:
  *	@return {Object} Time object: fields beg and end.
  */
-IEQ.prototype.DataTime = function(newTimeBeg,newTimeEnd){
-	if(newTimeBeg || newTimeEnd) {
+IEQ.prototype.DataTime = function(newTimeBeg,newTimeEnd, newRange){
+	if(newTimeBeg || newTimeEnd || newRange) {
 		this.dataConfig.criteria.time.beg = newTimeBeg.getTime();
 		this.dataConfig.criteria.time.end = newTimeEnd.getTime();
+		this.dataConfig.criteria.time.range = newRange;
 		return this;
 	}
 	else
 		return {
 			beg: new Date(this.dataConfig.criteria.time.beg),
-			end: new Date(this.dataConfig.criteria.time.end)};
+			end: new Date(this.dataConfig.criteria.time.end),
+			range: new Date(this.dataConfig.criteria.time.range)
+		};
 };
 /**
  * Depends on robotIds
@@ -193,7 +200,6 @@ IEQ.prototype.DataPlaceIds = function(placeIds){
  */
 IEQ.prototype.getDataByName = function(sensorNames){
 	var data=[];
-	data.push(this.dataModel['time']);
 	for(var n in sensorNames) {
 		data.push(this.dataModel[sensorNames[n]]);
 	}
@@ -351,6 +357,8 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 				}
 				/* update data range */
 				dataModel[n].range=data[n].range;
+				/* update data range */
+				dataModel[n].timeRange=data[n].timeRange;
 				/* update data label */
 				dataModel[n].label=data[n].label;
 				/* update data unit */
