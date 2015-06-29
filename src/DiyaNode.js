@@ -333,7 +333,7 @@ DiyaNode.prototype._onclose = function(){
 
 	if(this._connectionDeferred){
 		Logger.log('d1: connection failed');
-		this._connectionDeferred.reject();
+		this._connectionDeferred.reject("d1: connection failed");
 		this._connectionDeferred = null;
 	}
 
