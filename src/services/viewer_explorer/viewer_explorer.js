@@ -13,12 +13,6 @@
  */
 DiyaSelector = require('../../DiyaSelector').DiyaSelector;
 
-function explorer(node){
-	var that = this;
-	this.node = node;
-	return this;
-}
-
 
 DiyaSelector.prototype.listenViewers = function(callback){
 		this.subscribe({
