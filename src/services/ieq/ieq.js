@@ -214,7 +214,7 @@ IEQ.prototype.updateData = function(callback, dataConfig){
 	var that=this;
 	if(dataConfig)
 		this.DataConfig(dataConfig);
-//	console.log("Request: "+JSON.stringify(dataConfig));
+	// console.log("Request: "+JSON.stringify(dataConfig));
 	this.selector.request({
 		service: "ieq",
 		func: "DataRequest",
@@ -227,6 +227,7 @@ IEQ.prototype.updateData = function(callback, dataConfig){
 			console.log("Recv err: "+err);
 			return;
 		}
+		
 		if(data.header.error) {
 			// TODO : check/use err status and adapt behavior accordingly
 			console.log("UpdateData:\n"+JSON.stringify(data.header.dataConfig));
@@ -236,7 +237,7 @@ IEQ.prototype.updateData = function(callback, dataConfig){
 		//console.log(JSON.stringify(that.dataModel));
 		that._getDataModelFromRecv(data);
 
-		//console.log(that.getDataModel());
+		// console.log(that.getDataModel());
 
 		callback = callback.bind(that); // bind callback with IEQ
 		callback(that.getDataModel()); // callback func
@@ -274,7 +275,7 @@ IEQ.prototype.getEnvQualityLevel = function(){
  * @return {[type]}		[description]
  */
 IEQ.prototype._getDataModelFromRecv = function(data){
-	var dataModel=this.dataModel;
+	var dataModel=null;
 	/*\
 	  |*|
 	  |*|  utilitaires de manipulations de chaînes base 64 / binaires / UTF-8
@@ -340,7 +341,6 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 		return tab;
 	};
 
-
 	if(data && data.header) {
 		for (var n in data) {
 			if(n != "header" && n != "err") {
@@ -349,6 +349,9 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 					console.log(n+" was in error: "+data[n].err.msg);
 					continue;
 				}
+				
+				if(!dataModel)
+					dataModel={};
 
 				// console.log(n);
 				if(!dataModel[n]) {
@@ -407,7 +410,8 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 	else {
 		console.log("No Data to read or header is missing !");
 	}
-	return this.dataModel;
+	this.dataModel=dataModel;
+	return dataModel;
 };
 
 /** create IEQ service **/
