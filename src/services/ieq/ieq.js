@@ -397,7 +397,7 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 					dataModel[n].robotId = [];
 				}
 				if(data[n].placeId.vals.length > 0)
-					dataModel[n].placeId = arrayFromBuffer(data[n].robotId);
+					dataModel[n].placeId = arrayFromBuffer(data[n].placeId);
 				else {
 					if(data[n].placeId.size != 0) console.log("Size mismatch received data (no data versus size="+data[n].placeId.size+")");
 					dataModel[n].placeId = [];
