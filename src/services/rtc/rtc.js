@@ -3,9 +3,11 @@ EventEmitter = require('node-event-emitter');
 inherits = require('inherits');
 
 
-var RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
-var RTCIceCandidate = window.RTCIceCandidate || window.mozRTCIceCandidate || window.webkitRTCIceCandidate;
-var RTCSessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription || window.webkitRTCSessionDescription;
+if(typeof window !== 'undefined'){
+	var RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
+	var RTCIceCandidate = window.RTCIceCandidate || window.mozRTCIceCandidate || window.webkitRTCIceCandidate;
+	var RTCSessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription || window.webkitRTCSessionDescription;
+}
 
 
 function Channel(dnId, name, open_cb){
@@ -50,7 +52,6 @@ Channel.prototype.writeAll = function(values){
     this._requestSend();
 };
 
-
 Channel.prototype._requestSend = function(){
 	var that = this;
 
@@ -66,7 +67,9 @@ Channel.prototype._requestSend = function(){
 	function doSend(){
 		that._sendRequested = false;
 		that._lastSendTimestamp = new Date().getTime();
-		that._send(that._buffer);
+		var ret = that._send(that._buffer);
+		//If autosend is set, automatically send buffer at the given frequency
+		if(ret && that.autosend) that._requestSend();
 	}
 };
 
@@ -113,14 +116,23 @@ Channel.prototype._negociate = function(){
 
 		that.channel.onmessage = that._onMessage.bind(that);
 
+		that.channel.onclose = that._onClose.bind(that);
+
 		if(typeof that.onopen === 'function') that.onopen(that.dnId, that);
+
+		console.log('channel '+that.name+' negociated !')
 	}
 };
 
 Channel.prototype._onMessage = function(message){
 	var valArray = new Float32Array(message.data);
 	this.emit('value', valArray);
-}
+};
+
+Channel.prototype._onClose = function(){
+	console.log('channel '+this.name+' closed !');
+	this.emit('close');
+};
 
 
 //////////////////////////////////////////////////////////////////
@@ -403,24 +415,25 @@ RTC.prototype._matchChannels = function(dnId, receivedChannels){
 
 
 RTC.prototype._onDataChannel = function(dnId, datachannel){
-	console.log("Channel "+datachannel.label+" created !");
-
 	var channel = this[dnId].usedChannels[datachannel.label];
+
 	if(!channel){
+		console.log("Channel "+datachannel.label+" unmatched, closing !");
 		datachannel.close();
 		return ;
 	}
+	console.log("Channel "+datachannel.label+" created !");
 
 	channel.setChannel(datachannel);
 };
 
 
 
-DiyaSelector.prototype.rtc = function(domNode){
+DiyaSelector.prototype.rtc = function(domNode, selectedNodes){
 	var rtc = new RTC(this);
 
 	if(domNode){
-		createNeuronsFromDOM(domNode, rtc);
+		createNeuronsFromDOM(domNode, selectedNodes, rtc);
 	}
 
 	return rtc;
@@ -430,8 +443,7 @@ DiyaSelector.prototype.rtc = function(domNode){
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 
-
-function createNeuronsFromDOM(domNode, rtc){
+function createNeuronsFromDOM(domNode, selectedNodes, rtc){
 	if(!domNode || !domNode.querySelectorAll) return ;
 
 
@@ -439,14 +451,21 @@ function createNeuronsFromDOM(domNode, rtc){
 	var neuronNodeList = domNode.querySelectorAll('*');
 	var neuronNodes = [];
 	for(var i=0;i<neuronNodeList.length; i++){
-		if(isNeuronTag(neuronNodeList[i])) neuronNodes.push(neuronNodeList[i]);
+		if(isNeuronTag(neuronNodeList[i])){
+			neuronNodes.push(neuronNodeList[i]);
+			if(Array.isArray(selectedNodes)) selectedNodes.push(neuronNodeList[i]);
+		}
 	}
 
 	//for each tag that has a name attribute, create a neuron associated with it
 	neuronNodes.forEach(function(neuronNode){
-		rtc.use(neuronNode.attributes["name"].value, function(dnId, neuron){
+
+		var channel = getChannel(neuronNode.attributes["name"].value);
+
+		rtc.use(channel, function(dnId, neuron){
 			neuronNode.setNeuron(dnId, neuron);
 		});
+
 	});
 
 }
@@ -456,4 +475,8 @@ function isNeuronTag(node){
 	return node.tagName.startsWith("NEURON-") &&
 		node.attributes["name"] &&
 		(typeof node.setNeuron === 'function');
+}
+
+function getChannel(name){
+	return name.replace(/\s+/, "");
 }

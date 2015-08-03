@@ -12,8 +12,7 @@
  * License along with this library.
  */
 
-var util = require('util');
-var Message = require('../message');
+DiaSelector = require('../../DiyaSelector').DiyaSelector;
 
 function pico(node){
 	var that = this;
@@ -23,12 +22,12 @@ function pico(node){
 
 //
 
-pico.prototype.power = function(){
+DiyaSelector.prototype.power = function(){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'Power'
-	}, function(data){
+	}, function(peerId, err, data){
 		/*if(data.pico)
 			callback(null,data.pico);
 		if(data.error)
@@ -37,9 +36,9 @@ pico.prototype.power = function(){
 	});
 }
 
-pico.prototype.zoom = function(callback){
+DiyaSelector.prototype.zoom = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'Zoom'
 	}, function(data){
@@ -52,9 +51,9 @@ pico.prototype.zoom = function(callback){
 }
 
 
-pico.prototype.back = function(callback){
+DiyaSelector.prototype.back = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'Back'
 	}, function(data){
@@ -67,9 +66,9 @@ pico.prototype.back = function(callback){
 }
 
 
-pico.prototype.up = function(callback){
+DiyaSelector.prototype.up = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'Up'
 	}, function(data){
@@ -82,9 +81,9 @@ pico.prototype.up = function(callback){
 }
 
 
-pico.prototype.left = function(callback){
+DiyaSelector.prototype.left = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'Left'
 	}, function(data){
@@ -97,9 +96,9 @@ pico.prototype.left = function(callback){
 }
 
 
-pico.prototype.ok = function(callback){
+DiyaSelector.prototype.ok = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'Ok'
 	}, function(data){
@@ -112,9 +111,9 @@ pico.prototype.ok = function(callback){
 }
 
 
-pico.prototype.right = function(callback){
+DiyaSelector.prototype.right = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'Right'
 	}, function(data){
@@ -127,9 +126,9 @@ pico.prototype.right = function(callback){
 }
 
 
-pico.prototype.down = function(callback){
+DiyaSelector.prototype.down = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'Down'
 	}, function(data){
@@ -141,9 +140,9 @@ pico.prototype.down = function(callback){
 	});
 }
 
-pico.prototype.prev = function(callback){
+DiyaSelector.prototype.prev = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'Prev'
 	}, function(data){
@@ -155,9 +154,9 @@ pico.prototype.prev = function(callback){
 	});
 }
 
-pico.prototype.play = function(callback){
+DiyaSelector.prototype.play = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'Play'
 	}, function(data){
@@ -168,9 +167,9 @@ pico.prototype.play = function(callback){
 		*/
 	});
 }
-pico.prototype.next = function(callback){
+DiyaSelector.prototype.next = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'Next'
 	}, function(data){
@@ -182,9 +181,9 @@ pico.prototype.next = function(callback){
 	});
 }
 
-pico.prototype.lumiDown = function(callback){
+DiyaSelector.prototype.lumiDown = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'LumiDown'
 	}, function(data){
@@ -196,9 +195,9 @@ pico.prototype.lumiDown = function(callback){
 	});
 }
 
-pico.prototype.lumiUp = function(callback){
+DiyaSelector.prototype.lumiUp = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'LumiUp'
 	}, function(data){
@@ -210,9 +209,9 @@ pico.prototype.lumiUp = function(callback){
 	});
 }
 
-pico.prototype.volumeDown = function(callback){
+DiyaSelector.prototype.volumeDown = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'VolumeDown'
 	}, function(data){
@@ -225,9 +224,9 @@ pico.prototype.volumeDown = function(callback){
 }
 
 
-pico.prototype.mute = function(callback){
+DiyaSelector.prototype.mute = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'Mute'
 	}, function(data){
@@ -239,9 +238,9 @@ pico.prototype.mute = function(callback){
 	});
 }
 
-pico.prototype.volumeUp = function(callback){
+DiyaSelector.prototype.volumeUp = function(callback){
 
-	this.node.get({
+	this.request({
 		service: 'pico',
 		func: 'VolumeUp'
 	}, function(data){
@@ -253,6 +252,16 @@ pico.prototype.volumeUp = function(callback){
 	});
 }
 
+DiyaSelector.prototype.display = function(callback){
+
+	this.request({
+		service: 'pico',
+		func: 'Display',
+		// data: req
+	}, function(data){
+
+	});
+}
 
 
 

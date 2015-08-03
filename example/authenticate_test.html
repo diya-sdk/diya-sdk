@@ -1,7 +1,8 @@
 <script type="text/javascript" src="../dist/diya-sdk.js"></script>
 <script>
 
-	d1.connect("ws://localhost:1236").then(function(){
+	d1.connect("ws://localhost:1500").then(function(){
+
 		console.log("Connected !");
 
 		d1(/.*/).each(function(peer){
@@ -12,24 +13,22 @@
 			console.log("Authentication to "+peerId+" successful !");
 		});
 
-
-
 	});
 
 
 	function startTimer(){
-		d1(/Robot*/).time(true, function(peerId, err, data){
-
-			console.log(peerId);
-			console.log(err);
-			console.log(data);
-			console.log('=========');
-			if(data && data.currentTime) console.log(data.currentTime);
-
-		});
+	// d1(/.*/).time(true, function(peerId, err, data){
+	//
+	// 		console.log(peerId);
+	// 		console.log(err);
+	// 		console.log(data);
+	// 		console.log('=========');
+	// 		if(data && data.currentTime) console.log(data.currentTime);
+	//
+	// 	});
+	//
+	//
 	}
-
-
 
 
 </script>

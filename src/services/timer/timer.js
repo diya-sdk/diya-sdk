@@ -9,7 +9,7 @@ DiyaSelector.prototype.time = function(loop, callback){
 	}else{
 		this.request({
 			service: 'timer',
-			func: 'GetTime'
+			func: 'GetTime',
 		}, callback);
 	}
 	return this;

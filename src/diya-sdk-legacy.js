@@ -21,16 +21,19 @@ var Promethe = require('./services/promethe/promethe');
 var discover = require('./services/discover/discover');
 var qei = require('./services/qei/qei');
 var update = require('./services/update/update');
+var explorer = ('./services/explorer/explorer');
+var pico = ('./services/pico/pico');
+
 
 var WebSocket = window.WebSocket || window.MozWebSocket;
 
 
 
- 
+
 
 function Diya(addr){
 	var that = this;
-	var socket;	
+	var socket;
 
 	var DEBUG = false;
 
@@ -50,7 +53,7 @@ function Diya(addr){
 		nextSubscriptionId++;
 		return nextSubscriptionId;
 	}
-	
+
 	function dispatch(msg){
 
 		if(msg.reqId !== undefined){
@@ -65,7 +68,7 @@ function Diya(addr){
 			return ;
 		}
 
-		
+
 	}
 
 	function dispatchRequest(msg){
@@ -105,8 +108,8 @@ function Diya(addr){
 			return ;
 		}
 	}
-	
-	
+
+
 	function send(msg){
 		if(socket.readyState === WebSocket.CLOSING || socket.readyState === WebSocket.CLOSED){
 			console.log("diya-SDK : cannot send message -> socket closed");
@@ -117,8 +120,8 @@ function Diya(addr){
 		}catch(e){
 			console.log('malformed JSON, ignoring msg...');
 		}
-	}	
-	
+	}
+
 	function handleMessage(incomingMessage){
 		var msg;
 
@@ -126,14 +129,14 @@ function Diya(addr){
 			msg = JSON.parse(incomingMessage.data);
 		}catch(e){
 			console.log("malformed JSON");
-			 
+
 			return ;
 		}
-		
+
 		dispatch(msg);
 
 	};
-	
+
 	function closeAll(){
 		while(pendingRequests.length){
 			pendingRequests.pop();
@@ -160,7 +163,7 @@ function Diya(addr){
 	///////////////////////////////////
 	//////////Public API///////////////
 	///////////////////////////////////
-	
+
 	this.connect = function(callback, args){
 		try{
 			socket = new WebSocket(addr);
@@ -168,15 +171,15 @@ function Diya(addr){
 			socket.onerror = function(e){
 				callback("Cannot Connect", null);
 			}
-			
+
 			socket.onopen = function(){
 				callback(null, args);
 			};
-			
+
 			socket.onmessage = function(incomingMessage){
 				handleMessage(incomingMessage);
 			}
-			
+
 			socket.onclose = function(){
 				closeAll();
 			}
@@ -214,7 +217,7 @@ function Diya(addr){
 		//Timeout after which the subscription is automatically invalidated
 		if(timeout && timeout > 0){
 			setTimeout(function(){
-				that.stopListening(msg.subId);	
+				that.stopListening(msg.subId);
 			}, timeout);
 		}
 
@@ -251,7 +254,7 @@ function Diya(addr){
 		socket.close();
 		closeAll();
 	}
-	
+
 	this.debug = function(value){
 		DEBUG = value;
 	}
@@ -290,9 +293,9 @@ function DiyaClient(addr, user, password){
 					else onfailure();
 				});
 			}
-		});	
+		});
 	}
-	
+
 }
 
 
@@ -303,7 +306,9 @@ var diya = {
 		Promethe: Promethe,
 		discover: discover,
 		qei: qei,
-		update: update
+		update: update,
+        explorer: explorer,
+		pico: pico
 }
 
 module.exports = diya;

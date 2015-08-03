@@ -6,7 +6,7 @@ var inherits = require('inherits');
 /////////////////// Logging utility methods //////////////////
 //////////////////////////////////////////////////////////////
 
-var DEBUG = true;
+var DEBUG = false;
 var Logger = {
 	log: function(message){
 		if(DEBUG) console.log(message);
@@ -34,6 +34,7 @@ function DiyaNode(){
 	this._pendingMessages = [];
 	this._peers = [];
 	this._reconnectTimeout = 1000;
+	this._connectTimeout = 5000;
 }
 inherits(DiyaNode, EventEmitter);
 
@@ -44,9 +45,16 @@ inherits(DiyaNode, EventEmitter);
 DiyaNode.prototype.connect = function(addr, WSocket){
 	var that = this;
 
-	if(this._status === 'opened' && this._addr === addr) return Q();
+	if(this._addr === addr){
+		if(this._status === 'opened')
+			return Q();
+		else if(this._connectionDeferred && !this._connectionDeferred.promise.isFulfilled())
+			return this._connectionDeferred.promise;
+	}
 
 	return this.close().then(function(){
+
+		Logger.log('d1: connect');
 
 		that._addr = addr;
 
@@ -57,20 +65,35 @@ DiyaNode.prototype.connect = function(addr, WSocket){
 
 		that._socket = new WSocket(that._addr);
 
-		that._socket.onclose = that._onclose.bind(that);
-		that._socket.onmessage = that._onmessage.bind(that);
+		that._socketOpenCallback = that._onopen.bind(that);
+		that._socketCloseCallback = that._onclose.bind(that);
+		that._socketMessageCallback = that._onmessage.bind(that);
 
-		that._socket.onerror = function(err){
+		that._socket.addEventListener('open', that._socketOpenCallback);
+		that._socket.addEventListener('close',that._socketCloseCallback);
+		that._socket.addEventListener('message', that._socketMessageCallback);
+
+
+		that._socket.addEventListener('error', function(err){
 			Logger.error("[WS] error : "+err);
-		}
+		});
+
+		setTimeout(function(){
+			if(that._status !== 'opened'){
+				Logger.log('d1: timed out while connecting');
+				that._socket.close();
+			}
+		}, that._connectTimeout);
 
 		return that._connectionDeferred.promise;
 	});
 };
 
 DiyaNode.prototype.close = function(){
-	if(this._disconnectionDeferred) return this._disconnectionDeferred.promise;
 
+	this._stopPingResponse();
+
+	if(this._disconnectionDeferred) return this._disconnectionDeferred.promise;
 
 	else if(this._socket && this._status === 'opened'){
 		this._disconnectionDeferred = new Q.defer();
@@ -85,15 +108,11 @@ DiyaNode.prototype.close = function(){
 	else{
 		return Q();
 	}
-
-
-
 };
 
 DiyaNode.prototype.isConnected = function(){
 	return (this._socket && this._socket.readyState == this._WSocket.OPEN && this._status === 'opened');
 };
-
 
 DiyaNode.prototype.request = function(params, callback, timeout){
 	var that = this;
@@ -222,15 +241,51 @@ DiyaNode.prototype._send = function(message){
 		this._socket.send(data);
 	}catch(err){
 		Logger.error('Cannot send message');
+		Logger.error(err);
 		return false;
 	}
 
 	return true;
+};
+
+DiyaNode.prototype._setupPingResponse = function(){
+	var that = this;
+
+	this._pingTimeout = 15000;
+	this._lastPing = new Date().getTime();
+
+	function checkPing(){
+		var curTime = new Date().getTime();
+		if(curTime - that._lastPing > that._pingTimeout){
+			that._forceClose();
+			Logger.log("d1: connection timed out !");
+		}else{
+			Logger.log("d1: last ping ok");
+			that._pingSetTimeoutId = setTimeout(checkPing, Math.round(that._pingTimeout / 2.1));
+		}
+	}
+
+	checkPing();
+};
+
+DiyaNode.prototype._stopPingResponse = function(){
+	clearTimeout(this._pingSetTimeoutId);
+};
+
+DiyaNode.prototype._forceClose = function(){
+	this._socket.close();
+	this._onclose();
 }
 
 ///////////////////////////////////////////////////////////////
 /////////////////// Socket event handlers /////////////////////
 ///////////////////////////////////////////////////////////////
+
+
+DiyaNode.prototype._onopen = function(){
+	this._setupPingResponse();
+};
+
 
 DiyaNode.prototype._onmessage = function(evt){
 	try{
@@ -260,24 +315,41 @@ DiyaNode.prototype._onmessage = function(evt){
 DiyaNode.prototype._onclose = function(){
 	var that = this;
 
+	if(this._socket && (typeof this._socket.removeEventListener === 'function')){
+		this._socket.removeEventListener('open', this._socketOpenCallback);
+		this._socket.removeEventListener('close', this._socketCloseCallback);
+		this._socket.removeEventListener('message', this._socketMessageCallback);
+	}else if(this._socket && (typeof this._socket.removeAllListeners === 'function')){
+		this._socket.removeAllListeners();
+	}
+
+	Logger.log("d1: on close");
+
+	this._stopPingResponse();
+
 	this._clearMessages('PeerDisconnected');
 	this._clearPeers();
 	this._status = 'closed';
 
 	if(this._connectionDeferred){
-		this._connectionDeferred.reject();
+		Logger.log('d1: connection failed');
+		this._connectionDeferred.reject("d1: connection failed");
 		this._connectionDeferred = null;
 	}
 
 	//if close was requested, resolve promise
 	if(this._disconnectionDeferred){
+		Logger.log('d1: disconnection done');
 		this._disconnectionDeferred.resolve();
 		this._disconnectionDeferred = null;
 	}
 	//Otherwise, try to reconnect
 	else{
+		Logger.log('d1: connection lost, try reconnecting');
 		setTimeout(function(){
-			that.connect(that._addr);
+			that.connect(that._addr, that._WSocket).catch(function(err){
+				
+			});
 		}, that._reconnectTimeout);
 	}
 
@@ -299,7 +371,18 @@ DiyaNode.prototype._handleInternalMessage = function(message){
 		case "Handshake":
 			this._handleHandshake(message);
 			break;
+		case "Ping":
+			this._handlePing(message);
+			break;
 	}
+};
+
+DiyaNode.prototype._handlePing = function(message){
+	message.type = "Pong";
+
+	this._lastPing = new Date().getTime();
+
+	this._send(message);
 };
 
 DiyaNode.prototype._handleHandshake = function(message){
