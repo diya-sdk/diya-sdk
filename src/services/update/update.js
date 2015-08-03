@@ -18,7 +18,7 @@ var util = require('util');
 DiyaSelector = require('../../DiyaSelector').DiyaSelector;
 var Message = require('../message');
 
-DiyaSelector.prototype.statusLockApt = function(callback){
+DiyaSelector.prototype.statusLockApt = function(SubID,callback){
 	
 	/*this.selector.request({
 			service: 'update',
@@ -35,7 +35,7 @@ DiyaSelector.prototype.statusLockApt = function(callback){
 		function(peerId, error, res){
 			callback(null,res.lockStatus);
 			console.log(res.lockStatus);
-		});
+		},{auto:true, subIds:SubID});
 
 };
 
@@ -59,8 +59,9 @@ DiyaSelector.prototype.updateAll = function(callback){
 		service: 'update',
 		func: 'UpdateAll'
 	}, function(peerId, error, data){
-		if(data.packages) 
-			callback(null,data.packages); 
+		if(data)
+			if(data.packages) 
+				callback(null,data.packages); 
 		if(error)
 			callback(error,null);
 	}); 
@@ -86,8 +87,9 @@ DiyaSelector.prototype.installPackage = function(pkg, callback){
 					package: pkg,
 				}
 			}, function(peerId, error, data){
-				if(data.packages) 
-					callback(null,data.packages); 
+				if(data)
+					if(data.packages) 
+						callback(null,data.packages); 
 				if(error)
 					callback(error,null);
 		
@@ -117,8 +119,9 @@ DiyaSelector.prototype.removePackage = function(pkg, callback){
 					package: pkg,
 				}
 			}, function(peerId, error, data){
-				if(data.packages) 
-					callback(null,data.packages); 
+				if (data)
+					if(data.packages) 
+						callback(null,data.packages); 
 				if(error)
 					callback(error,null);	
 				
