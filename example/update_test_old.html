@@ -3,24 +3,18 @@
 
 	var update = null;
 	
-	d1.connect("ws://localhost:1234").then(function(){
-		console.log("Connected !");
-		
-		d1(/.*/).each(function(peer){
-			console.log(peer);
-		});
+	function onClientAuthenticationFailure(){
+		console.log("Cannot authenticate client !");
+	}
 
-		d1(/.*/).auth("admin", "pass", function(peerId, isAuthenticated){
-			console.log("Authentication to "+peerId+" successful !");
-		});
+	function onClientAuthenticated(node){
 		
-				
-	});
-
+		console.log("Client authenticated !");
+		update = new diya.update.Update(node);
+	}
 		
 	function listPkgs(){	
-		
-		d1("YodaOne").listPackages(listCb);
+		update.listPackages(listCb);
 		
 		function listCb(errList,ListPkgs){
 			if (errList)
@@ -32,7 +26,7 @@
 		
 	function updateAll(){	
 		
-		d1("YodaOne").updateAll(function (errUpdateAll,InfoPkgs){
+		update.updateAll(function (errUpdateAll,InfoPkgs){
 			if (errUpdateAll)
 				console.log(errUpdateAll);
 			else
@@ -41,8 +35,7 @@
 	}
 		
 	function installPkg(pkg){	
-		
-		d1("YodaOne").installPackage(pkg,installPkgCb);
+		update.installPackage(pkg,installPkgCb);
 		
 		function installPkgCb(errInstallPkg,InfoPkg){
 			if (errInstallPkg)
@@ -52,7 +45,15 @@
 		}
 	} 
 		
+		
+	
+	var client = new diya.DiyaClient("ws://localhost:1234", "admin", "pass");
+
+	client.createSession(onClientAuthenticated, onClientAuthenticationFailure);
+
+
 </script>
 <button onclick="listPkgs()">List All Packages</button>
 <button onclick="updateAll()">Update All Packages</button>
 <button onclick="installPkg(' texmaker')"> Install Package</button>
+

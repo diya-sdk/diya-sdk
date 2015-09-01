@@ -14,53 +14,64 @@
 
 var util = require('util');
 
- 
-DiyaSelector = require('../../DiyaSelector').DiyaSelector;
+
 var Message = require('../message');
 
-DiyaSelector.prototype.statusUpdate = function(SubID,callback){
+function Update(node){	
+	var that = this;
+	this.node = node;
+	return this;
+}
+
+Update.prototype.statusLockApt = function(callback){
 	
-	
-	this.subscribe({
+	/*this.node.get({
 			service: 'update',
-			func: 'SubscribeUpdateStatus'
+			func: 'LockStatus'
+		},function(data){
+			if(data.lockStatus) 
+				callback(null,data.lockStatus); 
+	});*/
+	
+	this.node.listen({
+			service: 'update',
+			func: 'SubscribeLockStatus'
 		}, 
-		function(peerId, error, res){
-			callback(peerId,error,res);
+		function(res){
+			callback(null,res.lockStatus);
 			console.log(res.lockStatus);
-		},{auto:true, subIds:SubID});
+		});
 
-};
+}
 
-DiyaSelector.prototype.listPackages = function(callback){
+Update.prototype.listPackages = function(callback){
 
-	this.request({
+	this.node.get({
 		service: 'update',
 		func: 'ListPackages'
-	}, function(peerId, error, data){
+	}, function(data){
 		if(data.packages) 
 			callback(null,data.packages); 
-		if(error)
-			callback(error,null);
+		if(data.error)
+			callback(data.error,null);
 		
 	}); 
-};
+}
 	
-DiyaSelector.prototype.updateAll = function(callback){
+Update.prototype.updateAll = function(callback){
 
-	this.request({
+	this.node.get({
 		service: 'update',
 		func: 'UpdateAll'
-	}, function(peerId, error, data){
-		if(data)
-			if(data.packages) 
-				callback(null,data.packages); 
-		if(error)
-			callback(error,null);
+	}, function(data){
+		if(data.packages) 
+			callback(null,data.packages); 
+		if(data.error)
+			callback(data.error,null);
 	}); 
-};
+}
 	
-DiyaSelector.prototype.installPackage = function(pkg, callback){
+Update.prototype.installPackage = function(pkg, callback){
 		
 	if ((pkg === 'Undefined') || (typeof pkg !== 'string') || (pkg.length < 2)){
 		callback('undefinedPackage',null);
@@ -73,26 +84,26 @@ DiyaSelector.prototype.installPackage = function(pkg, callback){
 			callback("InvalidParameters",null);
 		else{
 				
-			this.request({
+			this.node.get({
 				service: 'update',
 				func: 'InstallPackage',
 				data:{
 					package: pkg,
 				}
-			}, function(peerId, error, data){
-				if(data)
-					if(data.packages) 
-						callback(null,data.packages); 
-				if(error)
-					callback(error,null);
-		
+			}, function(data){
+				if(data.packages) 
+					callback(null,data.packages); 
+				if(data.error)
+					callback(data.error,null);
+					
+				
 			});
 		}
 	}
 	
-};
+}
 
-DiyaSelector.prototype.removePackage = function(pkg, callback){
+Update.prototype.removePackage = function(pkg, callback){
 		
 	if ((pkg === 'Undefined') || (typeof pkg !== 'string') || (pkg.length < 2)){
 		callback('undefinedPackage',null);
@@ -105,22 +116,28 @@ DiyaSelector.prototype.removePackage = function(pkg, callback){
 			callback("InvalidParameters",null);
 		else{
 				
-			this.request({
+			this.node.get({
 				service: 'update',
 				func: 'RemovePackage',
 				data:{
 					package: pkg,
 				}
-			}, function(peerId, error, data){
-				if (data)
-					if(data.packages) 
-						callback(null,data.packages); 
-				if(error)
-					callback(error,null);	
+			}, function(data){
+				if(data.packages) 
+					callback(null,data.packages); 
+				if(data.error)
+					callback(data.error,null);
+					
 				
 			});
 		}
 	}
 	
-};
+}
 		
+		
+var exp = {
+		Update: Update
+}
+
+module.exports = exp; 
