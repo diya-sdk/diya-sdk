@@ -18,22 +18,15 @@ var util = require('util');
 DiyaSelector = require('../../DiyaSelector').DiyaSelector;
 var Message = require('../message');
 
-DiyaSelector.prototype.statusLockApt = function(SubID,callback){
+DiyaSelector.prototype.statusUpdate = function(SubID,callback){
 	
-	/*this.selector.request({
-			service: 'update',
-			func: 'LockStatus'
-		},function(data){
-			if(data.lockStatus) 
-				callback(null,data.lockStatus); 
-	});*/
 	
 	this.subscribe({
 			service: 'update',
-			func: 'SubscribeLockStatus'
+			func: 'SubscribeUpdateStatus'
 		}, 
 		function(peerId, error, res){
-			callback(null,res.lockStatus);
+			callback(peerId,error,res);
 			console.log(res.lockStatus);
 		},{auto:true, subIds:SubID});
 
