@@ -15,7 +15,7 @@ var Logger = {
 	error: function(message){
 		if(DEBUG) console.error(message);
 	}
-}
+};
 
 //////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////
@@ -119,7 +119,7 @@ DiyaNode.prototype.request = function(params, callback, timeout){
 
 	if(!params.service) {
 		Logger.error('No service defined for request !');
-		return ;
+		return false;
 	}
 
 	var message = this._createMessage(params, "Request");
@@ -144,7 +144,7 @@ DiyaNode.prototype.request = function(params, callback, timeout){
 DiyaNode.prototype.subscribe = function(params, callback){
 	if(!params.service){
 		Logger.error('No service defined for subscription !');
-		return ;
+		return -1;
 	}
 
 	var message = this._createMessage(params, "Subscription");
@@ -177,11 +177,12 @@ DiyaNode.prototype.unsubscribe = function(subId){
 
 		return true;
 	}
+	return false;
 };
 
 DiyaNode.prototype.peers = function(){
 	return this._peers;
-}
+};
 
 ///////////////////////////////////////////////////////////
 //////////////////// Internal methods /////////////////////
@@ -214,7 +215,7 @@ DiyaNode.prototype._clearMessages = function(err, data){
 
 DiyaNode.prototype._clearPeers = function(){
 	while(this._peers.length) this.emit('peer-disconnected', this._peers.pop());
-}
+};
 
 DiyaNode.prototype._getMessageHandler = function(messageId){
 	var handler = this._pendingMessages[messageId];
@@ -275,7 +276,7 @@ DiyaNode.prototype._stopPingResponse = function(){
 DiyaNode.prototype._forceClose = function(){
 	this._socket.close();
 	this._onclose();
-}
+};
 
 ///////////////////////////////////////////////////////////////
 /////////////////// Socket event handlers /////////////////////
@@ -476,7 +477,7 @@ DiyaNode.prototype._createMessage = function(params, type){
 		func: params.func,
 		obj: params.obj,
 		data: params.data
-	}
+	};
 };
 
 DiyaNode.prototype._generateId = function(){
