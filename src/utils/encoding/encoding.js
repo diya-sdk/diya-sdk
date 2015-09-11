@@ -22,8 +22,7 @@
  */
 
 
-var d1 = require('../../DiyaSelector');
-
+var DiyaSelector = require('../../DiyaSelector').DiyaSelector;
 
 
 /**
@@ -42,7 +41,7 @@ function NoCoding(){
 * @return array of float (32 or 64). null if could not convert.
 */
 NoCoding.prototype.from = function(data) {
-	return data.dat;
+	return data.d;
 };
 
 /**
@@ -53,8 +52,8 @@ NoCoding.prototype.from = function(data) {
 */
 NoCoding.prototype.to = function(array) {
 	return {
-		type: 'none',
-		dat: array
+		t: 'no', /* type */
+		d: array /* data */
 	};
 };
 
@@ -136,19 +135,18 @@ var base64DecToArr = function(sBase64, nBlocksSize) {
 * @return array of float (32 or 64). null if could not convert.
 */
 Base64Coding.prototype.from = function(data) {
-	var buffer = data.dat;
-	var byteCoding = data.byteCoding;
+	var byteCoding = data.b;
 	
 	/* check byte coding */
 	if(byteCoding !== 4 && byteCoding !== 8) {
 		return null;
 	}
-		
+
 	/* decode data to array of byte */
-	var buf = base64DecToArr(data.vals, data.byteCoding);
+	var buf = base64DecToArr(data.d, data.b);
 	/* parse data to float array */
 	var fArray=null;
-	switch(data.byteCoding) {
+	switch(data.b) {
 	case 4:
 		fArray = new Float32Array(buf);
 		break;
@@ -177,17 +175,26 @@ Base64Coding.prototype.to = function(array, byteCoding) {
 	}
 
 	/* write all samples in Buffer */
-	var buf = new Buffer(array.length*byteCoding);
-	for(var i = 0; i < array.length; i++) {
-		buf.writeDoubleLE(array[i], i * byteCoding);
+	var buf = new Buffer(array.length*byteCoding),i;
+	switch(byteCoding) {
+	case 4:
+		for(i = 0; i < array.length; i++) {
+			buf.writeFloatLE(array[i], i * byteCoding);
+		}
+		break;
+	case 8:
+		for(i = 0; i < array.length; i++) {
+			buf.writeDoubleLE(array[i], i * byteCoding);
+		}
+		break;
 	}
 
 	/* convert Buffer to base64 string */
 	var b64Buff = buf.toString('base64'); 
 	return {
-		type: 'b64',
-		byteCoding: byteCoding,
-		dat: b64Buff
+		t: 'b64', /* type */
+		b: byteCoding, /* byteCoding */
+		d: b64Buff /* data */
 	};
 };
 
@@ -206,7 +213,9 @@ function CodingHandler(){
 
 
 CodingHandler.prototype.from = function(data) {
-	switch(data.type) {
+	if(!data || data===null)
+		return null;
+	switch(data.t) {
 	case 'b64':
 		return this.b64.from(data);
 	default:
@@ -216,9 +225,10 @@ CodingHandler.prototype.from = function(data) {
 
 
 CodingHandler.prototype.to = function(array, type, byteCoding) {
-	if(typeof array === 'numeric')
-		array=[array];	
-	if(typeof array !== 'array'){
+	if(typeof array === 'number') {
+		array=[array];
+	}
+	if(!Array.isArray(array)){
 		console.log("CodingHandler.to only accepts array !");
 		return null;
 	}
@@ -226,7 +236,7 @@ CodingHandler.prototype.to = function(array, type, byteCoding) {
 	switch(type) {
 	case 'b64':
 		return this.b64.to(array, byteCoding);
-	case 'none':
+	case 'no':
 	default:
 		return this.none.to(array);		
 	}
