@@ -14,13 +14,51 @@
 /**
  * Management of channel encoding
  * - base64 coding
- *
+ * - none
+ * Data format : 
+ *		type: {'b64','none'}
+ *		byteCoding: <if b64> {4,8}
+ *		dat: encoded data {buffer or Array}
  */
 
 
+var d1 = require('../../DiyaSelector');
 
-DiyaSelector = require('../../DiyaSelector').DiyaSelector;
-var util = require('util');
+
+
+/**
+ * Default : no encoding
+ * Effective for string based channels (like JSON based WS)
+ * */
+function NoCoding(){
+	return this;
+};
+
+/**
+* Convert buffer coded in base64 and containing numbers coded by
+* byteCoding bytes into array
+* @param buffer in base64
+* @param byteCoding number of bytes for each number (4 or 8)
+* @return array of float (32 or 64). null if could not convert.
+*/
+NoCoding.prototype.from = function(data) {
+	return data.dat;
+};
+
+/**
+* Convert array containing numbers coded by byteCoding bytes into buffer coded in base64
+* @param 	{Array<Float>} 	array of float (32 or 64 bits)
+* @param 	{integer} 	byteCoding number of bytes for each float (4 or 8)
+* @return  	{String} 	buffer in base64. null if could not convert.
+*/
+NoCoding.prototype.to = function(array) {
+	return {
+		type: 'none',
+		dat: array
+	};
+};
+
+
 
 
 /**
@@ -30,6 +68,8 @@ var util = require('util');
 function Base64Coding(){
 	return this;
 };
+
+
 
 ////////////////////////////////////////////////////////////////
 /////////////////    Utility functions    //////////////////////
@@ -95,7 +135,10 @@ var base64DecToArr = function(sBase64, nBlocksSize) {
 * @param byteCoding number of bytes for each number (4 or 8)
 * @return array of float (32 or 64). null if could not convert.
 */
-Base64Coding.prototype.arrayFromB64Buffer = function(buffer, byteCoding) {
+Base64Coding.prototype.from = function(data) {
+	var buffer = data.dat;
+	var byteCoding = data.byteCoding;
+	
 	/* check byte coding */
 	if(byteCoding !== 4 && byteCoding !== 8) {
 		return null;
@@ -127,7 +170,7 @@ Base64Coding.prototype.arrayFromB64Buffer = function(buffer, byteCoding) {
 * @param 	{integer} 	byteCoding number of bytes for each float (4 or 8)
 * @return  	{String} 	buffer in base64. null if could not convert.
 */
-Base64Coding.prototype.b64BufferFromArray = function(array, byteCoding) {
+Base64Coding.prototype.to = function(array, byteCoding) {
 	/* check byte coding */
 	if(byteCoding !== 4 && byteCoding !== 8) {
 		return null;
@@ -141,13 +184,57 @@ Base64Coding.prototype.b64BufferFromArray = function(array, byteCoding) {
 
 	/* convert Buffer to base64 string */
 	var b64Buff = buf.toString('base64'); 
-	return b64Buff;
+	return {
+		type: 'b64',
+		byteCoding: byteCoding,
+		dat: b64Buff
+	};
 };
 
+
+
+
+/**
+ * Management of comm encoding
+ * */
+function CodingHandler(){
+	this.b64 = new Base64Coding();
+	this.none = new NoCoding();
+	
+	return this;
+};
+
+
+CodingHandler.prototype.from = function(data) {
+	switch(data.type) {
+	case 'b64':
+		return this.b64.from(data);
+	default:
+		return this.none.from(data);		
+	}
+};
+
+
+CodingHandler.prototype.to = function(array, type, byteCoding) {
+	if(typeof array === 'numeric')
+		array=[array];	
+	if(typeof array !== 'array'){
+		console.log("CodingHandler.to only accepts array !");
+		return null;
+	}
+	
+	switch(type) {
+	case 'b64':
+		return this.b64.to(array, byteCoding);
+	case 'none':
+	default:
+		return this.none.to(array);		
+	}
+};
 
 
 /** Add base64 handler to DiyaSelector **/
-DiyaSelector.prototype.Base64Coding = function(){
-	var b64c = new Base64Coding(this);
-	return b64c;
+DiyaSelector.prototype.encode = function(){
+	return new CodingHandler();
 };
+

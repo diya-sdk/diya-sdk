@@ -21,7 +21,7 @@
 
 */
 
-DiyaSelector = require('../../DiyaSelector').DiyaSelector;
+var DiyaSelector = require('../../DiyaSelector').DiyaSelector;
 var util = require('util');
 
 
@@ -416,6 +416,5 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 
 /** create IEQ service **/
 DiyaSelector.prototype.IEQ = function(){
-	var ieq = new IEQ(this);
-	return ieq;
+	return new IEQ(this);
 };
