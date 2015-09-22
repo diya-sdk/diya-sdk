@@ -27,7 +27,6 @@ DiyaSelector.prototype.statusUpdate = function(SubID,callback){
 		}, 
 		function(peerId, error, res){
 			callback(peerId,error,res);
-			console.log(res.lockStatus);
 		},{auto:true, subIds:SubID});
 
 };
