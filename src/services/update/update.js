@@ -27,7 +27,6 @@ DiyaSelector.prototype.statusUpdate = function(SubID,callback){
 		}, 
 		function(peerId, error, res){
 			callback(peerId,error,res);
-			console.log(res.lockStatus);
 		},{auto:true, subIds:SubID});
 
 };
@@ -46,6 +45,20 @@ DiyaSelector.prototype.listPackages = function(callback){
 	}); 
 };
 	
+DiyaSelector.prototype.upgradeAll = function(callback){
+
+	this.request({
+		service: 'update',
+		func: 'UpgradeAll'
+	}, function(peerId, error, data){
+		if(data)
+			if(data.packages) 
+				callback(null,data.packages); 
+		if(error)
+			callback(error,null);
+	}); 
+};
+
 DiyaSelector.prototype.updateAll = function(callback){
 
 	this.request({
@@ -54,7 +67,7 @@ DiyaSelector.prototype.updateAll = function(callback){
 	}, function(peerId, error, data){
 		if(data)
 			if(data.packages) 
-				callback(null,data.packages); 
+				callback(null,data); 
 		if(error)
 			callback(error,null);
 	}); 
