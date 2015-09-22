@@ -16,9 +16,10 @@
  * - base64 coding
  * - none
  * Data format : 
- *		type: {'b64','none'}
- *		byteCoding: <if b64> {4,8}
- *		dat: encoded data {buffer or Array}
+ *		t: {'b64','none'}
+ *		b: <if b64> {4,8}
+ *		d: encoded data {buffer or Array}
+ *		s: size
  */
 
 
@@ -53,7 +54,8 @@ NoCoding.prototype.from = function(data) {
 NoCoding.prototype.to = function(array) {
 	return {
 		t: 'no', /* type */
-		d: array /* data */
+		d: array, /* data */
+		s: array.length
 	};
 };
 
@@ -159,6 +161,11 @@ Base64Coding.prototype.from = function(data) {
 	}
 	/* parse fArray into normal array */
 	var tab = [].slice.call(fArray);
+
+	if(data.s !== tab.length) {
+		console.log("Size mismatch when decoding !");
+		return null;
+	}
 	return tab;
 };
 
@@ -194,7 +201,8 @@ Base64Coding.prototype.to = function(array, byteCoding) {
 	return {
 		t: 'b64', /* type */
 		b: byteCoding, /* byteCoding */
-		d: b64Buff /* data */
+		d: b64Buff, /* data */
+		s: array.length /* size */
 	};
 };
 
