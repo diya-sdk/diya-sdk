@@ -226,9 +226,8 @@ IEQ.prototype.updateData = function(callback, dataConfig){
 	}, function(dnId, err, data){
 		if(err) {
 			console.log("Recv err: "+JSON.stringify(err));
-			return;
+			/// return;
 		}
-		
 		if(data.header.error) {
 			// TODO : check/use err status and adapt behavior accordingly
 			console.log("UpdateData:\n"+JSON.stringify(data.header.dataConfig));
@@ -238,7 +237,7 @@ IEQ.prototype.updateData = function(callback, dataConfig){
 		//console.log(JSON.stringify(that.dataModel));
 		that._getDataModelFromRecv(data);
 
-		// console.log(that.getDataModel());
+		console.log(that.getDataModel());
 
 		callback = callback.bind(that); // bind callback with IEQ
 		callback(that.getDataModel()); // callback func
@@ -278,6 +277,9 @@ IEQ.prototype.getEnvQualityLevel = function(){
 IEQ.prototype._getDataModelFromRecv = function(data){
 	var dataModel=null;
 
+	console.log("data : ");
+	console.log(data);
+	
 	if(data && data.header) {
 		for (var n in data) {
 			if(n != "header" && n != "err") {
@@ -307,14 +309,11 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 					/* confortRange: data[n].confortRange, */
 					indexRange: data[n].indexRange
 				};
-				//					console.log("data : "+JSON.stringify(data[n]));
 				dataModel[n].data = this._coder.from(data[n].data,'b64',4);
 				dataModel[n].time = this._coder.from(data[n].time,'b64',8);
-				dataModel[n].index = this._coder.from(data[n].index,'b64',4);
+				dataModel[n].qualityIndex = this._coder.from(data[n].index,'b64',4);
 				dataModel[n].robotId = this._coder.from(data[n].robotId,'b64',4);
 				dataModel[n].placeId = this._coder.from(data[n].placeId,'b64',4);
-				
-				console.log('mydata '+JSON.stringify(dataModel[n]));
 			}
 		}
 	}

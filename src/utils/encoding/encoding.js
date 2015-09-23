@@ -186,11 +186,15 @@ Base64Coding.prototype.to = function(array, byteCoding) {
 	switch(byteCoding) {
 	case 4:
 		for(i = 0; i < array.length; i++) {
+			if(typeof array[i] !== 'number')
+				return null;
 			buf.writeFloatLE(array[i], i * byteCoding);
 		}
 		break;
 	case 8:
 		for(i = 0; i < array.length; i++) {
+			if(typeof array[i] !== 'number')
+				return null;
 			buf.writeDoubleLE(array[i], i * byteCoding);
 		}
 		break;
