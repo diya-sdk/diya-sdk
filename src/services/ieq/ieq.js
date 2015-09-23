@@ -27,6 +27,22 @@ var util = require('util');
 
 var Message = require('../message');
 
+
+//////////////////////////////////////////////////////////////
+/////////////////// Logging utility methods //////////////////
+//////////////////////////////////////////////////////////////
+
+var DEBUG = true;
+var Logger = {
+	log: function(message){
+		if(DEBUG) console.log(message);
+	},
+
+	error: function(message){
+		if(DEBUG) console.error(message);
+	}
+};
+
 /**
  *	callback : function called after model updated
  * */
@@ -225,19 +241,19 @@ IEQ.prototype.updateData = function(callback, dataConfig){
 		}
 	}, function(dnId, err, data){
 		if(err) {
-			console.log("Recv err: "+JSON.stringify(err));
-			/// return;
+			Logger.error("["+that.dataConfig.sensors+"] Recv err: "+JSON.stringify(err));
+			return;
 		}
 		if(data.header.error) {
 			// TODO : check/use err status and adapt behavior accordingly
-			console.log("UpdateData:\n"+JSON.stringify(data.header.dataConfig));
-			console.log("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
+			Logger.log("UpdateData:\n"+JSON.stringify(data.header.dataConfig));
+			Logger.log("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
 			return;
 		}
-		//console.log(JSON.stringify(that.dataModel));
+		//Logger.log(JSON.stringify(that.dataModel));
 		that._getDataModelFromRecv(data);
 
-		console.log(that.getDataModel());
+		// Logger.log(that.getDataModel());
 
 		callback = callback.bind(that); // bind callback with IEQ
 		callback(that.getDataModel()); // callback func
@@ -253,7 +269,7 @@ IEQ.prototype._isDataModelWithNaN = function() {
 			return nanPres && isNaN(d);
 		},false);
 		dataModelNaN = dataModelNaN && sensorNan;
-		console.log(n+" with nan : "+sensorNan+" ("+dataModelNaN+") / "+this.dataModel[n].data.length);
+		Logger.log(n+" with nan : "+sensorNan+" ("+dataModelNaN+") / "+this.dataModel[n].data.length);
 	}
 };
 
@@ -277,22 +293,19 @@ IEQ.prototype.getEnvQualityLevel = function(){
 IEQ.prototype._getDataModelFromRecv = function(data){
 	var dataModel=null;
 
-	console.log("data : ");
-	console.log(data);
-	
 	if(data && data.header) {
 		for (var n in data) {
 			if(n != "header" && n != "err") {
 
 				if(data[n].err && data[n].err.st>0) {
-					console.log(n+" was in error: "+data[n].err.msg);
+					Logger.error(n+" was in error: "+data[n].err.msg);
 					continue;
 				}
 				
 				if(!dataModel)
 					dataModel={};
 
-				// console.log(n);
+				// Logger.log(n);
 				if(!dataModel[n]) {
 					dataModel[n]={};
 				}
@@ -318,7 +331,7 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 		}
 	}
 	else {
-		console.log("No Data to read or header is missing !");
+		Logger.error("No Data to read or header is missing !");
 	}
 	this.dataModel=dataModel;
 	return dataModel;

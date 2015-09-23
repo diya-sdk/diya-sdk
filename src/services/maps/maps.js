@@ -39,7 +39,7 @@ DiyaSelector.prototype.getCurrentPlace = function( map, func) {
 	this.request({
 		service: 'maps',
 		func: 'GetCurrentPlace',
-		obj: [ map ],
+		obj: [ map ]
 	}, function(peerId, err, data) {
 		func(peerId, err, data);
 	});
