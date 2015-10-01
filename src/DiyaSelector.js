@@ -27,7 +27,7 @@ d1.disconnect = function(){
 
 d1.currentServer = function(){
 	return connection._addr;
-}
+};
 
 d1.on = function(event, callback){
 	connection.on(event, callback);
@@ -132,7 +132,7 @@ DiyaSelector.prototype._handlePeerDisconnected = function(peerId){
 	if(match(this._selector, peerId)) {
 		this.emit('peer-disconnected', peerId);
 	}
-}
+};
 
 //////////////////////////////////////////////////////////
 ////////////////////// Public API ////////////////////////
@@ -144,12 +144,23 @@ DiyaSelector.prototype.listen = function(){
 	return this;
 };
 
+/**
+ * Apply callback cb to each selected peer. Peers are selected
+ * according to the rule 'selector' given to constructor. Selector can
+ * be a peerId, a regEx for peerIds of an array of peerIds.
+ * @params 	cb		callback to be applied
+ * @return 	this 	<DiyaSelector>
+ */
 DiyaSelector.prototype.each = function(cb){
 	var peers = this._select();
 	for(var i=0; i<peers.length; i++) cb.bind(this)(peers[i]);
 	return this;
 };
 
+/**
+ * Send request to selected peers ( see each() ) through the current
+ * connection (DiyaNode).
+ */
 DiyaSelector.prototype.request = function(params, callback, timeout){
 	if(!connection) return this;
 

@@ -21,11 +21,27 @@
 
 */
 
-DiyaSelector = require('../../DiyaSelector').DiyaSelector;
+var DiyaSelector = require('../../DiyaSelector').DiyaSelector;
 var util = require('util');
 
 
 var Message = require('../message');
+
+
+//////////////////////////////////////////////////////////////
+/////////////////// Logging utility methods //////////////////
+//////////////////////////////////////////////////////////////
+
+var DEBUG = true;
+var Logger = {
+	log: function(message){
+		if(DEBUG) console.log(message);
+	},
+
+	error: function(message){
+		if(DEBUG) console.error(message);
+	}
+};
 
 /**
  *	callback : function called after model updated
@@ -34,6 +50,7 @@ function IEQ(selector){
 	var that = this;
 	this.selector = selector;
 	this.dataModel={};
+	this._coder = selector.encode();
 
 
 	/*** structure of data config ***
@@ -224,25 +241,23 @@ IEQ.prototype.updateData = function(callback, dataConfig){
 		}
 	}, function(dnId, err, data){
 		if(err) {
-			console.log("Recv err: "+err);
+			Logger.error("["+that.dataConfig.sensors+"] Recv err: "+JSON.stringify(err));
 			return;
 		}
-		
 		if(data.header.error) {
 			// TODO : check/use err status and adapt behavior accordingly
-			console.log("UpdateData:\n"+JSON.stringify(data.header.dataConfig));
-			console.log("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
+			Logger.error("UpdateData:\n"+JSON.stringify(data.header.dataConfig));
+			Logger.error("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
 			return;
 		}
-		//console.log(JSON.stringify(that.dataModel));
+		//Logger.log(JSON.stringify(that.dataModel));
 		that._getDataModelFromRecv(data);
 
-		// console.log(that.getDataModel());
+		// Logger.log(that.getDataModel());
 
 		callback = callback.bind(that); // bind callback with IEQ
 		callback(that.getDataModel()); // callback func
 	});
-	/** TODO USE PROMISE ? */
 };
 
 IEQ.prototype._isDataModelWithNaN = function() {
@@ -253,7 +268,7 @@ IEQ.prototype._isDataModelWithNaN = function() {
 			return nanPres && isNaN(d);
 		},false);
 		dataModelNaN = dataModelNaN && sensorNan;
-		console.log(n+" with nan : "+sensorNan+" ("+dataModelNaN+") / "+this.dataModel[n].data.length);
+		Logger.log(n+" with nan : "+sensorNan+" ("+dataModelNaN+") / "+this.dataModel[n].data.length);
 	}
 };
 
@@ -276,87 +291,22 @@ IEQ.prototype.getEnvQualityLevel = function(){
  */
 IEQ.prototype._getDataModelFromRecv = function(data){
 	var dataModel=null;
-	/*\
-	  |*|
-	  |*|  utilitaires de manipulations de chaînes base 64 / binaires / UTF-8
-	  |*|
-	  |*|  https://developer.mozilla.org/fr/docs/Décoder_encoder_en_base64
-	  |*|
-	  \*/
-	/** Decoder un tableau d'octets depuis une chaîne en base64 */
-	var b64ToUint6 = function(nChr) {
-		return nChr > 64 && nChr < 91 ?
-			nChr - 65
-			: nChr > 96 && nChr < 123 ?
-			nChr - 71
-			: nChr > 47 && nChr < 58 ?
-			nChr + 4
-			: nChr === 43 ?
-			62
-			: nChr === 47 ?
-			63
-			:	0;
-	};
-	/**
-	 * Decode base64 string to UInt8Array
-	 * @param  {String} sBase64		base64 coded string
-	 * @param  {int} nBlocksSize size of blocks of bytes to be read. Output byteArray length will be a multiple of this value.
-	 * @return {Uint8Array}				tab of decoded bytes
-	 */
-	var base64DecToArr = function(sBase64, nBlocksSize) {
-		var
-		sB64Enc = sBase64.replace(/[^A-Za-z0-9\+\/]/g, ""), nInLen = sB64Enc.length,
-		nOutLen = nBlocksSize ? Math.ceil((nInLen * 3 + 1 >> 2) / nBlocksSize) * nBlocksSize : nInLen * 3 + 1 >> 2,
-		buffer = new ArrayBuffer(nOutLen), taBytes = new Uint8Array(buffer);
-
-		for (var nMod3, nMod4, nUint24 = 0, nOutIdx = 0, nInIdx = 0; nInIdx < nInLen; nInIdx++) {
-			nMod4 = nInIdx & 3; /* n mod 4 */
-			nUint24 |= b64ToUint6(sB64Enc.charCodeAt(nInIdx)) << 18 - 6 * nMod4;
-			if (nMod4 === 3 || nInLen - nInIdx === 1) {
-				for (nMod3 = 0; nMod3 < 3 && nOutIdx < nOutLen; nMod3++, nOutIdx++) {
-					taBytes[nOutIdx] = nUint24 >>> (16 >>> nMod3 & 24) & 255;
-				}
-				nUint24 = 0;
-			}
-		}
-		// console.log("u8int : "+JSON.stringify(taBytes));
-		return buffer;
-	};
-
-	var arrayFromBuffer = function(data) {
-		/* decode data to Float32Array*/
-		var buf = base64DecToArr(data.vals, data.byteCoding);
-		var fArray=null;
-		if(data.byteCoding===4)
-			fArray = new Float32Array(buf);
-		else if (data.byteCoding===8)
-			fArray = new Float64Array(buf);
-
-		if(data.size != fArray.length) console.log("Mismatch of size "+data.size+" vs "+fArray.length);
-		var tab = new Array(data.size);
-		/* update nb of samples stored */
-		for(var i in fArray) {
-			tab[parseInt(i)]=fArray[i]; /* keep first val - name of column */
-		}
-		return tab;
-	};
-
+	
 	if(data && data.header) {
 		for (var n in data) {
 			if(n != "header" && n != "err") {
 
 				if(data[n].err && data[n].err.st>0) {
-					console.log(n+" was in error: "+data[n].err.msg);
+					Logger.error(n+" was in error: "+data[n].err.msg);
 					continue;
 				}
 				
 				if(!dataModel)
 					dataModel={};
 
-				// console.log(n);
+				// Logger.log(n);
 				if(!dataModel[n]) {
 					dataModel[n]={};
-					dataModel[n].data={};
 				}
 				/* update data range */
 				dataModel[n].range=data[n].range;
@@ -371,44 +321,16 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 					/* confortRange: data[n].confortRange, */
 					indexRange: data[n].indexRange
 				};
-				//					console.log("data : "+JSON.stringify(data[n]));
-				if(data[n].data.vals.length > 0)
-					dataModel[n].data = arrayFromBuffer(data[n].data);
-				else {
-					if(data[n].data.size != 0) console.log("Size mismatch received data (no data versus size="+data[n].data.size+")");
-					dataModel[n].data = [];
-				}
-				if(data[n].time.vals.length > 0)
-					dataModel[n].time = arrayFromBuffer(data[n].time);
-				else {
-					if(data[n].time.size != 0) console.log("Size mismatch received data (no data versus size="+data[n].time.size+")");
-					dataModel[n].time = [];
-				}
-				if(data[n].index.vals.length > 0)
-					dataModel[n].qualityIndex = arrayFromBuffer(data[n].index);
-				else {
-					if(data[n].index.size != 0) console.log("Size mismatch received data (no data versus size="+data[n].index.size+")");
-					dataModel[n].qualityIndex = [];
-				}
-				if(data[n].robotId.vals.length > 0)
-					dataModel[n].robotId = arrayFromBuffer(data[n].robotId);
-				else {
-					if(data[n].robotId.size != 0) console.log("Size mismatch received data (no data versus size="+data[n].robotId.size+")");
-					dataModel[n].robotId = [];
-				}
-				if(data[n].placeId.vals.length > 0)
-					dataModel[n].placeId = arrayFromBuffer(data[n].placeId);
-				else {
-					if(data[n].placeId.size != 0) console.log("Size mismatch received data (no data versus size="+data[n].placeId.size+")");
-					dataModel[n].placeId = [];
-				}
-				// dataModel[n].data = Array.from(fArray);
-				//console.log('mydata '+JSON.stringify(dataModel[n].data));
+				dataModel[n].data = this._coder.from(data[n].data,'b64',4);
+				dataModel[n].time = this._coder.from(data[n].time,'b64',8);
+				dataModel[n].qualityIndex = this._coder.from(data[n].index,'b64',4);
+				dataModel[n].robotId = this._coder.from(data[n].robotId,'b64',4);
+				dataModel[n].placeId = this._coder.from(data[n].placeId,'b64',4);
 			}
 		}
 	}
 	else {
-		console.log("No Data to read or header is missing !");
+		Logger.error("No Data to read or header is missing !");
 	}
 	this.dataModel=dataModel;
 	return dataModel;
@@ -416,6 +338,5 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 
 /** create IEQ service **/
 DiyaSelector.prototype.IEQ = function(){
-	var ieq = new IEQ(this);
-	return ieq;
+	return new IEQ(this);
 };
