@@ -246,8 +246,8 @@ IEQ.prototype.updateData = function(callback, dataConfig){
 		}
 		if(data.header.error) {
 			// TODO : check/use err status and adapt behavior accordingly
-			Logger.log("UpdateData:\n"+JSON.stringify(data.header.dataConfig));
-			Logger.log("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
+			Logger.error("UpdateData:\n"+JSON.stringify(data.header.dataConfig));
+			Logger.error("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
 			return;
 		}
 		//Logger.log(JSON.stringify(that.dataModel));
@@ -258,7 +258,6 @@ IEQ.prototype.updateData = function(callback, dataConfig){
 		callback = callback.bind(that); // bind callback with IEQ
 		callback(that.getDataModel()); // callback func
 	});
-	/** TODO USE PROMISE ? */
 };
 
 IEQ.prototype._isDataModelWithNaN = function() {
@@ -292,7 +291,7 @@ IEQ.prototype.getEnvQualityLevel = function(){
  */
 IEQ.prototype._getDataModelFromRecv = function(data){
 	var dataModel=null;
-
+	
 	if(data && data.header) {
 		for (var n in data) {
 			if(n != "header" && n != "err") {
