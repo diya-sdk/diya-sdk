@@ -1,0 +1,29 @@
+<script type="text/javascript" src="../build/diya-sdk.js"></script>
+<script>
+
+function ERR(e) { document.getElementById("err").innerHTML += e + "<br>";}
+
+try {
+	d1.connect("ws://localhost:1234").then(function(){
+
+		console.log("Connected !");
+
+		d1(/.*/).each(function(peer){
+			Logger.warning(peer);
+		});
+
+	});
+} catch(e) {
+	ERR(e);
+}
+
+	function doJoin(){
+		d1("B").join("A");
+	}
+
+
+</script>
+
+<input type="button" onclick="doJoin()" value="JOIN !"/>
+
+<div id="err" style="font-size:13px;color:red"></div>
