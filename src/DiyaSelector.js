@@ -76,7 +76,7 @@ function matchArray(selector, str){
 	return false;
 }
 
-
+// TODO : Change to public 
 DiyaSelector.prototype._select = function(selectorFunction){
 	var that = this;
 

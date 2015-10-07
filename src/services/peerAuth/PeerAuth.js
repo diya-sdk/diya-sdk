@@ -12,15 +12,15 @@ var DiyaSelector = require('../../DiyaSelector').DiyaSelector;
  */
 DiyaSelector.prototype.join = function(bootstrap_peers, bAuthenticate, callback){
 	if(typeof bootstrap_peers === 'string') bootstrap_peers = [ bootstrap_peers ];
-	if(bootstrap_peers.constructor !== 'Array') throw "join() : bootstrap_peers should be an array of peers URIs";
+	if(bootstrap_peers.constructor !== Array) throw "join() : bootstrap_peers should be an array of peers URIs";
 
 	if(bAuthenticate) {
+		ERR("Request public key to " + this._select());
 		return this.givePublicKey(function(joining_peer, err, data){
 			if(err) ERR("The PeerAuth service is not running on " + joining_peer);
 			else {
-					ERR("YOUPI !! " + data.keys().join(","));
-					var public_key = data.public_key;
-					d1(bootstrap_peers).addTrustedPeer(joining_peer, public_key, function(peerId, err, data) {
+					ERR("Add trusted peer " + joining_peer + " with public key <p style='font-size:8px'>" + data.public_key + "</p>");
+					d1(bootstrap_peers).addTrustedPeer(joining_peer, data.public_key, function(peerId, err, data) {
 					});
 			}
 		});
@@ -52,7 +52,30 @@ DiyaSelector.prototype.givePublicKey = function(callback){
  */
 DiyaSelector.prototype.addTrustedPeer = function(name, public_key, callback){
 	return this.request(
-		{ service: 'peerAuth',	func: 'AddTrustedPeer',	data: {} },
-		function(peerId, err, data){callback(peerId,err,data);
-	});
+		{ service: 'peerAuth',	func: 'AddTrustedPeer',	data: { name: name, public_key: public_key } },
+		function(peerId, err, data) {
+			if(err) ERR(err);
+			else {
+				alert(Object.keys(data));
+				alert("ok " + data.peerName);
+				callback(peerId,err,data);
+			}
+		}
+	);
+};
+
+
+/**
+ * Check if the selected DiyaNodes trust the given peers
+ * @param peers : an array of peer names
+ */
+DiyaSelector.prototype.areTrusted = function(peers, callback){
+	return this.request(
+		{ service: 'peerAuth',	func: 'AreTrusted',	data: { peers: peers } },
+		function(peerId, err, data) {
+			var allTrusted = data.trusted;
+			if(allTrusted) ERR(peers + " are trusted by " + peerId);
+			else ERR("Some peers in " + peers + " are untrusted by " + peerId);
+		}
+	);
 };

@@ -1,7 +1,7 @@
 <script type="text/javascript" src="../build/diya-sdk.js"></script>
 <script>
 
-function ERR(e) { document.getElementById("err").innerHTML += e + "<br>";}
+function ERR(e) { document.getElementById("err").innerHTML += "<li>"+ e + "</li>";}
 
 try {
 	d1.connect("ws://localhost:40001").then(function(){
@@ -31,8 +31,24 @@ function doJoin(){
 }
 
 
+function doCheck() {
+	ERR("Check if A trust B");
+	d1("A").auth("admin", "pass", function(peerId, bAuthenticated) {
+			if(!bAuthenticated) ERR("ACCESS DENIED BY PEER " +  peerId);
+			else  {
+				ERR("SUCCESSFULLY LOGGED IN TO A");
+				d1("A").areTrusted("B", function(peerId, err, data) {
+					if(err) ERR("ERROR : " + err);
+					else ERR(data);
+				});
+			}
+		});
+}
+
 </script>
 
 <input type="button" onclick="doJoin()" value="JOIN !"/>
+<input type="button" onclick="doCheck()" value="Check !"/>
 
-<div id="err" style="font-size:13px;color:red"></div>
+<ul id="err" style="font-size:20px;color:red"></ul>
+<style> ul > li { margin-top: 20px;}</style>
