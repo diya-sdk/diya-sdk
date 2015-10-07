@@ -21,6 +21,9 @@ DiyaSelector.prototype.join = function(bootstrap_peers, bAuthenticate, callback)
 			else {
 					ERR("Add trusted peer " + joining_peer + " with public key <p style='font-size:8px'>" + data.public_key + "</p>");
 					d1(bootstrap_peers).addTrustedPeer(joining_peer, data.public_key, function(peerId, err, data) {
+							if(err=='AlreadyTrusted') ERR(joining_peer + " already trusted by " + peerId);
+							else if(err) ERR("NASTY GUY ! " + err);
+							else ERR("DONE !");
 					});
 			}
 		});
@@ -51,16 +54,8 @@ DiyaSelector.prototype.givePublicKey = function(callback){
  * @param public_key : the RSA public key of the new trusted DiyaNode peer
  */
 DiyaSelector.prototype.addTrustedPeer = function(name, public_key, callback){
-	return this.request(
-		{ service: 'peerAuth',	func: 'AddTrustedPeer',	data: { name: name, public_key: public_key } },
-		function(peerId, err, data) {
-			if(err) ERR(err);
-			else {
-				alert(Object.keys(data));
-				alert("ok " + data.peerName);
-				callback(peerId,err,data);
-			}
-		}
+	return this.request({ service: 'peerAuth',	func: 'AddTrustedPeer',	data: { name: name, public_key: public_key }},
+		function(peerId,err,data){callback(peerId,err,data);}
 	);
 };
 
