@@ -4,12 +4,12 @@
 function ERR(e) { document.getElementById("err").innerHTML += e + "<br>";}
 
 try {
-	d1.connect("ws://localhost:1234").then(function(){
+	d1.connect("ws://localhost:40001").then(function(){
 
-		console.log("Connected !");
+		ERR("Connected !");
 
 		d1(/.*/).each(function(peer){
-			Logger.warning(peer);
+			ERR("- " + peer);
 		});
 
 	});
@@ -17,9 +17,18 @@ try {
 	ERR(e);
 }
 
-	function doJoin(){
-		d1("B").join("A");
+function doJoin(){
+	ERR("B -> A ...");
+	d1("B").auth("admin", "pass", function(peerId, bAuthenticated) {
+		if(!bAuthenticated) ERR("ACCESS DENIED BY PEER " +  peerId);
+		else  {
+			ERR("SUCCESSFULLY LOGGED IN TO B");
+			d1("B").join("A", function() {
+				ERR("YOUPI !!!!");
+			});
 	}
+	});
+}
 
 
 </script>
