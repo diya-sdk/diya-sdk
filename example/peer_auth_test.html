@@ -18,15 +18,15 @@ try {
 }
 
 function doJoin(){
-	ERR("B -> A ...");
-	d1("B").auth("admin", "pass", function(peerId, bAuthenticated) {
-		if(!bAuthenticated) ERR("ACCESS DENIED BY PEER " +  peerId);
-		else  {
-			ERR("SUCCESSFULLY LOGGED IN TO B");
-			d1("B").join("A", function() {
-				ERR("YOUPI !!!!");
-			});
-	}
+		ERR("B -> A ...");
+		d1("B").auth("admin", "pass", function(peerId, bAuthenticated) {
+				if(!bAuthenticated) ERR("ACCESS DENIED BY PEER " +  peerId);
+				else  {
+					ERR("SUCCESSFULLY LOGGED IN TO B");
+					d1("B").join("A", true, function() {
+						ERR("YOUPI !!!!");
+					});
+				}
 	});
 }
 
