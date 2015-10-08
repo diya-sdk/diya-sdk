@@ -3,3 +3,6 @@ node_modules
 *.project*
 *.jshintrc*
 npm-debug.log
+/build/diya-sdk.js
+/build/diya-sdk.min.js
+
