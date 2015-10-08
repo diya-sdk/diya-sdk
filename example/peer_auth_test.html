@@ -1,45 +1,44 @@
 <script type="text/javascript" src="../build/diya-sdk.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
 <script>
 
 function ERR(e) { document.getElementById("err").innerHTML += "<li>"+ e + "</li>";}
+function OK(e) { document.getElementById("err").innerHTML += "<li class='ok'>"+ e + "</li>";}
+function INFO(e) { document.getElementById("err").innerHTML += "<li class='info'>"+ e + "</li>";}
 
-try {
-	d1.connect("ws://localhost:40001").then(function(){
 
-		ERR("Connected !");
-
-		d1(/.*/).each(function(peer){
-			ERR("- " + peer);
-		});
-
-	});
-} catch(e) {
-	ERR(e);
-}
+$(function(){
+	$("#ip").val("ws://localhost:40001");
+	$("#bootstrap_ip").val("ws://localhost:40000");
+	$("#user").val("admin");
+	$("#password").val("pass");
+});
 
 function doJoin(){
-		ERR("B -> A ...");
-		d1("B").auth("admin", "pass", function(peerId, bAuthenticated) {
-				if(!bAuthenticated) ERR("ACCESS DENIED BY PEER " +  peerId);
-				else  {
-					ERR("SUCCESSFULLY LOGGED IN TO B");
-					d1("B").join("A", true, function() {
-						ERR("YOUPI !!!!");
-					});
-				}
-	});
+	var ip = $("#ip").val();
+	var bootstrap_ip = $("#bootstrap_ip").val();
+	var user = $("#user").val();
+	var password = $("#password").val();
+	d1.installNode(
+		 ip,bootstrap_ip,
+			user, password,
+		 function(peer, bootstrap_peer, err, data) {
+			 if(err) ERR("[ERROR] " + err);
+			 else OK("[OK] SUCCESSFULLY JOINED " + peer + "(ip="+ip+") to " + bootstrap_peer + "(ip="+ bootstrap_ip +")");
+		 }
+	);
 }
 
 
 function doCheck() {
-	ERR("Check if A trust B");
+	OK("Check if A trust B");
 	d1("A").auth("admin", "pass", function(peerId, bAuthenticated) {
 			if(!bAuthenticated) ERR("ACCESS DENIED BY PEER " +  peerId);
 			else  {
-				ERR("SUCCESSFULLY LOGGED IN TO A");
+				OK("SUCCESSFULLY LOGGED IN TO A");
 				d1(/.*/).areTrusted("B", function(peerId, err, data) {
 					if(err) ERR("ERROR : " + err);
-					else ERR(data);
+					else OK(data);
 				});
 			}
 		});
@@ -47,8 +46,16 @@ function doCheck() {
 
 </script>
 
+<p>IP : <input type="text" id="ip" /></p>
+<p>Bootstrap IP : <input type="text" id="bootstrap_ip" /></p>
+<p>User : <input type="text" id="user" /></p>
+<p>Password : <input type="text" id="password" /></p>
 <input type="button" onclick="doJoin()" value="JOIN !"/>
 <input type="button" onclick="doCheck()" value="Check !"/>
 
 <ul id="err" style="font-size:20px;color:red"></ul>
-<style> ul > li { margin-top: 20px;}</style>
+<style>
+li { margin-top: 20px; }
+li.ok { color:green; }
+li.info { color:black; }
+</style>

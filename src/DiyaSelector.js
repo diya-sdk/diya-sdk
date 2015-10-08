@@ -34,6 +34,13 @@ d1.on = function(event, callback){
 	return d1;
 };
 
+/** Shorthand function to connect and login with the given (user,password) */
+d1.connectAsUser = function(ip, user, password) {
+	return d1.connect(ip).then(function(){
+		return d1().auth(user, password);
+	});
+}
+
 d1.deauthenticate = function(){
 	token = null;
 };
@@ -50,7 +57,7 @@ inherits(DiyaSelector, EventEmitter);
 
 
 function match(selector, str){
-	if(!selector) return false;
+	if(!selector) return connection && str===connection.self();
 	else if(selector.constructor.name === 'String'){
 		return matchString(selector, str);
 	}else if(selector.constructor.name === 'RegExp'){
@@ -76,7 +83,7 @@ function matchArray(selector, str){
 	return false;
 }
 
-// TODO : Change to public 
+// TODO : Change to public
 DiyaSelector.prototype._select = function(selectorFunction){
 	var that = this;
 
@@ -204,10 +211,11 @@ DiyaSelector.prototype.unsubscribe = function(subIds){
 };
 
 DiyaSelector.prototype.auth = function(user, password, callback, timeout){
-	if(typeof callback === 'function')
-		callback = callback.bind(this);
+	if(typeof callback === 'function') callback = callback.bind(this);
 
-	return this.request({
+	var deferred = Q.defer();
+
+	this.request({
 		service: 'auth',
 		func: 'Authenticate',
 		data: {
@@ -218,17 +226,22 @@ DiyaSelector.prototype.auth = function(user, password, callback, timeout){
 
 		if(err === 'ServiceNotFound'){
 			if(typeof callback === 'function') callback(peerId, true);
+			else deferred.reject(err);
 			return ;
 		}
 
 		if(!err && data && data.authenticated && data.token){
 			token = data.token;
 			if(typeof callback === 'function') callback(peerId, true);
-		}else {
+			else deferred.resolve();
+		} else {
 			if(typeof callback === 'function') callback(peerId, false);
+			else deferred.reject('AccessDenied');
 		}
 
 	}, timeout);
+
+	return deferred.promise;
 };
 
 module.exports = d1;
