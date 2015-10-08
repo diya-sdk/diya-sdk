@@ -17,13 +17,15 @@ var d1 = require('../../DiyaSelector');
 *
 * @param ip : the IP address of the new device
 * @param bootstrap_ip : the IP address of the bootstrap device
+* @param bootstrap_net : the IP address where the new device will connect to the boostrap one
 * @param user : a user identifier with root role on both nodes
 * @param password : the password for 'user'
 * @param callback : of the form callback(new_peer_name,bootstrap_peer_name, err, data)
 */
-d1.installNode = function(ip, bootstrap_ip, user, password, callback) {
+d1.installNode = function(ip, bootstrap_ip, bootstrap_net, user, password, callback) {
 	if(typeof ip !== 'string') throw "[installNode] ip should be an IP address";
 	if(typeof bootstrap_ip !== 'string') throw "[installNode] bootstrap_ip should be an IP address";
+	if(typeof bootstrap_net !== 'string') throw "[installNode] bootstrap_net should be an IP address";
 
 		d1.connectAsUser(ip, user, password).then(function(peer, err, data){
 				d1().givePublicKey(function(peer, err, data) {
@@ -44,10 +46,10 @@ d1.installNode = function(ip, bootstrap_ip, user, password, callback) {
 												else INFO(peer + "(ip="+ ip +") added " + bootstrap_peer + "(ip="+ bootstrap_ip +") as a Trusted Peer");
 
 												// Once Keys have been exchanged ask to join the network
-												OK("KEYS OK ! Now, let "+peer+"(ip="+ip+") join the network via "+bootstrap_peer+"(ip="+bootstrap_ip+") ...");
-												d1().join(bootstrap_ip, function(bootstrap_peer, err, data){
+												OK("KEYS OK ! Now, let "+peer+"(ip="+ip+") join the network via "+bootstrap_peer+"(ip="+bootstrap_net+") ...");
+												d1().join(bootstrap_net, true, function(peer, err, data){
 													if(!err) OK("JOINED !!!");
-														return callback(peer, bootstrap_peer, err, data);
+													return callback(peer, bootstrap_peer, err, data);
 												});
 											});
 										});
@@ -71,12 +73,14 @@ d1.installNode = function(ip, bootstrap_ip, user, password, callback) {
  * NOTE : This operation requires root role
  *
  * @param bootstrap_ips : an array of bootstrap IP addresses to contact to join the Network
+ * @param bPermanent : if true, permanently add the bootstrap peers as automatic bootstrap peers for the selected nodes.
+ *
  */
-DiyaSelector.prototype.join = function(bootstrap_ips, callback){
+DiyaSelector.prototype.join = function(bootstrap_ips, bPermanent, callback){
 	if(typeof bootstrap_ips === 'string') bootstrap_ips = [ bootstrap_ips ];
 	if(bootstrap_ips.constructor !== Array) throw "join() : bootstrap_ips should be an array of peers URIs";
 	this.request(
-		{service : 'meshNetwork', func: 'Join', data: { bootstrap_ips: bootstrap_ips }},
+		{service : 'meshNetwork', func: 'Join', data: { bootstrap_ips: bootstrap_ips, bPermanent: bPermanent }},
 		function(peerId, err, data) {callback(peerId, err, data);}
 	);
 };
@@ -116,7 +120,7 @@ DiyaSelector.prototype.areTrusted = function(peers, callback){
 		{ service: 'peerAuth',	func: 'AreTrusted',	data: { peers: peers } },
 		function(peerId, err, data) {
 			var allTrusted = data.trusted;
-			if(allTrusted) ERR(peers + " are trusted by " + peerId);
+			if(allTrusted) OK(peers + " are trusted by " + peerId);
 			else ERR("Some peers in " + peers + " are untrusted by " + peerId);
 		}
 	);

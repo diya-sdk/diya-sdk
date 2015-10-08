@@ -10,6 +10,7 @@ function INFO(e) { document.getElementById("err").innerHTML += "<li class='info'
 $(function(){
 	$("#ip").val("ws://localhost:40001");
 	$("#bootstrap_ip").val("ws://localhost:40000");
+	$("#bootstrap_net").val("ws://localhost:4000");
 	$("#user").val("admin");
 	$("#password").val("pass");
 });
@@ -17,10 +18,11 @@ $(function(){
 function doJoin(){
 	var ip = $("#ip").val();
 	var bootstrap_ip = $("#bootstrap_ip").val();
+	var bootstrap_net = $("#bootstrap_net").val();
 	var user = $("#user").val();
 	var password = $("#password").val();
 	d1.installNode(
-		 ip,bootstrap_ip,
+		 ip,bootstrap_ip, bootstrap_net,
 			user, password,
 		 function(peer, bootstrap_peer, err, data) {
 			 if(err) ERR("[ERROR] " + err);
@@ -36,7 +38,7 @@ function doCheck() {
 			if(!bAuthenticated) ERR("ACCESS DENIED BY PEER " +  peerId);
 			else  {
 				OK("SUCCESSFULLY LOGGED IN TO A");
-				d1(/.*/).areTrusted("B", function(peerId, err, data) {
+				d1(/.*/).areTrusted(["B","A"], function(peerId, err, data) {
 					if(err) ERR("ERROR : " + err);
 					else OK(data);
 				});
@@ -44,14 +46,33 @@ function doCheck() {
 		});
 }
 
+function listAllNodes() {
+	OK("NODES : " + d1(/.*/).select());
+}
+
+function connectToA() {
+	OK("Connect to A");
+	d1.connect($("#bootstrap_ip").val());
+}
+
+function connectToB() {
+	OK("Connect to B");
+	d1.connect($("#ip").val());
+}
+
+
 </script>
 
 <p>IP : <input type="text" id="ip" /></p>
 <p>Bootstrap IP : <input type="text" id="bootstrap_ip" /></p>
+<p>Bootstrap net : <input type="text" id="bootstrap_net" /></p>
 <p>User : <input type="text" id="user" /></p>
 <p>Password : <input type="text" id="password" /></p>
 <input type="button" onclick="doJoin()" value="JOIN !"/>
 <input type="button" onclick="doCheck()" value="Check !"/>
+<input type="button" onclick="connectToA()" value="Connect A"/>
+<input type="button" onclick="connectToB()" value="Connect B"/>
+<input type="button" onclick="listAllNodes()" value="List Connected nodes !"/>
 
 <ul id="err" style="font-size:20px;color:red"></ul>
 <style>

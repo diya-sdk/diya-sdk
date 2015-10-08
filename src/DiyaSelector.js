@@ -83,7 +83,8 @@ function matchArray(selector, str){
 	return false;
 }
 
-// TODO : Change to public
+// TODO : Defnitely change to public
+DiyaSelector.prototype.select = function() { return this._select(); };
 DiyaSelector.prototype._select = function(selectorFunction){
 	var that = this;
 
