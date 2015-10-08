@@ -37,7 +37,7 @@ function doCheck() {
 			if(!bAuthenticated) ERR("ACCESS DENIED BY PEER " +  peerId);
 			else  {
 				ERR("SUCCESSFULLY LOGGED IN TO A");
-				d1("A").areTrusted("B", function(peerId, err, data) {
+				d1(/.*/).areTrusted("B", function(peerId, err, data) {
 					if(err) ERR("ERROR : " + err);
 					else ERR(data);
 				});

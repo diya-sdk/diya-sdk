@@ -25,15 +25,15 @@ DiyaSelector.prototype.join = function(bootstrap_peers, bAuthenticate, callback)
 							else if(err) ERR("NASTY GUY ! " + err);
 							else {
 								ERR(peerId + " added " + joining_peer + " as a Trusted Peer");
-								ERR("In return, add " + peerId + " to " + joining_peer + " as a Trusted Peer");
-								d1(joining_peer).addTrustedPeer(peerId, data.public_key, function(joining_peer, err, data)) {
+								ERR("In return, add " + peerId + " to " + joining_peer + " as a Trusted Peer with public key  <p style='font-size:8px'>" + data.public_key + "</p>");
+								d1(joining_peer).addTrustedPeer(peerId, data.public_key, function(joining_peer, err, data) {
 									if(err=='AlreadyTrusted') ERR(peerId + " already trusted by " + joining_peer);
 									else if(err) ERR(peerId + " is a NASTY GUY ?! " + err);
 									else {
 										ERR(joining_peer + " added " + peerId + " as a Trusted Peer");
 										ERR("Done !");
 									}
-								}
+								});
 							}
 					});
 			}
