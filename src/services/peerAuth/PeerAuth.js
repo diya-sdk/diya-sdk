@@ -16,13 +16,15 @@ var d1 = require('../../DiyaSelector');
 * NOTE : This operation requires the given user to have root role on both nodes
 *
 * @param ip : the IP address of the new device
-* @param bootstrap_ip : the IP address of the bootstrap device
-* @param bootstrap_net : the IP address where the new device will connect to the boostrap one
-* @param user : a user identifier with root role on both nodes
+* @param user : a username with root role on the new device
 * @param password : the password for 'user'
+* @param bootstrap_ip : the IP address of the bootstrap device
+* @param bootstrap_user : a user identifier with root role on the boostrap device
+* @param bootstrap_password : the password for 'bootstrap_user'
+* @param bootstrap_net : the IP address where the new device will connect to the boostrap one
 * @param callback : of the form callback(new_peer_name,bootstrap_peer_name, err, data)
 */
-d1.installNode = function(ip, bootstrap_ip, bootstrap_net, user, password, callback) {
+d1.installNode = function(ip, user, password, bootstrap_ip, bootstrap_user, bootstrap_password, bootstrap_net, callback) {
 	if(typeof ip !== 'string') throw "[installNode] ip should be an IP address";
 	if(typeof bootstrap_ip !== 'string') throw "[installNode] bootstrap_ip should be an IP address";
 	if(typeof bootstrap_net !== 'string') throw "[installNode] bootstrap_net should be an IP address";
@@ -32,7 +34,7 @@ d1.installNode = function(ip, bootstrap_ip, bootstrap_net, user, password, callb
 					if(err) return callback(peer, null, err, null);
 					else {
 						INFO("Add trusted peer " + peer + "(ip=" + ip + ") with public key <p style='font-size:8px'>" + data.public_key + "</p>");
-						d1.connectAsUser(bootstrap_ip, user, password).then(function(){
+						d1.connectAsUser(bootstrap_ip, bootstrap_user, bootstrap_password).then(function(){
 							d1().addTrustedPeer(peer, data.public_key, function(bootstrap_peer, err, data) {
 									if(err=='AlreadyTrusted') ERR(peer + " already trusted by " + bootstrap_peer);
 									else if(err) return callback(peer, bootstrap_peer, err, null);

@@ -11,19 +11,24 @@ $(function(){
 	$("#ip").val("ws://localhost:40001");
 	$("#bootstrap_ip").val("ws://localhost:40000");
 	$("#bootstrap_net").val("ws://localhost:4000");
-	$("#user").val("admin");
-	$("#password").val("pass");
+	$("#ip_user").val("admin");
+	$("#ip_password").val("pass");
+	$("#bootstrap_user").val("admin");
+	$("#bootstrap_password").val("pass");
 });
 
 function doJoin(){
 	var ip = $("#ip").val();
+	var ip_user = $("#ip_user").val();
+	var ip_password = $("#ip_password").val();
+
 	var bootstrap_ip = $("#bootstrap_ip").val();
+	var bootstrap_user = $("#bootstrap_user").val();
+	var bootstrap_password = $("#bootstrap_password").val();
 	var bootstrap_net = $("#bootstrap_net").val();
-	var user = $("#user").val();
-	var password = $("#password").val();
+
 	d1.installNode(
-		 ip,bootstrap_ip, bootstrap_net,
-			user, password,
+		 ip, ip_user, ip_password, bootstrap_ip, bootstrap_user, bootstrap_password, bootstrap_net,
 		 function(peer, bootstrap_peer, err, data) {
 			 if(err) ERR("[ERROR] " + err);
 			 else OK("[OK] SUCCESSFULLY JOINED " + peer + "(ip="+ip+") to " + bootstrap_peer + "(ip="+ bootstrap_ip +")");
@@ -63,11 +68,16 @@ function connectToB() {
 
 </script>
 
-<p>IP : <input type="text" id="ip" /></p>
+<p>Join IP : <input type="text" id="ip" /></p>
+<p>Join User : <input type="text" id="ip_user" /></p>
+<p>Join Password : <input type="text" id="ip_password" /></p>
+<p/>
 <p>Bootstrap IP : <input type="text" id="bootstrap_ip" /></p>
+<p>Bootstrap User : <input type="text" id="bootstrap_user" /></p>
+<p>Bootstrap Password : <input type="text" id="bootstrap_password" /></p>
+<p/>
 <p>Bootstrap net : <input type="text" id="bootstrap_net" /></p>
-<p>User : <input type="text" id="user" /></p>
-<p>Password : <input type="text" id="password" /></p>
+<p/>
 <input type="button" onclick="doJoin()" value="JOIN !"/>
 <input type="button" onclick="doCheck()" value="Check !"/>
 <input type="button" onclick="connectToA()" value="Connect A"/>
