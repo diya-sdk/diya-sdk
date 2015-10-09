@@ -29,9 +29,20 @@ d1.installNode = function(ip, user, password, bootstrap_ip, bootstrap_user, boot
 	if(typeof bootstrap_ip !== 'string') throw "[installNode] bootstrap_ip should be an IP address";
 	if(typeof bootstrap_net !== 'string') throw "[installNode] bootstrap_net should be an IP address";
 
+	function join() {
+		d1().join(bootstrap_net, true, function(peer, err, data){
+			if(!err) OK("JOINED !!!");
+			return callback(peer, bootstrap_peer, err, data);
+		});
+	}
+
 		d1.connectAsUser(ip, user, password).then(function(peer, err, data){
 				d1().givePublicKey(function(peer, err, data) {
-					if(err) return callback(peer, null, err, null);
+					if(err==='ServiceNotFound') {
+						INFO("Peer Authentication disabled ... directly joining");
+						join();
+					}
+					else if(err) return callback(peer, null, err, null);
 					else {
 						INFO("Add trusted peer " + peer + "(ip=" + ip + ") with public key <p style='font-size:8px'>" + data.public_key + "</p>");
 						d1.connectAsUser(bootstrap_ip, bootstrap_user, bootstrap_password).then(function(){
@@ -49,10 +60,7 @@ d1.installNode = function(ip, user, password, bootstrap_ip, bootstrap_user, boot
 
 												// Once Keys have been exchanged ask to join the network
 												OK("KEYS OK ! Now, let "+peer+"(ip="+ip+") join the network via "+bootstrap_peer+"(ip="+bootstrap_net+") ...");
-												d1().join(bootstrap_net, true, function(peer, err, data){
-													if(!err) OK("JOINED !!!");
-													return callback(peer, bootstrap_peer, err, data);
-												});
+												join();
 											});
 										});
 									}
