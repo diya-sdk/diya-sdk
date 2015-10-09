@@ -9,6 +9,7 @@ require('./services/viewer_explorer/viewer_explorer.js');
 require('./services/ieq/ieq.js');
 require('./services/networkId/NetworkId.js');
 require('./services/maps/maps.js');
+require('./services/peerAuth/PeerAuth.js');
 require('./utils/encoding/encoding.js');
 
 module.exports = d1;
