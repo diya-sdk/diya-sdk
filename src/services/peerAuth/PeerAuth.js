@@ -41,6 +41,7 @@ d1.installNode = function(ip, user, password, bootstrap_ip, bootstrap_user, boot
 					if(err==='ServiceNotFound') {
 						INFO("Peer Authentication disabled ... directly joining");
 						join();
+						return;
 					}
 					else if(err) return callback(peer, null, err, null);
 					else {
