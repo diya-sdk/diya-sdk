@@ -184,6 +184,10 @@ DiyaNode.prototype.peers = function(){
 	return this._peers;
 };
 
+DiyaNode.prototype.self = function() {
+	return this._self;
+}
+
 ///////////////////////////////////////////////////////////
 //////////////////// Internal methods /////////////////////
 ///////////////////////////////////////////////////////////
@@ -349,7 +353,7 @@ DiyaNode.prototype._onclose = function(){
 		Logger.log('d1: connection lost, try reconnecting');
 		setTimeout(function(){
 			that.connect(that._addr, that._WSocket).catch(function(err){
-				
+
 			});
 		}, that._reconnectTimeout);
 	}
@@ -387,10 +391,12 @@ DiyaNode.prototype._handlePing = function(message){
 };
 
 DiyaNode.prototype._handleHandshake = function(message){
-	if(message.peers === undefined){
+	if(message.peers === undefined || typeof message.self !== 'string'){
 		Logger.error("Missing argumnents for Handshake message, dropping...");
 		return ;
 	}
+
+	this._self = message.self;
 
 	for(var i=0;i<message.peers.length; i++){
 		this._peers.push(message.peers[i]);

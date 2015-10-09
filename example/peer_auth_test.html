@@ -1,0 +1,92 @@
+<script type="text/javascript" src="../build/diya-sdk.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script>
+
+function ERR(e) { document.getElementById("err").innerHTML += "<li>"+ e + "</li>";}
+function OK(e) { document.getElementById("err").innerHTML += "<li class='ok'>"+ e + "</li>";}
+function INFO(e) { document.getElementById("err").innerHTML += "<li class='info'>"+ e + "</li>";}
+
+
+$(function(){
+	$("#ip").val("ws://localhost:40001");
+	$("#bootstrap_ip").val("ws://localhost:40000");
+	$("#bootstrap_net").val("ws://localhost:4000");
+	$("#ip_user").val("admin");
+	$("#ip_password").val("pass");
+	$("#bootstrap_user").val("admin");
+	$("#bootstrap_password").val("pass");
+});
+
+function doJoin(){
+	var ip = $("#ip").val();
+	var ip_user = $("#ip_user").val();
+	var ip_password = $("#ip_password").val();
+
+	var bootstrap_ip = $("#bootstrap_ip").val();
+	var bootstrap_user = $("#bootstrap_user").val();
+	var bootstrap_password = $("#bootstrap_password").val();
+	var bootstrap_net = $("#bootstrap_net").val();
+
+	d1.installNode(
+		 ip, ip_user, ip_password, bootstrap_ip, bootstrap_user, bootstrap_password, bootstrap_net,
+		 function(peer, bootstrap_peer, err, data) {
+			 if(err) ERR("[ERROR] " + err);
+			 else OK("[OK] SUCCESSFULLY JOINED " + peer + "(ip="+ip+") to " + bootstrap_peer + "(ip="+ bootstrap_ip +")");
+		 }
+	);
+}
+
+
+function doCheck() {
+	OK("Check if A trust B");
+	d1("A").auth("admin", "pass", function(peerId, bAuthenticated) {
+			if(!bAuthenticated) ERR("ACCESS DENIED BY PEER " +  peerId);
+			else  {
+				OK("SUCCESSFULLY LOGGED IN TO A");
+				d1(/.*/).areTrusted(["B","A"], function(peerId, err, data) {
+					if(err) ERR("ERROR : " + err);
+					else OK(data);
+				});
+			}
+		});
+}
+
+function listAllNodes() {
+	OK("NODES : " + d1(/.*/).select());
+}
+
+function connectToA() {
+	OK("Connect to A");
+	d1.connect($("#bootstrap_ip").val());
+}
+
+function connectToB() {
+	OK("Connect to B");
+	d1.connect($("#ip").val());
+}
+
+
+</script>
+
+<p>Join IP : <input type="text" id="ip" /></p>
+<p>Join User : <input type="text" id="ip_user" /></p>
+<p>Join Password : <input type="text" id="ip_password" /></p>
+<p/>
+<p>Bootstrap IP : <input type="text" id="bootstrap_ip" /></p>
+<p>Bootstrap User : <input type="text" id="bootstrap_user" /></p>
+<p>Bootstrap Password : <input type="text" id="bootstrap_password" /></p>
+<p/>
+<p>Bootstrap net : <input type="text" id="bootstrap_net" /></p>
+<p/>
+<input type="button" onclick="doJoin()" value="JOIN !"/>
+<input type="button" onclick="doCheck()" value="Check !"/>
+<input type="button" onclick="connectToA()" value="Connect A"/>
+<input type="button" onclick="connectToB()" value="Connect B"/>
+<input type="button" onclick="listAllNodes()" value="List Connected nodes !"/>
+
+<ul id="err" style="font-size:20px;color:red"></ul>
+<style>
+li { margin-top: 20px; }
+li.ok { color:green; }
+li.info { color:black; }
+</style>
