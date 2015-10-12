@@ -37,13 +37,27 @@ function doJoin(){
 }
 
 
-function doCheck() {
+function doCheckA() {
 	OK("Check if A trust B");
 	d1("A").auth("admin", "pass", function(peerId, bAuthenticated) {
 			if(!bAuthenticated) ERR("ACCESS DENIED BY PEER " +  peerId);
 			else  {
 				OK("SUCCESSFULLY LOGGED IN TO A");
 				d1(/.*/).areTrusted(["B","A"], function(peerId, err, data) {
+					if(err) ERR("ERROR : " + err);
+					else OK(data);
+				});
+			}
+		});
+}
+
+function doCheckB() {
+	OK("Check if B trust A");
+	d1("B").auth("admin", "pass", function(peerId, bAuthenticated) {
+			if(!bAuthenticated) ERR("ACCESS DENIED BY PEER " +  peerId);
+			else  {
+				OK("SUCCESSFULLY LOGGED IN TO B");
+				d1(/.*/).areTrusted(["A","B"], function(peerId, err, data) {
 					if(err) ERR("ERROR : " + err);
 					else OK(data);
 				});
@@ -79,7 +93,8 @@ function connectToB() {
 <p>Bootstrap net : <input type="text" id="bootstrap_net" /></p>
 <p/>
 <input type="button" onclick="doJoin()" value="JOIN !"/>
-<input type="button" onclick="doCheck()" value="Check !"/>
+<input type="button" onclick="doCheckA()" value="Check A!"/>
+<input type="button" onclick="doCheckB()" value="Check B!"/>
 <input type="button" onclick="connectToA()" value="Connect A"/>
 <input type="button" onclick="connectToB()" value="Connect B"/>
 <input type="button" onclick="listAllNodes()" value="List Connected nodes !"/>
