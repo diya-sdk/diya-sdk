@@ -92,7 +92,7 @@ DiyaSelector.prototype.join = function(bootstrap_ips, bPermanent, callback){
 	if(bootstrap_ips.constructor !== Array) throw "join() : bootstrap_ips should be an array of peers URIs";
 	this.request(
 		{service : 'meshNetwork', func: 'Join', data: { bootstrap_ips: bootstrap_ips, bPermanent: bPermanent }},
-		function(peerId, err, data) {callback(peerId, err, data);}
+		function(peerId, err, data) { if(typeof callback === "function") callback(peerId, err, data);}
 	);
 };
 

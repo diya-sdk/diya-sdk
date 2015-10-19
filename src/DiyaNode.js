@@ -45,6 +45,15 @@ inherits(DiyaNode, EventEmitter);
 DiyaNode.prototype.connect = function(addr, WSocket){
 	var that = this;
 
+	// Check and Format URI (FQDN)
+	if(addr.indexOf("ws://") === 0 && this._secured) return Q.reject("Please use a secured connection (" + addr + ")");
+	if(addr.indexOf("wss://") === 0 && this._secured === false) return Q.reject("Please use a non-secured connection (" + addr + ")");
+	if(addr.indexOf("ws://") !== 0 && addr.indexOf("wss://") !== 0) {
+		if(this._secured) addr = "wss://" + addr;
+		else addr = "ws://" + addr;
+	}
+
+
 	if(this._addr === addr){
 		if(this._status === 'opened')
 			return Q();
@@ -76,12 +85,15 @@ DiyaNode.prototype.connect = function(addr, WSocket){
 
 		that._socket.addEventListener('error', function(err){
 			Logger.error("[WS] error : "+err);
+			that._socket.close();
 		});
+
 
 		setTimeout(function(){
 			if(that._status !== 'opened'){
 				Logger.log('d1: timed out while connecting');
-				that._socket.close();
+				// if(that._socket.readyState !== WSocket.CLOSED) that._socket.close()    ??? TODO : This may cause a weird warning in Chrome
+				if(that._connectionDeferred) that._connectionDeferred.reject("Timeout");
 			}
 		}, that._connectTimeout);
 
@@ -186,7 +198,13 @@ DiyaNode.prototype.peers = function(){
 
 DiyaNode.prototype.self = function() {
 	return this._self;
-}
+};
+
+
+DiyaNode.prototype.setSecured = function(bSecured) {
+	if(bSecured === undefined) bSecured = true;
+	this._secured = bSecured;
+};
 
 ///////////////////////////////////////////////////////////
 //////////////////// Internal methods /////////////////////

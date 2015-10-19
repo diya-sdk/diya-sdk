@@ -25,6 +25,31 @@ d1.disconnect = function(){
 	return connection.close();
 };
 
+d1.isConnected = function() {
+	return connection.isConnected();
+};
+
+/** Try to connect to the given servers list in the list order, until finding a available one */
+d1.tryConnect = function(servers, WSocket){
+	var deferred = Q.defer();
+	function tc(i) {
+		console.log("TRY : " + servers[i]);
+		d1.connect(servers[i], WSocket).then(function(e){
+			console.log("youpi : " + servers[i]);
+			return deferred.resolve(servers[i]);
+		}).catch(function(e){
+			console.log("FAILED : " + servers[i]);
+			d1.disconnect().then(function() {
+				i++;
+				if(i<servers.length) setTimeout(function() {tc(i);}, 100);
+				else return deferred.reject("Timeout");
+			});
+		});
+	}
+	tc(0);
+	return deferred.promise;
+}
+
 d1.currentServer = function(){
 	return connection._addr;
 };
@@ -44,6 +69,11 @@ d1.connectAsUser = function(ip, user, password) {
 d1.deauthenticate = function(){
 	token = null;
 };
+
+d1.setSecured = function(bSecured) {
+	connection.setSecured(bSecured);
+};
+
 
 function DiyaSelector(selector){
 	EventEmitter.call(this);
