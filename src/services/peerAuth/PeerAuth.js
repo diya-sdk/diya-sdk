@@ -29,7 +29,7 @@ d1.installNode = function(ip, user, password, bootstrap_ip, bootstrap_user, boot
 	if(typeof bootstrap_ip !== 'string') throw "[installNode] bootstrap_ip should be an IP address";
 	if(typeof bootstrap_net !== 'string') throw "[installNode] bootstrap_net should be an IP address";
 
-	function join() {
+	function join(peer, bootstrap_peer) {
 		d1().join(bootstrap_net, true, function(peer, err, data){
 			if(!err) OK("JOINED !!!");
 			return callback(peer, bootstrap_peer, err, data);
@@ -48,23 +48,22 @@ d1.installNode = function(ip, user, password, bootstrap_ip, bootstrap_user, boot
 						INFO("Add trusted peer " + peer + "(ip=" + ip + ") with public key <p style='font-size:8px'>" + data.public_key + "</p>");
 						d1.connectAsUser(bootstrap_ip, bootstrap_user, bootstrap_password).then(function(){
 							d1().addTrustedPeer(peer, data.public_key, function(bootstrap_peer, err, data) {
-									if(err=='AlreadyTrusted') ERR(peer + " already trusted by " + bootstrap_peer);
-									else if(err) return callback(peer, bootstrap_peer, err, null);
-									else {
-										INFO(bootstrap_peer + "(ip="+ bootstrap_ip +") added " + peer + "(ip=" + ip + ") as a Trusted Peer");
-										INFO("In return, add " + bootstrap_peer + " to " + peer + " as a Trusted Peer with public key  <p style='font-size:8px'>" + data.public_key + "</p>");
-										d1.connectAsUser(ip, user, password).then(function(){
-											d1().addTrustedPeer(bootstrap_peer, data.public_key, function(peer, err, data) {
-												if(err=='AlreadyTrusted') ERR(bootstrap_peer + " already trusted by " + peer);
-												else if(err) callback(peer, bootstrap_peer, err, null);
-												else INFO(peer + "(ip="+ ip +") added " + bootstrap_peer + "(ip="+ bootstrap_ip +") as a Trusted Peer");
 
-												// Once Keys have been exchanged ask to join the network
-												OK("KEYS OK ! Now, let "+peer+"(ip="+ip+") join the network via "+bootstrap_peer+"(ip="+bootstrap_net+") ...");
-												join();
-											});
+									if(err) return callback(peer, bootstrap_peer, err, null);
+									if(data.alreadyTrusted) INFO(peer + " already trusted by " + bootstrap_peer);
+									else INFO(bootstrap_peer + "(ip="+ bootstrap_ip +") added " + peer + "(ip=" + ip + ") as a Trusted Peer");
+
+									INFO("In return, add " + bootstrap_peer + " to " + peer + " as a Trusted Peer with public key  <p style='font-size:8px'>" + data.public_key + "</p>");
+									d1.connectAsUser(ip, user, password).then(function(){
+										d1().addTrustedPeer(bootstrap_peer, data.public_key, function(peer, err, data) {
+											if(err) callback(peer, bootstrap_peer, err, null);
+											else if(data.alreadyTrusted) INFO(bootstrap_peer + " already trusted by " + peer);
+											else INFO(peer + "(ip="+ ip +") added " + bootstrap_peer + "(ip="+ bootstrap_ip +") as a Trusted Peer");
+											// Once Keys have been exchanged ask to join the network
+											OK("KEYS OK ! Now, let "+peer+"(ip="+ip+") join the network via "+bootstrap_peer+"(ip="+bootstrap_net+") ...");
+											return join(peer, bootstrap_peer);
 										});
-									}
+									});
 							});
 						});
 					}

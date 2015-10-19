@@ -303,6 +303,7 @@ RTC.prototype.disconnect = function(){
 	var that = this;
 
 	this.selector.each(function(dnId){
+		if(!that[dnId]) return ;
 		for(var promID in that[dnId].peers){
 			that._closePeer(dnId, promID);
 		}
