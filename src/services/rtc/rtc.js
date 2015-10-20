@@ -239,6 +239,8 @@ Peer.prototype._createPeer = function(data){
 	};
 
 	peer.onicecandidate = function(evt){
+		console.log("local candidate : ");
+		console.log(evt.candidate);
 		that.dn.request({
 			service: 'rtc',
 			func: 'ICECandidate',
@@ -259,6 +261,10 @@ Peer.prototype._createPeer = function(data){
 
 Peer.prototype._addRemoteICECandidate = function(data){
 	var that = this;
+	
+	console.log("remote candidate : ");
+	console.log(data.candidate);
+
 	try{
 		var candidate = new RTCIceCandidate(data.candidate);
 		this.peer.addIceCandidate(candidate, function(){
