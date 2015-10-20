@@ -29,6 +29,8 @@ d1.isConnected = function() {
 	return connection.isConnected();
 };
 
+d1.peers = function(){return connection.peers();};
+
 /** Try to connect to the given servers list in the list order, until finding a available one */
 d1.tryConnect = function(servers, WSocket){
 	var deferred = Q.defer();
@@ -87,7 +89,7 @@ inherits(DiyaSelector, EventEmitter);
 
 
 function match(selector, str){
-	if(!selector) return connection && str===connection.self();
+	if(!selector || selector === "#self") return connection && str===connection.self();
 	else if(selector.constructor.name === 'String'){
 		return matchString(selector, str);
 	}else if(selector.constructor.name === 'RegExp'){
@@ -113,7 +115,7 @@ function matchArray(selector, str){
 	return false;
 }
 
-// TODO : Defnitely change to public
+// TODO : Definitely change to public
 DiyaSelector.prototype.select = function() { return this._select(); };
 DiyaSelector.prototype._select = function(selectorFunction){
 	var that = this;
