@@ -281,7 +281,7 @@ DiyaNode.prototype._setupPingResponse = function(){
 		var curTime = new Date().getTime();
 		if(curTime - that._lastPing > that._pingTimeout){
 			that._forceClose();
-			Logger.log("d1: connection timed out !");
+			Logger.log("d1:  timed out !");
 		}else{
 			Logger.log("d1: last ping ok");
 			that._pingSetTimeoutId = setTimeout(checkPing, Math.round(that._pingTimeout / 2.1));
@@ -422,7 +422,7 @@ DiyaNode.prototype._handleHandshake = function(message){
 	}
 
 	if(this._connectionDeferred && !this._connectionDeferred.promise.isFulfilled()){
-		this._connectionDeferred.resolve(this.self());
+		this._connectionDeferred.resolve("prout");
 		this.emit('open', this._addr);
 		this._status = 'opened';
 		this._connectionDeferred = null;
