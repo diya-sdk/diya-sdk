@@ -53,10 +53,8 @@ DiyaNode.prototype.connect = function(addr, WSocket){
 		else addr = "ws://" + addr;
 	}
 
-console.log("iuhiuhiuhiuh!!!!!!!");
-
 	if(this._addr === addr){
-		console.log("SMAE");
+		console.log("SMAE " + this._status);
 		if(this._status === 'opened')
 			return Q(this.self());
 		else if(this._connectionDeferred && !this._connectionDeferred.promise.isFulfilled())
