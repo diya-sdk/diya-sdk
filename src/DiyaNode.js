@@ -59,6 +59,7 @@ DiyaNode.prototype.connect = function(addr, WSocket){
 			return Q(this.self());
 		else if(this._connectionDeferred && !this._connectionDeferred.promise.isFulfilled())
 			return this._connectionDeferred.promise;
+		console.log("SAME ADDR but do connect to " + addr);
 	}
 
 	return this.close().then(function(){
