@@ -53,6 +53,7 @@ DiyaNode.prototype.connect = function(addr, WSocket){
 		else addr = "ws://" + addr;
 	}
 
+console.log("iuhiuhiuhiuh!!!!!!!");
 
 	if(this._addr === addr){
 		console.log("SMAE");
