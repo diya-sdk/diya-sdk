@@ -56,7 +56,7 @@ DiyaNode.prototype.connect = function(addr, WSocket){
 
 	if(this._addr === addr){
 		if(this._status === 'opened')
-			return Q();
+			return Q(this.self());
 		else if(this._connectionDeferred && !this._connectionDeferred.promise.isFulfilled())
 			return this._connectionDeferred.promise;
 	}
@@ -409,8 +409,6 @@ DiyaNode.prototype._handlePing = function(message){
 };
 
 DiyaNode.prototype._handleHandshake = function(message){
-
-console.log("ok-d----------------------------d");
 
 	if(message.peers === undefined || typeof message.self !== 'string'){
 		Logger.error("Missing argumnents for Handshake message, dropping...");
