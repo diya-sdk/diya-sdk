@@ -409,6 +409,9 @@ DiyaNode.prototype._handlePing = function(message){
 };
 
 DiyaNode.prototype._handleHandshake = function(message){
+
+console.log("ok-d----------------------------d");
+
 	if(message.peers === undefined || typeof message.self !== 'string'){
 		Logger.error("Missing argumnents for Handshake message, dropping...");
 		return ;
@@ -422,7 +425,7 @@ DiyaNode.prototype._handleHandshake = function(message){
 	}
 
 	if(this._connectionDeferred && !this._connectionDeferred.promise.isFulfilled()){
-		this._connectionDeferred.resolve("prout");
+		this._connectionDeferred.resolve(this.self());
 		this.emit('open', this._addr);
 		this._status = 'opened';
 		this._connectionDeferred = null;
