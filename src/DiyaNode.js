@@ -62,6 +62,7 @@ DiyaNode.prototype.connect = function(addr, WSocket){
 	}
 
 	return this.close().then(function(){
+		console.log("do connect to " + addr);
 
 		Logger.log('d1: connect');
 
