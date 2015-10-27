@@ -96,6 +96,24 @@ DiyaSelector.prototype.join = function(bootstrap_ips, bPermanent, callback){
 };
 
 
+/**
+ * Disconnect the selected DiyaNodes from the given bootstrap peers
+ *
+ * NOTE : This operation requires root role
+ *
+ * @param bootstrap_ips : an array of bootstrap IP addresses to leave
+ * @param bPermanent : if true, permanently remove the given peers from the automatic bootstrap peers list
+ *
+ */
+DiyaSelector.prototype.leave = function(bootstrap_ips, bPermanent, callback){
+	if(typeof bootstrap_ips === 'string') bootstrap_ips = [ bootstrap_ips ];
+	if(bootstrap_ips.constructor !== Array) throw "leave() : bootstrap_ips should be an array of peers URIs";
+	this.request(
+		{service : 'meshNetwork', func: 'Leave', data: { bootstrap_ips: bootstrap_ips, bPermanent: bPermanent }},
+		function(peerId, err, data) { if(typeof callback === "function") callback(peerId, err, data);}
+	);
+};
+
 
 /**
  * Ask the selected DiyaNodes for their public keys
