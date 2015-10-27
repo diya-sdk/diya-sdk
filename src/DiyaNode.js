@@ -422,7 +422,7 @@ DiyaNode.prototype._handleHandshake = function(message){
 	}
 
 	if(this._connectionDeferred && !this._connectionDeferred.promise.isFulfilled()){
-		this._connectionDeferred.resolve();
+		this._connectionDeferred.resolve(this.self());
 		this.emit('open', this._addr);
 		this._status = 'opened';
 		this._connectionDeferred = null;
