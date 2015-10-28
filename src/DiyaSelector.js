@@ -30,6 +30,7 @@ d1.isConnected = function() {
 };
 
 d1.peers = function(){return connection.peers();};
+d1.self = function() {return connection.self();};
 
 /** Try to connect to the given servers list in the list order, until finding a available one */
 d1.tryConnect = function(servers, WSocket){
