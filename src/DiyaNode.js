@@ -190,14 +190,10 @@ DiyaNode.prototype.unsubscribe = function(subId){
 	return false;
 };
 
-DiyaNode.prototype.peers = function(){
-	return this._peers;
-};
 
-DiyaNode.prototype.self = function() {
-	return this._self;
-};
-
+DiyaNode.prototype.addr = function() { return this._addr; };
+DiyaNode.prototype.peers = function(){ return this._peers; };
+DiyaNode.prototype.self = function() { return this._self; };
 
 DiyaNode.prototype.setSecured = function(bSecured) {
 	if(bSecured === undefined) bSecured = true;

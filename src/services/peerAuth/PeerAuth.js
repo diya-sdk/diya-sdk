@@ -2,6 +2,8 @@ var DiyaSelector = require('../../DiyaSelector').DiyaSelector;
 var d1 = require('../../DiyaSelector');
 
 
+if(typeof INFO === 'undefined') INFO = function(s) { console.log(s);}
+if(typeof OK === 'undefined') OK = function(s) { console.log(s);}
 
 
 
@@ -24,7 +26,7 @@ var d1 = require('../../DiyaSelector');
 * @param bootstrap_net : the IP address where the new device will connect to the boostrap one
 * @param callback : of the form callback(new_peer_name,bootstrap_peer_name, err, data)
 */
-d1.installNode = function(ip, user, password, bootstrap_ip, bootstrap_user, bootstrap_password, bootstrap_net, callback) {
+d1.installNodeExt = function(ip, user, password, bootstrap_ip, bootstrap_user, bootstrap_password, bootstrap_net, callback) {
 	if(typeof ip !== 'string') throw "[installNode] ip should be an IP address";
 	if(typeof bootstrap_ip !== 'string') throw "[installNode] bootstrap_ip should be an IP address";
 	if(typeof bootstrap_net !== 'string') throw "[installNode] bootstrap_net should be an IP address";
@@ -45,8 +47,10 @@ d1.installNode = function(ip, user, password, bootstrap_ip, bootstrap_user, boot
 					}
 					else if(err) return callback(peer, null, err, null);
 					else {
-						INFO("Add trusted peer " + peer + "(ip=" + ip + ") with public key <p style='font-size:8px'>" + data.public_key + "</p>");
+						INFO("Add trusted peer " + peer + "(ip=" + ip + ") to " + bootstrap_ip + " with public key " + data.public_key.slice(0,20));
+						INFO("d1.connectAsUser("+bootstrap_ip+", "+bootstrap_user+", "+bootstrap_password+").then(function(){");
 						d1.connectAsUser(bootstrap_ip, bootstrap_user, bootstrap_password).then(function(){
+							INFO("OK");
 							d1().addTrustedPeer(peer, data.public_key, function(bootstrap_peer, err, data) {
 
 									if(err) return callback(peer, bootstrap_peer, err, null);
@@ -69,8 +73,17 @@ d1.installNode = function(ip, user, password, bootstrap_ip, bootstrap_user, boot
 					}
 				});
 		});
+}
 
 
+/** Short version of @see{d1.installNodeExt} */
+d1.installNode = function(bootstrap_ip, bootstrap_net, callback) {
+		var ip = d1.addr();
+		var user = d1.user();
+		var password = d1.pass();
+		var bootstrap_user = user;
+		var bootstrap_password = password;
+		return d1.installNodeExt(ip, user, password, bootstrap_ip, bootstrap_user, bootstrap_password, bootstrap_net, callback);
 }
 
 

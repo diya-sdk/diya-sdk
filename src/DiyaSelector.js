@@ -7,6 +7,8 @@ var DiyaNode = require('./DiyaNode');
 var connection = new DiyaNode();
 var connectionEvents = new EventEmitter();
 var token = null;
+var _user = null;
+var _pass = null;
 
 function d1(selector){
 	return new DiyaSelector(selector);
@@ -25,12 +27,13 @@ d1.disconnect = function(){
 	return connection.close();
 };
 
-d1.isConnected = function() {
-	return connection.isConnected();
-};
+d1.isConnected = function() {	return connection.isConnected();};
+d1.peers = function() { return connection.peers();};
+d1.self = function() { return connection.self(); };
+d1.addr = function() { return connection.addr(); };
+d1.user = function() { return _user; };
+d1.pass = function() { return _pass; };
 
-d1.peers = function(){return connection.peers();};
-d1.self = function() {return connection.self();};
 
 /** Try to connect to the given servers list in the list order, until finding a available one */
 d1.tryConnect = function(servers, WSocket){
@@ -246,7 +249,7 @@ DiyaSelector.prototype.unsubscribe = function(subIds){
 
 DiyaSelector.prototype.auth = function(user, password, callback, timeout){
 	if(typeof callback === 'function') callback = callback.bind(this);
-
+	
 	var deferred = Q.defer();
 
 	this.request({
@@ -266,6 +269,8 @@ DiyaSelector.prototype.auth = function(user, password, callback, timeout){
 
 		if(!err && data && data.authenticated && data.token){
 			token = data.token;
+			_user = user;
+			_pass = password;
 			if(typeof callback === 'function') callback(peerId, true);
 			else deferred.resolve();
 		} else {
