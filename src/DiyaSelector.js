@@ -34,6 +34,8 @@ d1.addr = function() { return connection.addr(); };
 d1.user = function() { return _user; };
 d1.pass = function() { return _pass; };
 
+d1.reza = function() { console.log("prout"); throw "oiuoijuoijuoij";}
+
 
 /** Try to connect to the given servers list in the list order, until finding an available one */
 d1.tryConnect = function(servers, WSocket){
