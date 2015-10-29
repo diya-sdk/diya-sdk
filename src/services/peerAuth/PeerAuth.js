@@ -159,8 +159,17 @@ DiyaSelector.prototype.areTrusted = function(peers, callback){
 		{ service: 'peerAuth',	func: 'AreTrusted',	data: { peers: peers } },
 		function(peerId, err, data) {
 			var allTrusted = data.trusted;
-			if(allTrusted) OK(peers + " are trusted by " + peerId);
-			else ERR("Some peers in " + peers + " are untrusted by " + peerId);
+			if(allTrusted) { OK(peers + " are trusted by " + peerId); callback(peerId, true); }
+			else { ERR("Some peers in " + peers + " are untrusted by " + peerId); callback(peerId, false); }
 		}
 	);
 };
+DiyaSelector.prototype.isTrusted = function(peer, callback) { return this.areTrusted([peer], callback); }
+
+
+DiyaSelector.prototype.trustedPeers = function(peer, callback) {
+	return this.request(
+		{ service: 'peerAuth',	func: 'GetTrustedPeers',	data: { peers: peers } },
+		function(peerId, err, data) {	callback(peerId, data);	}
+	);
+}
