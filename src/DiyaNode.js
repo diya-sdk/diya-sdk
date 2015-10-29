@@ -67,8 +67,9 @@ DiyaNode.prototype.connect = function(addr, WSocket){
 
 		that._connectionDeferred = Q.defer();
 
-		if(!WSocket) WSocket = window.WebSocket;
-		that._WSocket = WSocket;
+		if(WSocket) that._WSocket = WSocket;
+		else if(!that._WSocket) that._WSocket = window.WebSocket;
+		WSocket = that._WSocket;
 
 		that._socket = new WSocket(that._addr);
 
@@ -199,6 +200,10 @@ DiyaNode.prototype.setSecured = function(bSecured) {
 	if(bSecured === undefined) bSecured = true;
 	this._secured = bSecured;
 };
+
+DiyaNode.prototype.setWSocket = function(WSocket) {
+	this._WSocket = WSocket;
+}
 
 ///////////////////////////////////////////////////////////
 //////////////////// Internal methods /////////////////////

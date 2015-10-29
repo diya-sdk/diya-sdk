@@ -48,16 +48,14 @@ d1.installNodeExt = function(ip, user, password, bootstrap_ip, bootstrap_user, b
 					else if(err) return callback(peer, null, err, null);
 					else {
 						INFO("Add trusted peer " + peer + "(ip=" + ip + ") to " + bootstrap_ip + " with public key " + data.public_key.slice(0,20));
-						INFO("d1.connectAsUser("+bootstrap_ip+", "+bootstrap_user+", "+bootstrap_password+").then(function(){");
 						d1.connectAsUser(bootstrap_ip, bootstrap_user, bootstrap_password).then(function(){
-							INFO("OK");
 							d1().addTrustedPeer(peer, data.public_key, function(bootstrap_peer, err, data) {
 
 									if(err) return callback(peer, bootstrap_peer, err, null);
 									if(data.alreadyTrusted) INFO(peer + " already trusted by " + bootstrap_peer);
 									else INFO(bootstrap_peer + "(ip="+ bootstrap_ip +") added " + peer + "(ip=" + ip + ") as a Trusted Peer");
 
-									INFO("In return, add " + bootstrap_peer + " to " + peer + " as a Trusted Peer with public key  <p style='font-size:8px'>" + data.public_key + "</p>");
+									INFO("In return, add " + bootstrap_peer + " to " + peer + " as a Trusted Peer with public key " + data.public_key.slice(0,20));
 									d1.connectAsUser(ip, user, password).then(function(){
 										d1().addTrustedPeer(bootstrap_peer, data.public_key, function(peer, err, data) {
 											if(err) callback(peer, bootstrap_peer, err, null);

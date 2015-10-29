@@ -35,7 +35,7 @@ d1.user = function() { return _user; };
 d1.pass = function() { return _pass; };
 
 
-/** Try to connect to the given servers list in the list order, until finding a available one */
+/** Try to connect to the given servers list in the list order, until finding an available one */
 d1.tryConnect = function(servers, WSocket){
 	var deferred = Q.defer();
 	function tc(i) {
@@ -66,20 +66,15 @@ d1.on = function(event, callback){
 };
 
 /** Shorthand function to connect and login with the given (user,password) */
-d1.connectAsUser = function(ip, user, password) {
-	return d1.connect(ip).then(function(){
-		return d1().auth(user, password);
+d1.connectAsUser = function(ip, user, password, WSocket) {
+	return d1.connect(ip, WSocket).then(function(){
+		return d1("#self").auth(user, password);
 	});
 }
 
-d1.deauthenticate = function(){
-	token = null;
-};
-
-d1.setSecured = function(bSecured) {
-	connection.setSecured(bSecured);
-};
-
+d1.deauthenticate = function(){ 	token = null;};
+d1.setSecured = function(bSecured) { connection.setSecured(bSecured); };
+d1.setWSocket = function(WSocket) { connection.setWSocket(WSocket); }
 
 function DiyaSelector(selector){
 	EventEmitter.call(this);
@@ -249,7 +244,7 @@ DiyaSelector.prototype.unsubscribe = function(subIds){
 
 DiyaSelector.prototype.auth = function(user, password, callback, timeout){
 	if(typeof callback === 'function') callback = callback.bind(this);
-	
+
 	var deferred = Q.defer();
 
 	this.request({
