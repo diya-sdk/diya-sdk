@@ -202,14 +202,18 @@ DiyaSelector.prototype.each = function(cb){
  * Send request to selected peers ( see each() ) through the current
  * connection (DiyaNode).
  */
-DiyaSelector.prototype.request = function(params, callback, timeout){
+DiyaSelector.prototype.request = function(params, callback, timeout, bNotifyWhenFinished){
 	if(!connection) return this;
 
+	var nbAnswers = 0;
+	var nbExpected = this._select().length;
 	return this.each(function(peerId){
 		params.target = peerId;
 		params.token = token;
 		connection.request(params, function(err, data){
 			if(typeof callback === 'function') callback(peerId, err, data);
+			nbAnswers++;
+			if(nbAnswers == nbExpected && bNotifyWhenFinished) callback(null, err, "##END##"); // TODO : Find a better way to notify request END !!
 		}, timeout);
 	});
 };
