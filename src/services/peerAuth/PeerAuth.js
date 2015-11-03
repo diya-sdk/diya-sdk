@@ -32,14 +32,14 @@ d1.installNodeExt = function(ip, user, password, bootstrap_ip, bootstrap_user, b
 	if(typeof bootstrap_net !== 'string') throw "[installNode] bootstrap_net should be an IP address";
 
 	function join(peer, bootstrap_peer) {
-		d1().join(bootstrap_net, true, function(peer, err, data){
+		d1("#self").join(bootstrap_net, true, function(peer, err, data){
 			if(!err) OK("JOINED !!!");
 			return callback(peer, bootstrap_peer, err, data);
 		});
 	}
 
 	d1.connectAsUser(ip, user, password).then(function(peer, err, data){
-		d1().givePublicKey(function(peer, err, data) {
+		d1("#self").givePublicKey(function(peer, err, data) {
 			if(err==='ServiceNotFound') {
 				INFO("Peer Authentication disabled ... directly joining");
 				join();
@@ -49,7 +49,7 @@ d1.installNodeExt = function(ip, user, password, bootstrap_ip, bootstrap_user, b
 			else {
 				INFO("Add trusted peer " + peer + "(ip=" + ip + ") to " + bootstrap_ip + " with public key " + data.public_key.slice(0,20));
 				d1.connectAsUser(bootstrap_ip, bootstrap_user, bootstrap_password).then(function(){
-					d1().addTrustedPeer(peer, data.public_key, function(bootstrap_peer, err, data) {
+					d1("#self").addTrustedPeer(peer, data.public_key, function(bootstrap_peer, err, data) {
 
 						if(err) return callback(peer, bootstrap_peer, err, null);
 						if(data.alreadyTrusted) INFO(peer + " already trusted by " + bootstrap_peer);
@@ -57,7 +57,7 @@ d1.installNodeExt = function(ip, user, password, bootstrap_ip, bootstrap_user, b
 
 						INFO("In return, add " + bootstrap_peer + " to " + peer + " as a Trusted Peer with public key " + data.public_key.slice(0,20));
 						d1.connectAsUser(ip, user, password).then(function(){
-							d1().addTrustedPeer(bootstrap_peer, data.public_key, function(peer, err, data) {
+							d1("#self").addTrustedPeer(bootstrap_peer, data.public_key, function(peer, err, data) {
 								if(err) callback(peer, bootstrap_peer, err, null);
 								else if(data.alreadyTrusted) INFO(bootstrap_peer + " already trusted by " + peer);
 								else INFO(peer + "(ip="+ ip +") added " + bootstrap_peer + "(ip="+ bootstrap_ip +") as a Trusted Peer");
