@@ -1,4 +1,0 @@
-#!/bin/bash
-
-echo "Removing any symlink left by a previous version ..."
-rm -rf /usr/lib/diya-sdk
