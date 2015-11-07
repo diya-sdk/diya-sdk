@@ -92,6 +92,7 @@ inherits(DiyaSelector, EventEmitter);
 function match(selector, str){
 	if(!selector) return false;
 	if(selector === "#self") return connection && str===connection.self();
+	else if(selector.not) return !match(selector.not, str);
 	else if(selector.constructor.name === 'String'){
 		return matchString(selector, str);
 	}else if(selector.constructor.name === 'RegExp'){
