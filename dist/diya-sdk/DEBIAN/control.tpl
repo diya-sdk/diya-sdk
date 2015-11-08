@@ -4,7 +4,7 @@ Section: base
 Priority: optional
 Architecture: all
 Depends: 
-Maintainer: jfellus <jerome.fellus@partnering.fr>
+Maintainer: antoineDerengerve <antoine.derengerve@partnering.fr>
 Description: SDK for accessing Diya One services
 Homepage: http://www.partnering-robotics.com
 
