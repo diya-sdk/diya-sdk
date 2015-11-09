@@ -10,6 +10,7 @@ require('./services/ieq/ieq.js');
 require('./services/networkId/NetworkId.js');
 require('./services/maps/maps.js');
 require('./services/peerAuth/PeerAuth.js');
+require('./services/meshNetwork/MeshNetwork.js');
 require('./services/verbose/Verbose.js');
 require('./utils/encoding/encoding.js');
 

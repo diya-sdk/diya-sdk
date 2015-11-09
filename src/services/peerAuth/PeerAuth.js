@@ -1,6 +1,6 @@
 var DiyaSelector = require('../../DiyaSelector').DiyaSelector;
 var d1 = require('../../DiyaSelector');
-
+var Q = require('q');
 
 if(typeof INFO === 'undefined') INFO = function(s) { console.log(s);}
 if(typeof OK === 'undefined') OK = function(s) { console.log(s);}
@@ -167,9 +167,17 @@ DiyaSelector.prototype.areTrusted = function(peers, callback){
 DiyaSelector.prototype.isTrusted = function(peer, callback) { return this.areTrusted([peer], callback); }
 
 
-DiyaSelector.prototype.trustedPeers = function(peer, callback) {
-	return this.request(
-		{ service: 'peerAuth',	func: 'GetTrustedPeers',	data: { peers: peers } },
-		function(peerId, err, data) {	callback(peerId, data);	}
+d1.trustedPeers = function() {
+	var deferred = Q.defer();
+	d1("#self").request(
+		{ service: 'peerAuth',	func: 'GetTrustedPeers' },
+		function(peerId, err, data) {
+			if(err) return deferred.reject(err);
+			var peers = [];
+			for(var i=0; i<data.peers.length; i++) peers.push(data.peers[i].name);
+			return deferred.resolve(peers);
+		}
 	);
-}
+	return deferred.promise;
+};
+d1.tp = d1.trustedPeers; // Shorthand
