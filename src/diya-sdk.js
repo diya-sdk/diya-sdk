@@ -13,5 +13,6 @@ require('./services/peerAuth/PeerAuth.js');
 require('./services/meshNetwork/MeshNetwork.js');
 require('./services/verbose/Verbose.js');
 require('./utils/encoding/encoding.js');
+require('./services/status/status.js');
 
 module.exports = d1;
