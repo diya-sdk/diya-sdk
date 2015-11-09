@@ -78,6 +78,29 @@ d1.deauthenticate = function(){ 	token = null;};
 d1.setSecured = function(bSecured) { connection.setSecured(bSecured); };
 d1.setWSocket = function(WSocket) { connection.setWSocket(WSocket); }
 
+
+/** Self-authenticate the local DiyaNode bound to port <port>, using its RSA signature */
+d1.selfConnect = function(port, signature, WSocket) {
+	return d1.connect('ws://localhost:' + port, WSocket)
+		.then(function() {
+			var deferred = Q.defer();
+			d1("#self").request({
+				service: 'peerAuth',
+				func: 'SelfAuthenticate',
+				data: {	signature: signature }
+			}, function(peerId, err, data){
+				if(err) return deferred.reject(err);
+				if(data && data.authenticated && data.token){
+					token = data.token;
+					_user = "#DiyaNode#"+peerId;
+					deferred.resolve();
+				} else deferred.reject('AccessDenied');
+			});
+			return deferred.promise;
+	});
+}
+
+
 function DiyaSelector(selector){
 	EventEmitter.call(this);
 
