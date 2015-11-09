@@ -5,28 +5,24 @@ EventEmitter = require('node-event-emitter');
  *
  * @param map {String} map's name
  */
-function Maps(selector, map) {
+function Maps(peerIds) {
 
 
-	this._map = map; // map name
-	this._selector = selector; // d1()
+	this._peerIds = peerIds;
 	this._subIds = {}; // list of subscription Id (for unsubscription purpose) e.g {peerId0: subId0, ...}
 
 	// list of registered place by Diya
 	this._diyas = {};
 
 	// get a list of Diya from selector and sort it
-	var listDiya = [];//, enterDiya = null, exitDiya = [];
-	this._selector.each(function(peerId) { listDiya.push(peerId); });
-	listDiya.sort();
-
-	this.listDiya = listDiya;
+	this.listDiya = this._peerIds;
 }
 inherits(Maps, EventEmitter);
 
-////////////////////∕∕∕∕∕∕/////////////////////////////////////////////∕∕∕∕∕∕///
-//// Static functions /////////////////////////////////////////////////∕∕∕∕∕∕///
-////////////////////∕∕∕∕∕∕/////////////////////////////////////////////∕∕∕∕∕∕///
+/////////////////////////////////////////
+//// Static functions ///////////////////
+/////////////////////////////////////////
+
 
 /**
  * static function, get current place from diyanode
@@ -35,15 +31,15 @@ inherits(Maps, EventEmitter);
  * @param map {String} map's name
  * @param func {function()} callback function with return peerId, error and data ({ mapId, label, neuronId,  x, y})
  */
-DiyaSelector.prototype.getCurrentPlace = function( map, func) {
+DiyaSelector.prototype.getCurrentPlace = function( peerId, func) {
 	this.request({
 		service: 'maps',
 		func: 'GetCurrentPlace',
-		obj: [ map ]
+		obj: [ peerId ]
 	}, function(peerId, err, data) {
 		func(peerId, err, data);
 	});
-}
+};
 
 ////////////////////∕∕∕∕∕∕/////////////////////////////////////////////∕∕∕∕∕∕///
 //// Internal functions ///////////////////////////////////////////////∕∕∕∕∕∕///
@@ -122,10 +118,10 @@ Maps.prototype.removePeer = function(peerId) {
 	if (this._subIds[peerId] !== null && !isNaN(this._subIds[peerId])) {
 		// existed subscription ??
 		// unsubscribe
-		d1(peerId).unsubscribe(this._subIds)
+		d1(peerId).unsubscribe(this._subIds);
 		delete this._subIds[peerId];
 	}
-}
+};
 
 /**
  * connect to service map
@@ -140,20 +136,27 @@ Maps.prototype.connect = function() {
 	};
 
 	// subscribe for map service
-	this._selector.subscribe({
+	d1("#self").subscribe({
 		service: 'maps',
 		func: 'ListenMap',
-		obj: [ this._map ]
+		obj: this._peerIds 
 	}, function(peerId, err, data) {
 		if (err || data.error) {
-			console.log("Maps: Peer [", peerId, "]: fail to get info from map '" + that._map + "', error:", err || data.error, "!"); // mostly PeerDisconnected
+			console.log("Maps: fail to get info from map, error:", err || data.error, "!"); // mostly PeerDisconnected
 
 			// remove that peer
-			that.removePeer(peerId);//...
+			//that.removePeer(peerId);//...
 			return;
 		}
 
 		if (data == null) return ;
+
+		peerId = data.peerId;
+
+		if(!peerId){
+			console.log("Maps: received info without a peerId");       
+			return ;
+		}
 
 		if (!Array.isArray(data.places)) { // winner, this isn't 1st message
 			data.places = [];
@@ -166,11 +169,10 @@ Maps.prototype.connect = function() {
 
 		var map_info = null, places_info = [];
 
-		if (data.id) { // first message from DiyaNode
+		if(data.type === 'MapInfo'){
 			// data : {id, name, places, rotate, scale, tx, ty, ratio}
 			if (that._diyas[peerId] == null) {
 				that._diyas[peerId] = {
-					mapId: data.id,
 					path: {
 						translate: [data.tx, data.ty],
 						scale: data.scale,
@@ -180,8 +182,6 @@ Maps.prototype.connect = function() {
 					places: {}
 				};
 			} else {
-				that._diyas[peerId].mapId = data.id;
-
 				if (that._diyas[peerId].path == null) {
 					that._diyas[peerId].path = {};
 				}
@@ -189,12 +189,10 @@ Maps.prototype.connect = function() {
 				that._diyas[peerId].path.scale = data.scale;
 				that._diyas[peerId].path.rotate = data.rotate;
 				that._diyas[peerId].path.ratio = data.ratio;
-
 				if (that._diyas[peerId].places == null) {
 					that._diyas[peerId].places = {};
 				}
 			}
-
 			map_info = {
 				id: data.id,
 				name: data.name,
@@ -202,7 +200,7 @@ Maps.prototype.connect = function() {
 				scale: data.scale,
 				translate: [data.tx, data.ty],
 				ratio: data.ratio
-			}
+			};
 		}
 
 		// save data values
@@ -246,7 +244,7 @@ Maps.prototype.connect = function() {
 	for (var peerId in options.subIds) {
 		if (this._subIds[peerId] !== null && !isNaN(this._subIds[peerId])) {
 			// existed subscription ??
-			d1(peerId).unsubscribe(this._subIds)
+			d1("#self").unsubscribe(this._subIds)
 			delete this._subIds[peerId];
 			console.log("Maps: bug: existed subscription ??")
 		} else {
@@ -263,9 +261,9 @@ Maps.prototype.connect = function() {
  */
 Maps.prototype.disconnect = function() {
 	var that = this;
-	this._selector.unsubscribe(this._subIds);
+	d1("#self").unsubscribe(this._subIds);
 	this._diyas = {};// delete ?
-	this._selector.each(function(peerId) {
+	this._peerIds.forEach(function(peerId) {
 		that.emit("peer-unsubscribed", peerId);
 	});
 	this.removeAllListeners();
@@ -285,10 +283,10 @@ Maps.prototype.saveMap = function (peerId, map_info, cb) {
 	_map_info.scale = Array.isArray(_map_info.scale) ? _map_info.scale[0] : _map_info.scale
 
 	if (this.mapIsModified(peerId, _map_info)) {
-		d1(peerId).request({
+		d1("#self").request({
 			service: 'maps',
 			func: 'UpdateMap',
-			obj: [ this._map ],
+			obj: [ peerId ],
 			data: {
 				scale: _map_info.scale,
 				tx: _map_info.translate[0],
@@ -326,11 +324,11 @@ Maps.prototype.savePlace = function (peerId, place_info, cb) {
 
 	// save place
 	if (this.placeIsModified(peerId, _place_info)) {
-		d1(peerId).request({
+		d1("#self").request({
 			service: 'maps',
 			func: 'UpdatePlace',
+			obj: [ peerId ],
 			data: {
-				mapId: this._diyas[peerId].mapId,
 				neuronId: _place_info.id,
 				x: _place_info.x,
 				y: _place_info.y
@@ -356,10 +354,10 @@ Maps.prototype.savePlace = function (peerId, place_info, cb) {
 Maps.prototype.clearPlaces = function(peerId, cb) {
 	var that = this;
 
-	d1(peerId).request({
+	d1("#self").request({
 		service: 'maps',
 		func: 'ClearMap',
-		obj: [ this._map ]
+		obj: [ peerId ]
 	}, function(peerId, err, data) {
 		if (err != null) {
 			// delete from internal list
@@ -370,8 +368,8 @@ Maps.prototype.clearPlaces = function(peerId, cb) {
 }
 
 // export it as module of DiyaSelector
-DiyaSelector.prototype.maps = function(map) {
-	var maps = new Maps(this, map);
+DiyaSelector.prototype.maps = function(peerIds) {
+	var maps = new Maps(peerIds);
 
 	return maps;
 }
