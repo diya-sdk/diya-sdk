@@ -97,6 +97,8 @@ d1.selfConnect = function(port, signature, WSocket) {
 }
 
 
+
+
 function DiyaSelector(selector){
 	EventEmitter.call(this);
 
