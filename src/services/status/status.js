@@ -367,11 +367,10 @@ Status.prototype._getRobotModelFromRecv = function(data){
 
 					/** update errorList **/
 					if(!rParts[p].errorList)
-						rParts[p].errorList=[];
-					parts[p].errorList.forEach(function(el,i) {
-						if(el)
-							rParts[p].errorList[i] = el;
-					});
+						rParts[p].errorList={};
+					for( var el in parts[p].errorList )
+						if(!rParts[p].errorList[el])
+							rParts[p].errorList[el] = parts[p].errorList[el];
 
 					rParts[p].error = {
 						code: this._coder.from(parts[p].errors.code),
