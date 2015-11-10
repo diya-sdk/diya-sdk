@@ -40,12 +40,9 @@ d1.pass = function() { return _pass; };
 d1.tryConnect = function(servers, WSocket){
 	var deferred = Q.defer();
 	function tc(i) {
-		console.log("TRY : " + servers[i]);
 		d1.connect(servers[i], WSocket).then(function(e){
-			console.log("youpi : " + servers[i]);
 			return deferred.resolve(servers[i]);
 		}).catch(function(e){
-			console.log("FAILED : " + servers[i]);
 			d1.disconnect().then(function() {
 				i++;
 				if(i<servers.length) setTimeout(function() {tc(i);}, 100);
