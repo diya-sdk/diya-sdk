@@ -31,6 +31,19 @@ d1.installNodeExt = function(ip, user, password, bootstrap_ip, bootstrap_user, b
 	if(typeof bootstrap_ip !== 'string') throw "[installNode] bootstrap_ip should be an IP address";
 	if(typeof bootstrap_net !== 'string') throw "[installNode] bootstrap_net should be an IP address";
 
+
+	// Check and Format URI (FQDN)
+	if(bootstrap_ip.indexOf("ws://") !== 0 && bootstrap_ip.indexOf("wss://") !== 0) {
+		if(d1.isSecured()) bootstrap_ip = "wss://" + bootstrap_ip;
+		else bootstrap_ip = "ws://" + bootstrap_ip;
+	}
+	if(bootstrap_net.indexOf("ws://") !== 0 && bootstrap_net.indexOf("wss://") !== 0) {
+		if(d1.isSecured()) bootstrap_net = "wss://" + bootstrap_net;
+		else bootstrap_net = "ws://" + bootstrap_net;
+	}
+
+
+
 	function join(peer, bootstrap_peer) {
 		d1("#self").join(bootstrap_net, true, function(peer, err, data){
 			if(!err) OK("JOINED !!!");
