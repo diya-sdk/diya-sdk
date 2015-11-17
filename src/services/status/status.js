@@ -232,11 +232,13 @@ Status.prototype.getDataByName = function(sensorNames){
 /**
  * Subscribe to error/status updates
  */
-Status.prototype.subscribe = function(callback){
+Status.prototype.subscribe = function(robotNames, callback){
 	var that = this;
+	console.log(robotNames);
 	this.selector.subscribe({
 		service: 'status',
-		func: 'ListenUpdates'
+		func: 'ListenUpdates',
+		data: robotNames
 	}, function (peerId, err, data) {
 		// console.log(peerId);
 		// console.log(err);
@@ -335,9 +337,10 @@ Status.prototype._getRobotModelFromRecv = function(data){
 			for(var q in rParts) {
 				/** part[q] was not sent because no error **/
 				if(!parts[q]
-				   &&rParts[q].error&&rParts[q].error.code) {
-					rParts[q].error = {
+				   &&rParts[q].evts&&rParts[q].evts.code) {
+					rParts[q].evts = {
 						code: [0],
+						codeRef: [0],
 						time: [Date.now()] /** update **/
 					};
 				}
@@ -372,9 +375,10 @@ Status.prototype._getRobotModelFromRecv = function(data){
 						if(!rParts[p].errorList[el])
 							rParts[p].errorList[el] = parts[p].errorList[el];
 
-					rParts[p].error = {
-						code: this._coder.from(parts[p].errors.code),
-						time: this._coder.from(parts[p].errors.time)
+					rParts[p].evts = {
+						code: this._coder.from(parts[p].evts.code),
+						codeRef: this._coder.from(parts[p].evts.codeRef),
+						time: this._coder.from(parts[p].evts.time)
 					};
 				}
 				// console.log(rParts[p].error);
