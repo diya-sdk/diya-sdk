@@ -223,8 +223,8 @@ DiyaSelector.prototype.each = function(cb){
 };
 
 /**
- * Send request to selected peers ( see each() ) through the current
- * connection (DiyaNode).
+ * Send request to selected peers ( see each() ) through the current connection (DiyaNode).
+ * @param {String | Object} params : can be service.function or {service:service, func:function, ...}
  */
 DiyaSelector.prototype.request = function(params, callback, timeout, bNotifyWhenFinished){
 	if(!connection) return this;
@@ -242,6 +242,7 @@ DiyaSelector.prototype.request = function(params, callback, timeout, bNotifyWhen
 	});
 };
 
+/* @param {String | Object} params : can be service.function or {service:service, func:function, ...} */
 DiyaSelector.prototype.subscribe = function(params, callback, options){
 
 	function doSubscribe(peerId){

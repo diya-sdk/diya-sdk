@@ -128,6 +128,12 @@ DiyaNode.prototype.isConnected = function(){
 DiyaNode.prototype.request = function(params, callback, timeout){
 	var that = this;
 
+	if(params.constructor === String) {
+		var _params = params.split(".");
+		if(_params.length!=2) throw 'MalformedRequest';
+		params = {service:_params[0], func:_params[0]};
+	}
+
 	if(!params.service) {
 		Logger.error('No service defined for request !');
 		return false;
@@ -153,6 +159,12 @@ DiyaNode.prototype.request = function(params, callback, timeout){
 };
 
 DiyaNode.prototype.subscribe = function(params, callback){
+	if(params.constructor === String) {
+		var _params = params.split(".");
+		if(_params.length!=2) throw 'MalformedRequest';
+		params = {service:_params[0], func:_params[0]};
+	}
+
 	if(!params.service){
 		Logger.error('No service defined for subscription !');
 		return -1;
