@@ -131,7 +131,7 @@ DiyaNode.prototype.request = function(params, callback, timeout){
 	if(params.constructor === String) {
 		var _params = params.split(".");
 		if(_params.length!=2) throw 'MalformedRequest';
-		params = {service:_params[0], func:_params[0]};
+		params = {service:_params[0], func:_params[1]};
 	}
 
 	if(!params.service) {
@@ -162,7 +162,7 @@ DiyaNode.prototype.subscribe = function(params, callback){
 	if(params.constructor === String) {
 		var _params = params.split(".");
 		if(_params.length!=2) throw 'MalformedRequest';
-		params = {service:_params[0], func:_params[0]};
+		params = {service:_params[0], func:_params[1]};
 	}
 
 	if(!params.service){
