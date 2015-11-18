@@ -242,10 +242,10 @@ DiyaSelector.prototype.request = function(params, callback, timeout, bNotifyWhen
 		params.token = token;
 		connection.request(params, function(err, data){
 			if(typeof callback === 'function') callback(peerId, err, data);
-			nbAnswers++; 
+			nbAnswers++;
 			if(nbAnswers == nbExpected && bNotifyWhenFinished) callback(null, err, "##END##"); // TODO : Find a better way to notify request END !!
 		}, timeout,
-		(typeof callback_partial === 'function') ? function(){callback_partial(peerId);} : null);
+		(typeof callback_partial === 'function') ? function(err, data){callback_partial(peerId, err, data);} : null);
 	});
 };
 
