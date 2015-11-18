@@ -226,7 +226,7 @@ DiyaSelector.prototype.each = function(cb){
  * Send request to selected peers ( see each() ) through the current connection (DiyaNode).
  * @param {String | Object} params : can be service.function or {service:service, func:function, ...}
  */
-DiyaSelector.prototype.request = function(params, callback, timeout, bNotifyWhenFinished, callback_finished){
+DiyaSelector.prototype.request = function(params, callback, timeout, bNotifyWhenFinished, callback_partial){
 	if(!connection) return this;
 
 	if(params.constructor === String) {
@@ -242,10 +242,10 @@ DiyaSelector.prototype.request = function(params, callback, timeout, bNotifyWhen
 		params.token = token;
 		connection.request(params, function(err, data){
 			if(typeof callback === 'function') callback(peerId, err, data);
-			nbAnswers++; // !! TODO : Doesn't work with Partial Answers
+			nbAnswers++; 
 			if(nbAnswers == nbExpected && bNotifyWhenFinished) callback(null, err, "##END##"); // TODO : Find a better way to notify request END !!
 		}, timeout,
-		(typeof callback_finished === 'function') ? function(){callback_finished(peerId);} : null);
+		(typeof callback_partial === 'function') ? function(){callback_partial(peerId);} : null);
 	});
 };
 
