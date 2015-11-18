@@ -125,7 +125,7 @@ DiyaNode.prototype.isConnected = function(){
 	return (this._socket && this._socket.readyState == this._WSocket.OPEN && this._status === 'opened');
 };
 
-DiyaNode.prototype.request = function(params, callback, timeout){
+DiyaNode.prototype.request = function(params, callback, timeout, callback_finished){
 	var that = this;
 
 	if(params.constructor === String) {
@@ -141,6 +141,7 @@ DiyaNode.prototype.request = function(params, callback, timeout){
 
 	var message = this._createMessage(params, "Request");
 	this._appendMessage(message, callback);
+	if(typeof callback_finished === 'function') this._pendingMessages[message.id].callback_finished = callback_finished;
 
 	if(!isNaN(timeout) && timeout > 0){
 		setTimeout(function(){
@@ -482,7 +483,11 @@ DiyaNode.prototype._handlePeerDisconnected = function(message){
 };
 
 DiyaNode.prototype._handleRequest = function(handler, message){
-	this._removeMessage(message.id);
+	if(message.type !== 'PartialAnswer') {
+		if(typeof this._pendingMessages[message.id].callback_finished === 'function')
+			this._pendingMessages[message.id].callback_finished();
+		this._removeMessage(message.id);
+	}
 	this._notifyListener(handler, message.error, message.data);
 };
 

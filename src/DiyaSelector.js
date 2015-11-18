@@ -33,7 +33,7 @@ d1.self = function() { return connection.self(); };
 d1.addr = function() { return connection.addr(); };
 d1.user = function() { return _user; };
 d1.pass = function() { return _pass; };
-
+d1.isAuthenticated = function() {return token != null; }
 
 
 /** Try to connect to the given servers list in the list order, until finding an available one */
@@ -226,8 +226,14 @@ DiyaSelector.prototype.each = function(cb){
  * Send request to selected peers ( see each() ) through the current connection (DiyaNode).
  * @param {String | Object} params : can be service.function or {service:service, func:function, ...}
  */
-DiyaSelector.prototype.request = function(params, callback, timeout, bNotifyWhenFinished){
+DiyaSelector.prototype.request = function(params, callback, timeout, bNotifyWhenFinished, callback_finished){
 	if(!connection) return this;
+
+	if(params.constructor === String) {
+		var _params = params.split(".");
+		if(_params.length!=2) throw 'MalformedRequest';
+		params = {service:_params[0], func:_params[1]};
+	}
 
 	var nbAnswers = 0;
 	var nbExpected = this._select().length;
@@ -236,14 +242,21 @@ DiyaSelector.prototype.request = function(params, callback, timeout, bNotifyWhen
 		params.token = token;
 		connection.request(params, function(err, data){
 			if(typeof callback === 'function') callback(peerId, err, data);
-			nbAnswers++;
+			nbAnswers++; // !! TODO : Doesn't work with Partial Answers
 			if(nbAnswers == nbExpected && bNotifyWhenFinished) callback(null, err, "##END##"); // TODO : Find a better way to notify request END !!
-		}, timeout);
+		}, timeout,
+		(typeof callback_finished === 'function') ? function(){callback_finished(peerId);} : null);
 	});
 };
 
 /* @param {String | Object} params : can be service.function or {service:service, func:function, ...} */
 DiyaSelector.prototype.subscribe = function(params, callback, options){
+
+	if(params.constructor === String) {
+		var _params = params.split(".");
+		if(_params.length!=2) throw 'MalformedRequest';
+		params = {service:_params[0], func:_params[1]};
+	}
 
 	function doSubscribe(peerId){
 		params.target = peerId;
