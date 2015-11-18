@@ -485,6 +485,8 @@ DiyaNode.prototype._handlePeerDisconnected = function(message){
 DiyaNode.prototype._handleRequest = function(handler, message){
 	if(message.type === 'PartialAnswer') {
 		if(typeof this._pendingMessages[message.id].callback_partial === 'function') {
+			console.log(error);
+			console.log(data);
 			var error = message.error ? message.error : null;
 			var data = message.data ? message.data : null;
 			this._pendingMessages[message.id].callback_partial(error, data);
