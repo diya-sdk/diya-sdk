@@ -226,9 +226,9 @@ DiyaSelector.prototype.each = function(cb){
  * Send request to selected peers ( see each() ) through the current connection (DiyaNode).
  * @param {String | Object} params : can be service.function or {service:service, func:function, ...}
  */
-DiyaSelector.prototype.request = function(params, callback, timeout, bNotifyWhenFinished, callback_partial){
+DiyaSelector.prototype.request = function(params, callback, timeout, options){
 	if(!connection) return this;
-
+	if(!options) options = {};
 	if(params.constructor === String) {
 		var _params = params.split(".");
 		if(_params.length!=2) throw 'MalformedRequest';
@@ -240,12 +240,16 @@ DiyaSelector.prototype.request = function(params, callback, timeout, bNotifyWhen
 	return this.each(function(peerId){
 		params.target = peerId;
 		params.token = token;
+
+		var opts = {};
+		for(var i in options) opts[i] = options[i];
+		if(typeof opts.callback_partial === 'function') opts.callback_partial = function(err, data){ options.callback_partial(peerId, err, data);}
+
 		connection.request(params, function(err, data){
 			if(typeof callback === 'function') callback(peerId, err, data);
 			nbAnswers++;
-			if(nbAnswers == nbExpected && bNotifyWhenFinished) callback(null, err, "##END##"); // TODO : Find a better way to notify request END !!
-		}, timeout,
-		(typeof callback_partial === 'function') ? function(err, data){callback_partial(peerId, err, data);} : null);
+			if(nbAnswers == nbExpected && options.bNotifyWhenFinished) callback(null, err, "##END##"); // TODO : Find a better way to notify request END !!
+		}, timeout, opts);
 	});
 };
 

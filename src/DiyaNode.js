@@ -125,8 +125,9 @@ DiyaNode.prototype.isConnected = function(){
 	return (this._socket && this._socket.readyState == this._WSocket.OPEN && this._status === 'opened');
 };
 
-DiyaNode.prototype.request = function(params, callback, timeout, callback_partial){
+DiyaNode.prototype.request = function(params, callback, timeout, options){
 	var that = this;
+	if(!options) options = {};
 
 	if(params.constructor === String) {
 		var _params = params.split(".");
@@ -141,7 +142,8 @@ DiyaNode.prototype.request = function(params, callback, timeout, callback_partia
 
 	var message = this._createMessage(params, "Request");
 	this._appendMessage(message, callback);
-	if(typeof callback_partial === 'function') this._pendingMessages[message.id].callback_partial = callback_partial;
+	if(typeof options.callback_partial === 'function') this._pendingMessages[message.id].callback_partial = options.callback_partial;
+	message.options = options;
 
 	if(!isNaN(timeout) && timeout > 0){
 		setTimeout(function(){
