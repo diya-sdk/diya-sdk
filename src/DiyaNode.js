@@ -42,8 +42,23 @@ inherits(DiyaNode, EventEmitter);
 ////////////////// Public API //////////////////////
 ////////////////////////////////////////////////////
 
+
+DiyaNode.prototype.addr = function() { return this._addr; };
+DiyaNode.prototype.peers = function(){ return this._peers; };
+DiyaNode.prototype.self = function() { return this._self; };
+DiyaNode.prototype.setSecured = function(bSecured) { this._secured = bSecured !== false; };
+DiyaNode.prototype.setWSocket = function(WSocket) {this._WSocket = WSocket;}
+
+
+
+/** @return {Promise<String>} the connected peer name */
 DiyaNode.prototype.connect = function(addr, WSocket){
 	var that = this;
+	this.bDontReconnected = false;
+
+	if(WSocket) this._WSocket = WSocket;
+	else if(!this._WSocket) this._WSocket = window.WebSocket;
+	WSocket = this._WSocket;
 
 	// Check and Format URI (FQDN)
 	if(addr.indexOf("ws://") === 0 && this._secured) return Q.reject("Please use a secured connection (" + addr + ")");
@@ -61,68 +76,59 @@ DiyaNode.prototype.connect = function(addr, WSocket){
 	}
 
 	return this.close().then(function(){
-		Logger.log('d1: connect');
-
 		that._addr = addr;
-
 		that._connectionDeferred = Q.defer();
+		Logger.log('d1: connect to ' + that._addr);
+		var sock = new SocketHandler(WSocket, that._addr, that._connectTimeout);
 
-		if(WSocket) that._WSocket = WSocket;
-		else if(!that._WSocket) that._WSocket = window.WebSocket;
-		WSocket = that._WSocket;
+		if(!that._socketHandler) that._socketHandler = sock;
 
-		that._socket = new WSocket(that._addr);
-
-		that._socketOpenCallback = that._onopen.bind(that);
-		that._socketCloseCallback = that._onclose.bind(that);
-		that._socketMessageCallback = that._onmessage.bind(that);
-
-		that._socket.addEventListener('open', that._socketOpenCallback);
-		that._socket.addEventListener('close',that._socketCloseCallback);
-		that._socket.addEventListener('message', that._socketMessageCallback);
-
-
-		that._socket.addEventListener('error', function(err){
-			Logger.error("[WS] error : "+err);
-			that._socket.close();
+		sock.on('open', function(){
+			if(that._socketHandler !== sock) {
+				console.log("[d1] Websocket responded but already connected to a different one");
+				return;
+			}
+			that._socketHandler = sock;
+			that._status = 'opened';
+			that._setupPingResponse();
 		});
 
+		sock.on('close', function() {
+			if(that._socketHandler !== sock) return;
+			that._socketHandler = null;
+			that._status = 'closed';
+			that._stopPingResponse();
+			that._onclose();
+			if(that._connectionDeferred) { that._connectionDeferred.reject("closed"); that._connectionDeferred = null;}
+		});
 
-		setTimeout(function(){
-			if(that._status !== 'opened'){
-				Logger.log('d1: timed out while connecting');
-				// if(that._socket.readyState !== WSocket.CLOSED) that._socket.close()    ??? TODO : This may cause a weird warning in Chrome
-				if(that._connectionDeferred) that._connectionDeferred.reject("Timeout");
-			}
-		}, that._connectTimeout);
+		sock.on('timeout', function() {
+			if(that._socketHandler !== sock) return;
+			that._socketHandler = null;
+			that._status = 'closed';
+			if(that._connectionDeferred) { that._connectionDeferred.reject("closed"); that._connectionDeferred = null;}
+		})
+
+		sock.on('message', function(message) { that._onmessage(message); });
 
 		return that._connectionDeferred.promise;
 	});
 };
 
+DiyaNode.prototype.disconnect = function() {
+	this.bDontReconnected = true;
+	return this.close();
+};
+
+
 DiyaNode.prototype.close = function(){
-
 	this._stopPingResponse();
-
-	if(this._disconnectionDeferred) return this._disconnectionDeferred.promise;
-
-	else if(this._socket && this._status === 'opened'){
-		this._disconnectionDeferred = new Q.defer();
-		this._socket.close();
-		return this._disconnectionDeferred.promise;
-	}
-
-	else if(this._status === 'closed'){
-		return Q();
-	}
-
-	else{
-		return Q();
-	}
+	if(this._socketHandler) return this._socketHandler.close();
+	else return Q();
 };
 
 DiyaNode.prototype.isConnected = function(){
-	return (this._socket && this._socket.readyState == this._WSocket.OPEN && this._status === 'opened');
+	return (this._socketHandler && this._socketHandler.isConnected());
 };
 
 DiyaNode.prototype.request = function(params, callback, timeout, options){
@@ -154,7 +160,7 @@ DiyaNode.prototype.request = function(params, callback, timeout, options){
 
 	if(!this._send(message)){
 		this._removeMessage(message.id);
-		Logger.error('Cannot send request !');
+		console.error('Cannot send request !');
 		return false;
 	}
 
@@ -207,18 +213,6 @@ DiyaNode.prototype.unsubscribe = function(subId){
 };
 
 
-DiyaNode.prototype.addr = function() { return this._addr; };
-DiyaNode.prototype.peers = function(){ return this._peers; };
-DiyaNode.prototype.self = function() { return this._self; };
-
-DiyaNode.prototype.setSecured = function(bSecured) {
-	if(bSecured === undefined) bSecured = true;
-	this._secured = bSecured;
-};
-
-DiyaNode.prototype.setWSocket = function(WSocket) {
-	this._WSocket = WSocket;
-}
 
 ///////////////////////////////////////////////////////////
 //////////////////// Internal methods /////////////////////
@@ -262,27 +256,14 @@ DiyaNode.prototype._notifyListener = function(handler, error, data){
 	if(handler && typeof handler.callback === 'function') {
 		error = error ? error : null;
 		data = data ? data : null;
-		handler.callback(error, data);
+		try {
+			handler.callback(error, data);
+		} catch(e) { console.log('[Error in Request callback] ' + e.stack ? e.stack : e);}
 	}
 };
 
 DiyaNode.prototype._send = function(message){
-	try{
-		var data = JSON.stringify(message);
-	}catch(err){
-		Logger.error('Cannot serialize message');
-		return false;
-	}
-
-	try{
-		this._socket.send(data);
-	}catch(err){
-		Logger.error('Cannot send message');
-		Logger.error(err);
-		return false;
-	}
-
-	return true;
+	return this._socketHandler.send(message);
 };
 
 DiyaNode.prototype._setupPingResponse = function(){
@@ -310,7 +291,7 @@ DiyaNode.prototype._stopPingResponse = function(){
 };
 
 DiyaNode.prototype._forceClose = function(){
-	this._socket.close();
+	this._socketHandler.close();
 	this._onclose();
 };
 
@@ -319,76 +300,30 @@ DiyaNode.prototype._forceClose = function(){
 ///////////////////////////////////////////////////////////////
 
 
-DiyaNode.prototype._onopen = function(){
-	this._setupPingResponse();
-};
-
-
-DiyaNode.prototype._onmessage = function(evt){
-	try{
-		var message = JSON.parse(evt.data);
-	}catch(err){
-		Logger.error("[WS] cannot parse message, dropping...");
-		return ;
-	}
-
-	if(isNaN(message.id)) {
-		this._handleInternalMessage(message);
-	}else{
-		var handler = this._getMessageHandler(message.id);
-		if(handler){
-			switch(handler.type){
-				case "Request":
-					this._handleRequest(handler, message);
-					break;
-				case "Subscription":
-					this._handleSubscription(handler, message);
-					break;
-			}
-		}
+DiyaNode.prototype._onmessage = function(message){
+	if(isNaN(message.id)) return this._handleInternalMessage(message);
+	var handler = this._getMessageHandler(message.id);
+	if(!handler) return;
+	switch(handler.type){
+		case "Request":
+			this._handleRequest(handler, message);
+			break;
+		case "Subscription":
+			this._handleSubscription(handler, message);
+			break;
 	}
 };
 
 DiyaNode.prototype._onclose = function(){
 	var that = this;
 
-	if(this._socket && (typeof this._socket.removeEventListener === 'function')){
-		this._socket.removeEventListener('open', this._socketOpenCallback);
-		this._socket.removeEventListener('close', this._socketCloseCallback);
-		this._socket.removeEventListener('message', this._socketMessageCallback);
-	}else if(this._socket && (typeof this._socket.removeAllListeners === 'function')){
-		this._socket.removeAllListeners();
-	}
-
-	Logger.log("d1: on close");
-
-	this._stopPingResponse();
-
 	this._clearMessages('PeerDisconnected');
 	this._clearPeers();
-	this._status = 'closed';
 
-	if(this._connectionDeferred){
-		Logger.log('d1: connection failed');
-		this._connectionDeferred.reject("d1: connection failed");
-		this._connectionDeferred = null;
-	}
-
-	//if close was requested, resolve promise
-	if(this._disconnectionDeferred){
-		Logger.log('d1: disconnection done');
-		this._disconnectionDeferred.resolve();
-		this._disconnectionDeferred = null;
-	}
-	//Otherwise, try to reconnect
-	else{
-		Logger.log('d1: connection lost, try reconnecting');
-		setTimeout(function(){
-			that.connect(that._addr, that._WSocket).catch(function(err){
-
-			});
-		}, that._reconnectTimeout);
-	}
+	Logger.log('d1: connection lost, try reconnecting');
+	setTimeout(function(){
+		that.connect(that._addr, that._WSocket).catch(function(err){});
+	}, that._reconnectTimeout);
 
 	this.emit('close', this._addr);
 };
@@ -416,16 +351,14 @@ DiyaNode.prototype._handleInternalMessage = function(message){
 
 DiyaNode.prototype._handlePing = function(message){
 	message.type = "Pong";
-
 	this._lastPing = new Date().getTime();
-
 	this._send(message);
 };
 
 DiyaNode.prototype._handleHandshake = function(message){
 
 	if(message.peers === undefined || typeof message.self !== 'string'){
-		Logger.error("Missing argumnents for Handshake message, dropping...");
+		Logger.error("Missing arguments for Handshake message, dropping...");
 		return ;
 	}
 
@@ -436,12 +369,10 @@ DiyaNode.prototype._handleHandshake = function(message){
 		this.emit('peer-connected', message.peers[i]);
 	}
 
-	if(this._connectionDeferred && !this._connectionDeferred.promise.isFulfilled()){
-		this._connectionDeferred.resolve(this.self());
-		this.emit('open', this._addr);
-		this._status = 'opened';
-		this._connectionDeferred = null;
-	}
+	this._connectionDeferred.resolve(this.self());
+	this.emit('open', this._addr);
+	this._status = 'opened';
+	this._connectionDeferred = null;
 };
 
 DiyaNode.prototype._handlePeerConnected = function(message){
@@ -504,6 +435,112 @@ DiyaNode.prototype._handleSubscription = function(handler, message){
 		message.error = 'SubscriptionClosed';
 	}
 	this._notifyListener(handler, message.error, message.data ? message.data : null);
+};
+
+
+///////////////////
+// SocketHandler //
+///////////////////
+
+function SocketHandler(WSocket, addr, timeout) {
+	var that = this;
+	this.addr = addr;
+
+	if(WSocket) this._WSocket = WSocket;
+	else if(!this._WSocket) this._WSocket = window.WebSocket;
+	WSocket = this._WSocket;
+
+	this._status = 'opening';
+
+	try {
+		this._socket = new WSocket(addr);
+	} catch(e) {
+		Logger.error(e.stack);
+		return that.close();
+	}
+
+	this._socketOpenCallback = this._onopen.bind(this);
+	this._socketCloseCallback = this._onclose.bind(this);
+	this._socketMessageCallback = this._onmessage.bind(this);
+
+	this._socket.addEventListener('open', this._socketOpenCallback);
+	this._socket.addEventListener('close',this._socketCloseCallback);
+	this._socket.addEventListener('message', this._socketMessageCallback);
+
+	this._socket.addEventListener('error', function(err){
+		Logger.error("[WS] error : "+JSON.stringify(err));
+		that._socket.close();
+	});
+
+	setTimeout(function(){
+		if(that._status === 'opened') return;
+		if(that._status !== 'closed'){
+			Logger.log('d1: ' + that.addr + ' timed out while connecting');
+			that.close();
+			that.emit('timeout', that._socket);
+		}
+	}, timeout);
+};
+inherits(SocketHandler, EventEmitter);
+
+SocketHandler.prototype.close = function() {
+	if(this._disconnectionDeferred && this._disconnectionDeferred.promise) return this._disconnectionDeferred.promise;
+	this._disconnectionDeferred = Q.defer();
+	this._status = 'closing';
+	this._socket.close();
+	return this._disconnectionDeferred.promise;
+};
+
+SocketHandler.prototype.send = function(message) {
+	try {
+		var data = JSON.stringify(message);
+	} catch(err) {
+		console.error('Cannot serialize message');
+		return false;
+	}
+
+	try {
+		this._socket.send(data);
+	} catch(err){
+		console.error('Cannot send message');
+		console.error(err);
+		return false;
+	}
+
+	return true;
+}
+
+SocketHandler.prototype.isConnected = function() {
+	return this._socket.readyState == this._WSocket.OPEN && this._status === 'opened';
+};
+
+SocketHandler.prototype._onopen = function() {
+	this._status = 'opened';
+	this.emit('open', this._socket);
+};
+
+SocketHandler.prototype._onclose = function() {
+	this._status = 'closed';
+	this.unregisterCallbacks();
+	this.emit('close', this._socket);
+	if(this._disconnectionDeferred && this._disconnectionDeferred.promise) this._disconnectionDeferred.resolve();
+};
+
+SocketHandler.prototype._onmessage = function(evt) {
+	try {
+		var message = JSON.parse(evt.data);
+		this.emit('message', message);
+	} catch(err){ Logger.error("[WS] cannot parse message, dropping..."); }
+};
+
+SocketHandler.prototype.unregisterCallbacks = function() {
+	if(this._socket && (typeof this._socket.removeEventListener === 'function')){
+		this._socket.removeEventListener('open', this._socketOpenCallback);
+		this._socket.removeEventListener('close', this._socketCloseCallback);
+		this._socket.removeEventListener('message', this._socketMessageCallback);
+	} else if(this._socket && (typeof this._socket.removeAllListeners === 'function')){
+		this._socket.removeAllListeners();
+	}
 };
 
 ///////////////////////////////////////////////////////////////

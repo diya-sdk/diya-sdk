@@ -24,7 +24,7 @@ d1.connect = function(addr, WSocket){
 
 d1.disconnect = function(){
 	token = null;
-	return connection.close();
+	return connection.disconnect();
 };
 
 d1.isConnected = function() {	return connection.isConnected();};
