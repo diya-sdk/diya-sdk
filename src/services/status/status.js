@@ -266,6 +266,8 @@ Status.prototype.subscribe = function(robotNames, callback){
 };
 
 
+
+
 /**
  * Get data given dataConfig.
  * @param {func} callback : called after update
@@ -396,4 +398,44 @@ Status.prototype._getRobotModelFromRecv = function(data){
 /** create Status service **/
 DiyaSelector.prototype.Status = function(){
 	return new Status(this);
+};
+
+/**
+ * Set on status
+ * @param robotName to find status to modify
+ * @param partName 	to find status to modify
+ * @param code		newCode
+ * @param callback		return callback (<bool>success)
+ */
+DiyaSelector.setStatus = function(robotName, partName, code, source, callback) {
+	var funcName = "SetStatus_"+partName;
+	this.selector.request(
+		{service:"status",func:funcName,data: {robotName: robotName, statusCode: code, source: source|1}}, function(peerId, err, data) {
+			if(err) {
+				if(callback) callback(false);
+			}
+			else {
+				if(callback) callback(true);
+			}
+		});
+};
+
+/**
+ * Get one status
+ * @param robotName to get status
+ * @param partName 	to get status
+ * @param callback		return callback(-1 if not found/data otherwise)
+ * @param _full 	more data about status
+ */
+DiyaSelector.getStatus = function(robotName, partName, callback, _full) {
+	var full=_full||false;
+	this.selector.request(
+		{service:"status",func:"GetStatus",data: {robotName: robotName, partName: partName, full: full}}, function(peerId, err, data) {
+			if(err) {
+				if(callback) callback(-1);
+			}
+			else {
+				if(callback) callback(data);
+			}
+		});
 };
