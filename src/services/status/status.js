@@ -409,7 +409,7 @@ DiyaSelector.prototype.Status = function(){
  */
 DiyaSelector.prototype.setStatus = function(robotName, partName, code, source, callback) {
 	var funcName = "SetStatus_"+partName;
-	this.selector.request(
+	this.request(
 		{service:"status",func:funcName,data: {robotName: robotName, statusCode: code, source: source|1}}, function(peerId, err, data) {
 			if(err) {
 				if(callback) callback(false);
@@ -429,7 +429,7 @@ DiyaSelector.prototype.setStatus = function(robotName, partName, code, source, c
  */
 DiyaSelector.prototype.getStatus = function(robotName, partName, callback, _full) {
 	var full=_full||false;
-	this.selector.request(
+	this.request(
 		{service:"status",func:"GetStatus",data: {robotName: robotName, partName: partName, full: full}}, function(peerId, err, data) {
 			if(err) {
 				if(callback) callback(-1);
