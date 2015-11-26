@@ -407,7 +407,7 @@ DiyaSelector.prototype.Status = function(){
  * @param code		newCode
  * @param callback		return callback (<bool>success)
  */
-DiyaSelector.setStatus = function(robotName, partName, code, source, callback) {
+DiyaSelector.prototype.setStatus = function(robotName, partName, code, source, callback) {
 	var funcName = "SetStatus_"+partName;
 	this.selector.request(
 		{service:"status",func:funcName,data: {robotName: robotName, statusCode: code, source: source|1}}, function(peerId, err, data) {
@@ -427,7 +427,7 @@ DiyaSelector.setStatus = function(robotName, partName, code, source, callback) {
  * @param callback		return callback(-1 if not found/data otherwise)
  * @param _full 	more data about status
  */
-DiyaSelector.getStatus = function(robotName, partName, callback, _full) {
+DiyaSelector.prototype.getStatus = function(robotName, partName, callback, _full) {
 	var full=_full||false;
 	this.selector.request(
 		{service:"status",func:"GetStatus",data: {robotName: robotName, partName: partName, full: full}}, function(peerId, err, data) {
