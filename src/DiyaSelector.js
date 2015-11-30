@@ -3,7 +3,6 @@ var EventEmitter = require('node-event-emitter');
 var inherits = require('inherits');
 
 var DiyaNode = require('./DiyaNode');
-var Subscription = require('./utils/Subscription');
 
 var connection = new DiyaNode();
 var connectionEvents = new EventEmitter();
@@ -285,7 +284,7 @@ DiyaSelector.prototype.on = function(type, callback){
 	if(type === 'peer-connected' && connection.isConnected()) {
 		var peers = connection.peers();
 		for(var i=0;i<peers.length; i++) {
-			if(match(this._selector, peerId)) callback(peerId);
+			if(match(this._selector, peers[i])) callback(peers[i]);
 		}
 	}
 };
@@ -310,6 +309,7 @@ DiyaSelector.prototype.removeListener = function(type, callback) {
 * according to the given selector
 */
 function Subscription(selector, params, callback, options) {
+		var that = this;
 		this.selector = selector;
 		this.params = params;
 		this.callback = callback;
@@ -323,17 +323,19 @@ function Subscription(selector, params, callback, options) {
 			this.selector.on('peer-connected', this.doSubscribe);
 		}
 		return this;
-}
+};
 
 Subscription.prototype.close = function() {
 	for(var i = 0; i<this.subIds.length; i++) {
 		connection.unsubscribe(this.subIds[i]);
 	}
 	this.selector.removeListener('peer-connected', this.doSubscribe);
-}
+};
 
 Subscription.prototype._addSubscription = function(peerId) {
 	var that = this;
+	params = {};
+	for(var k in this.params) params[k] = this.params[k];
 	params.target = peerId;
 	params.token = token;
 	var subId = connection.subscribe(params, function(err, data){
@@ -342,7 +344,8 @@ Subscription.prototype._addSubscription = function(peerId) {
 	if(this.options && Array.isArray(this.options.subIds))
 		this.options.subIds[peerId] = subId;
 	return subId;
-}
+};
+
 
 
 
@@ -358,7 +361,6 @@ DiyaSelector.prototype.__old_deprecated_unsubscribe = function(subIds) {
 		var subId = subIds[peerId];
 		if(subId) connection.unsubscribe(subId);
 	});
-	this._removeConnectionListener();
 	return this;
 }
 
