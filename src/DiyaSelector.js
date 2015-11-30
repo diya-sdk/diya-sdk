@@ -316,12 +316,14 @@ function Subscription(selector, params, callback, options) {
 		this.options = options;
 		this.subIds = [];
 
-		this.doSubscribe = function(peerId) {that._addSubscription(peerId);};
-		this.selector.each(this.doSubscribe);
+		this.doSubscribe = function(peerId) {that.subIds.push(that._addSubscription(peerId));};
 
 		if(this.options && this.options.auto) {
 			this.selector.on('peer-connected', this.doSubscribe);
+		} else {
+			this.selector.each(this.doSubscribe);
 		}
+
 		return this;
 };
 
