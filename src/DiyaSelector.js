@@ -3,6 +3,7 @@ var EventEmitter = require('node-event-emitter');
 var inherits = require('inherits');
 
 var DiyaNode = require('./DiyaNode');
+var Subscription = require('./utils/Subscription');
 
 var connection = new DiyaNode();
 var connectionEvents = new EventEmitter();
@@ -10,10 +11,15 @@ var token = null;
 var _user = null;
 var _pass = null;
 
+
+//////////////
+//  D1 API  //
+//////////////
+
+
 function d1(selector){
 	return new DiyaSelector(selector);
 }
-
 
 d1.DiyaNode = DiyaNode;
 d1.DiyaSelector = DiyaSelector;
@@ -63,6 +69,7 @@ d1.on = function(event, callback){
 	return d1;
 };
 
+
 /** Shorthand function to connect and login with the given (user,password) */
 d1.connectAsUser = function(ip, user, password, WSocket) {
 	return d1.connect(ip, WSocket).then(function(){
@@ -99,6 +106,9 @@ d1.selfConnect = function(port, signature, WSocket) {
 
 
 
+//////////////////
+// DiyaSelector //
+//////////////////
 
 function DiyaSelector(selector){
 	EventEmitter.call(this);
@@ -111,103 +121,13 @@ function DiyaSelector(selector){
 inherits(DiyaSelector, EventEmitter);
 
 
-function match(selector, str){
-	if(!selector) return false;
-	if(selector === "#self") return connection && str===connection.self();
-	else if(selector.not) return !match(selector.not, str);
-	else if(selector.constructor.name === 'String'){
-		return matchString(selector, str);
-	}else if(selector.constructor.name === 'RegExp'){
-		return matchRegExp(selector, str);
-	}else if(Array.isArray(selector)){
-		return matchArray(selector, str);
-	}
-	return false;
-}
-
-function matchString(selector, str){
-	return selector === str;
-}
-
-function matchRegExp(selector, str){
-	return str.match(selector);
-}
-
-function matchArray(selector, str){
-	for(var i=0;i<selector.length; i++){
-		if(selector[i] === str) return true;
-	}
-	return false;
-}
-
-// TODO : Definitely change to public
-DiyaSelector.prototype.select = function() { return this._select(); };
-DiyaSelector.prototype._select = function(selectorFunction){
-	var that = this;
-
-	if(!connection) return [];
-	return connection.peers().filter(function(peerId){
-		return match(that._selector, peerId);
-	});
-};
-
-DiyaSelector.prototype._addConnectionListener = function(){
-	if(this._listenerCount === 0){
-		this._attachListenCallback();
-	}
-	this._listenerCount++;
-};
-
-DiyaSelector.prototype._removeConnectionListener = function(){
-	if(this._listenerCount === 0) return ;
-	this._listenerCount--;
-	if(this._listenerCount === 0){
-		this._detachListenCallback();
-	}
-};
-
-DiyaSelector.prototype._attachListenCallback = function(){
-
-	this._connectedCallback = this._handlePeerConnected.bind(this);
-	this._disconnectedCallback = this._handlePeerDisconnected.bind(this);
-
-	connection.on('peer-connected', this._connectedCallback);
-	connection.on('peer-disconnected', this._disconnectedCallback);
-
-	if(connection.isConnected()){
-		var peers = connection.peers();
-		for(var i=0;i<peers.length; i++){
-			this._handlePeerConnected(peers[i]);
-		}
-	}
-};
-
-DiyaSelector.prototype._detachListenCallback = function(){
-	connection.removeListener('peer-connected', this._connectedCallback);
-	connection.removeListener('peer-disconnected', this._disconnectedCallback);
-};
-
-DiyaSelector.prototype._handlePeerConnected = function(peerId){
-	if(match(this._selector, peerId)) {
-		this.emit('peer-connected', peerId);
-	}
-};
-
-DiyaSelector.prototype._handlePeerDisconnected = function(peerId){
-	if(match(this._selector, peerId)) {
-		this.emit('peer-disconnected', peerId);
-	}
-};
-
 //////////////////////////////////////////////////////////
 ////////////////////// Public API ////////////////////////
 //////////////////////////////////////////////////////////
 
+DiyaSelector.prototype.select = function() { return this._select(); };
 
-DiyaSelector.prototype.listen = function(){
-	this._addConnectionListener();
-	return this;
-};
+
 
 /**
  * Apply callback cb to each selected peer. Peers are selected
@@ -253,41 +173,25 @@ DiyaSelector.prototype.request = function(params, callback, timeout, options){
 	});
 };
 
-/* @param {String | Object} params : can be service.function or {service:service, func:function, ...} */
-DiyaSelector.prototype.subscribe = function(params, callback, options){
 
+// IMPORTANT !!! By 30/11/15, this method doesn't return 'this' anymore, but a Subscription object instead
+/* @param {String | Object} params : can be 'service.function' or {service:service, func:function, ...} */
+DiyaSelector.prototype.subscribe = function(params, callback, options){
 	if(params.constructor === String) {
 		var _params = params.split(".");
-		if(_params.length!=2) throw 'MalformedRequest';
+		if(_params.length!=2) throw 'MalformedSubscription';
 		params = {service:_params[0], func:_params[1]};
 	}
 
-	function doSubscribe(peerId){
-		params.target = peerId;
-		params.token = token;
-		var subId = connection.subscribe(params, function(err, data){
-			callback(peerId, err, data);
-		});
-		if(options && Array.isArray(options.subIds))
-			options.subIds[peerId] = subId;
-	}
-
-	//send subscription to all selected peer
-	this.each(doSubscribe);
-	if(options && options.auto){
-		this._addConnectionListener();
-		this.on('peer-connected', doSubscribe);
-	}
-	return this;
+	return new Subscription(this, params, callback, options);
 };
 
-DiyaSelector.prototype.unsubscribe = function(subIds){
-	this.each(function(peerId){
-		var subId = subIds[peerId];
-		if(subId) connection.unsubscribe(subId);
-	});
-	this._removeConnectionListener();
-	return this;
+
+// IMPORTANT !!! BY 30/11/15, this method doesn't take subIds as input anymore.
+// Please provide a subscription instead !
+DiyaSelector.prototype.unsubscribe = function(subscription){
+	if(Array.isArray(subscription) || !subscription.close) return this.__old_deprecated_unsubscribe(subscription);
+	return subscription.close();
 };
 
 DiyaSelector.prototype.auth = function(user, password, callback, timeout){
@@ -325,5 +229,148 @@ DiyaSelector.prototype.auth = function(user, password, callback, timeout){
 
 	return deferred.promise;
 };
+
+
+
+// Privates
+
+DiyaSelector.prototype._select = function(selectorFunction){
+	var that = this;
+
+	if(!connection) return [];
+	return connection.peers().filter(function(peerId){
+		return match(that._selector, peerId);
+	});
+};
+
+function match(selector, str){
+	if(!selector) return false;
+	if(selector === "#self") return connection && str===connection.self();
+	else if(selector.not) return !match(selector.not, str);
+	else if(selector.constructor.name === 'String'){
+		return matchString(selector, str);
+	} else if(selector.constructor.name === 'RegExp'){
+		return matchRegExp(selector, str);
+	} else if(Array.isArray(selector)){
+		return matchArray(selector, str);
+	}
+	return false;
+}
+
+function matchString(selector, str){
+	return selector === str;
+}
+
+function matchRegExp(selector, str){
+	return str.match(selector);
+}
+
+function matchArray(selector, str){
+	for(var i=0;i<selector.length; i++){
+		if(selector[i] === str) return true;
+	}
+	return false;
+}
+
+// Overrides EventEmitter's behavior to proxy and filter events from the connection
+DiyaSelector.prototype._on = DiyaSelector.prototype.on;
+DiyaSelector.prototype.on = function(type, callback){
+	callback.___DiyaSelector_hidden_wrapper = function(peerId) {
+		if(match(this._selector, peerId)) this.emit(type, peerId);
+	};
+	connection.on(type, callback.___DiyaSelector_hidden_wrapper);
+	this._on(type, callback);
+
+	// Handle the specific case of "peer-connected" events, i.e., notify of already connected peers
+	if(type === 'peer-connected' && connection.isConnected()) {
+		var peers = connection.peers();
+		for(var i=0;i<peers.length; i++) {
+			if(match(this._selector, peerId)) callback(peerId);
+		}
+	}
+};
+
+
+// Overrides EventEmitter's behavior to proxy and filter events from the connection
+DiyaSelector.prototype._removeListener = DiyaSelector.prototype.removeListener;
+DiyaSelector.prototype.removeListener = function(type, callback) {
+	if(callback.___DiyaSelector_hidden_wrapper) connection.removeListener(type, callback.___DiyaSelector_hidden_wrapper);
+	this._removeListener(type, callback);
+};
+
+
+
+//////////////////
+// SUBSCRIPTION //
+//////////////////
+
+
+/**
+* Handles a subscription to some DiyaNode service for multiple nodes
+* according to the given selector
+*/
+function Subscription(selector, params, callback, options) {
+		this.selector = selector;
+		this.params = params;
+		this.callback = callback;
+		this.options = options;
+		this.subIds = [];
+
+		this.doSubscribe = function(peerId) {that._addSubscription(peerId);};
+		this.selector.each(this.doSubscribe);
+
+		if(this.options && this.options.auto) {
+			this.selector.on('peer-connected', this.doSubscribe);
+		}
+		return this;
+}
+
+Subscription.prototype.close = function() {
+	for(var i = 0; i<this.subIds.length; i++) {
+		connection.unsubscribe(this.subIds[i]);
+	}
+	this.selector.removeListener('peer-connected', this.doSubscribe);
+}
+
+Subscription.prototype._addSubscription(peerId) {
+	var that = this;
+	params.target = peerId;
+	params.token = token;
+	var subId = connection.subscribe(params, function(err, data){
+		that.callback(peerId, err, data);
+	});
+	if(this.options && Array.isArray(this.options.subIds))
+		this.options.subIds[peerId] = subId;
+	return subId;
+}
+
+Subscription.prototype._removeSubscription(subId) {
+
+}
+
+
+
+
+
+// Legacy --------------------------------------------
+
+
+/** @deprecated  */
+DiyaSelector.prototype.listen = function(){};
+
+DiyaSelector.prototype.__old_deprecated_unsubscribe = function(subIds) {
+	this.each(function(peerId){
+		var subId = subIds[peerId];
+		if(subId) connection.unsubscribe(subId);
+	});
+	this._removeConnectionListener();
+	return this;
+}
+
+
+
+// -------------------------------------
+
+
 
 module.exports = d1;
