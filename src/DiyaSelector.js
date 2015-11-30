@@ -332,7 +332,7 @@ Subscription.prototype.close = function() {
 	this.selector.removeListener('peer-connected', this.doSubscribe);
 }
 
-Subscription.prototype._addSubscription(peerId) {
+Subscription.prototype._addSubscription = function(peerId) {
 	var that = this;
 	params.target = peerId;
 	params.token = token;
@@ -343,11 +343,6 @@ Subscription.prototype._addSubscription(peerId) {
 		this.options.subIds[peerId] = subId;
 	return subId;
 }
-
-Subscription.prototype._removeSubscription(subId) {
-
-}
-
 
 
 
