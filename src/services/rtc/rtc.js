@@ -157,9 +157,7 @@ function Peer(dnId, rtc, id, channels){
 Peer.prototype._connect = function(){
 	var that = this;
 
-	this.subIds = [];
-
-	this.dn.subscribe({
+	this.subscription = this.dn.subscribe({
 		service: 'rtc',
 		func: 'Connect',
 		obj: this.channels,
@@ -169,7 +167,7 @@ Peer.prototype._connect = function(){
 	},
 	function(diya, err, data){
 		if(data) that._handleNegociationMessage(data);
-	}, this.subIds);
+	});
 
 	setTimeout(function(){
 		if(!that.connected && !that.closed){
@@ -231,7 +229,7 @@ Peer.prototype._createPeer = function(data){
 		console.log('RTC: state change('+that.id+':'+that.dnId+') : '+peer.iceConnectionState);
 		if(peer.iceConnectionState === 'connected'){
 			that.connected = true;
-			that.dn.unsubscribe(that.subIds);
+			if(that.subscription) that.subscription.close();
 		}
 		else if(peer.iceConnectionState === 'disconnected'){
 			if(!that.closed) that._reconnect();
@@ -280,7 +278,7 @@ Peer.prototype._addRemoteICECandidate = function(data){
 };
 
 Peer.prototype.close = function(){
-	this.dn.unsubscribe(this.subIds);
+	if(this.subscription) this.subscription.close();
 	if(this.peer){
 		try{
 			this.peer.close();
@@ -315,7 +313,7 @@ RTC.prototype.disconnect = function(){
 		}
 	});
 
-	this.selector.unsubscribe(this.subIds);
+	if(this.subscription) this.subscription.close();
 	return this;
 };
 
@@ -327,9 +325,7 @@ RTC.prototype.use = function(name_regex, onopen_callback){
 RTC.prototype.connect = function(){
 	var that = this;
 
-	this.subIds = [];
-
-	this.selector.subscribe({
+	this.subscription = this.selector.subscribe({
 		service: 'rtc',
 		func: 'ListenPeers'
 	}, function(dnId, err, data){
@@ -360,7 +356,7 @@ RTC.prototype.connect = function(){
 
 		}
 
-	}, {subIds: this.subIds, auto: true});
+	}, {auto: true});
 
 	return this;
 };
