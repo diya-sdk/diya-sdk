@@ -316,7 +316,10 @@ function Subscription(selector, params, callback, options) {
 		this.options = options;
 		this.subIds = [];
 
-		this.doSubscribe = function(peerId) {that.subIds.push(that._addSubscription(peerId));};
+		this.doSubscribe = function(peerId) {
+			that.subIds.push(that._addSubscription(peerId));
+			that.state = "open";
+		};
 
 		if(this.options && this.options.auto) {
 			this.selector.on('peer-connected', this.doSubscribe);
@@ -331,7 +334,9 @@ Subscription.prototype.close = function() {
 	for(var i = 0; i<this.subIds.length; i++) {
 		connection.unsubscribe(this.subIds[i]);
 	}
+	this.subIds = [];
 	this.selector.removeListener('peer-connected', this.doSubscribe);
+	this.state = "closed";
 };
 
 Subscription.prototype._addSubscription = function(peerId) {
