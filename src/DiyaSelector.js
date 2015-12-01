@@ -278,7 +278,7 @@ DiyaSelector.prototype.on = function(type, callback){
 		if(match(this._selector, peerId)) this.emit(type, peerId);
 	};
 	connection.on(type, callback.___DiyaSelector_hidden_wrapper);
-	this._on(type, callback);
+	var ret = this._on(type, callback);
 
 	// Handle the specific case of "peer-connected" events, i.e., notify of already connected peers
 	if(type === 'peer-connected' && connection.isConnected()) {
@@ -287,6 +287,7 @@ DiyaSelector.prototype.on = function(type, callback){
 			if(match(this._selector, peers[i])) callback(peers[i]);
 		}
 	}
+	return ret;
 };
 
 
