@@ -26,6 +26,7 @@ inherits(Channel, EventEmitter);
 Channel.prototype.setChannel = function(datachannel){
 	var that = this;
 	this.channel = datachannel;
+	this.channel.binaryType = 'arraybuffer';
 	this._negociate();
 
 };
