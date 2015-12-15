@@ -487,7 +487,7 @@ SocketHandler.prototype.close = function() {
 	if(this._disconnectionDeferred && this._disconnectionDeferred.promise) return this._disconnectionDeferred.promise;
 	this._disconnectionDeferred = Q.defer();
 	this._status = 'closing';
-	this._socket.close();
+	if(this._socket) this._socket.close();
 	return this._disconnectionDeferred.promise;
 };
 
