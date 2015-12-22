@@ -24,7 +24,7 @@
 
 
 var DiyaSelector = require('../../DiyaSelector').DiyaSelector;
-
+var base64 = require('base-64');
 
 /**
  * Default : no encoding
@@ -181,27 +181,21 @@ Base64Coding.prototype.to = function(array, byteCoding) {
 		return null;
 	}
 
-	/* write all samples in Buffer */
-	var buf = new Buffer(array.length*byteCoding),i;
+	/*** case ArrayBuffer ***/
+	var buffer = new ArrayBuffer(array.length*byteCoding);
 	switch(byteCoding) {
 	case 4:
-		for(i = 0; i < array.length; i++) {
-			if(typeof array[i] !== 'number')
-				return null;
-			buf.writeFloatLE(array[i], i * byteCoding);
-		}
+		var buf32 = new Float32Array(buffer);
+		buf32.set(array);
 		break;
 	case 8:
-		for(i = 0; i < array.length; i++) {
-			if(typeof array[i] !== 'number')
-				return null;
-			buf.writeDoubleLE(array[i], i * byteCoding);
-		}
+		var buf64 = new Float64Array(buffer);
+		buf64.set(array);
 		break;
 	}
-
-	/* convert Buffer to base64 string */
-	var b64Buff = buf.toString('base64');
+	var buffChar = new Uint8Array(buffer);
+	var str = String.fromCharCode.apply(null, buffChar);
+	var b64Buff = base64.encode(str);
 	return {
 		t: 'b64', /* type */
 		b: byteCoding, /* byteCoding */
