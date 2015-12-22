@@ -15,7 +15,7 @@
  * Management of channel encoding
  * - base64 coding
  * - none
- * Data format : 
+ * Data format :
  *		t: {'b64','none'}
  *		b: <if b64> {4,8}
  *		d: encoded data {buffer or Array}
@@ -138,7 +138,7 @@ var base64DecToArr = function(sBase64, nBlocksSize) {
 */
 Base64Coding.prototype.from = function(data) {
 	var byteCoding = data.b;
-	
+
 	/* check byte coding */
 	if(byteCoding !== 4 && byteCoding !== 8) {
 		return null;
@@ -201,7 +201,7 @@ Base64Coding.prototype.to = function(array, byteCoding) {
 	}
 
 	/* convert Buffer to base64 string */
-	var b64Buff = buf.toString('base64'); 
+	var b64Buff = buf.toString('base64');
 	return {
 		t: 'b64', /* type */
 		b: byteCoding, /* byteCoding */
@@ -219,7 +219,7 @@ Base64Coding.prototype.to = function(array, byteCoding) {
 function CodingHandler(){
 	this.b64 = new Base64Coding();
 	this.none = new NoCoding();
-	
+
 	return this;
 };
 
@@ -231,7 +231,7 @@ CodingHandler.prototype.from = function(data) {
 	case 'b64':
 		return this.b64.from(data);
 	default:
-		return this.none.from(data);		
+		return this.none.from(data);
 	}
 };
 
@@ -244,13 +244,13 @@ CodingHandler.prototype.to = function(array, type, byteCoding) {
 		console.log("CodingHandler.to only accepts array !");
 		return null;
 	}
-	
+
 	switch(type) {
 	case 'b64':
 		return this.b64.to(array, byteCoding);
 	case 'no':
 	default:
-		return this.none.to(array);		
+		return this.none.to(array);
 	}
 };
 
@@ -259,4 +259,3 @@ CodingHandler.prototype.to = function(array, type, byteCoding) {
 DiyaSelector.prototype.encode = function(){
 	return new CodingHandler();
 };
-
