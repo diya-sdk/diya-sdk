@@ -557,7 +557,6 @@ DiyaNode.prototype._createMessage = function(params, type){
 		id: this._generateId(),
 		service: params.service,
 		target: params.target,
-		token: params.token,
 		func: params.func,
 		obj: params.obj,
 		data: params.data
