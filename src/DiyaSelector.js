@@ -75,7 +75,7 @@ d1.connectAsUser = function(ip, user, password, WSocket) {
 	});
 };
 
-d1.deauthenticate = function(){ _authenticated = false; /*TODO: send deauthentication request to server*/};
+d1.deauthenticate = function(){ _authenticated = false; _user = null; _pass = null;};
 d1.setSecured = function(bSecured) { connection.setSecured(bSecured); };
 d1.isSecured = function() {return connection._secured; }
 d1.setWSocket = function(WSocket) { connection.setWSocket(WSocket); }
