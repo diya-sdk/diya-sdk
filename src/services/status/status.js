@@ -232,12 +232,12 @@ Status.prototype.getDataByName = function(sensorNames){
 /**
  * Subscribe to error/status updates
  */
-Status.prototype.subscribe = function(robotNames, callback){
+Status.prototype.watch = function(robotNames, callback){
 	var that = this;
 	console.log(robotNames);
 	this.selector.subscribe({
 		service: 'status',
-		func: 'ListenUpdates',
+		func: 'Watch',
 		data: robotNames
 	}, function (peerId, err, data) {
 		// console.log(peerId);
@@ -251,8 +251,9 @@ Status.prototype.subscribe = function(robotNames, callback){
 				// initialisation of robot model
 				that.robotModelInit = true;
 			}
+			console.log(data);
 			if(that.robotModelInit) {
-				that._getRobotModelFromRecv(data.robots);
+				that._getRobotModelFromRecv2(data.robots);
 				if(typeof callback === 'function')
 					callback(that.robotModel);
 			}
@@ -306,6 +307,94 @@ Status.prototype.getData = function(callback, dataConfig){
 		callback(dataModel); // callback func
 	});
 };
+
+
+/**
+ * Update internal robot model with received data (version 2)
+ * @param  {Object} data data received from DiyaNode by websocket
+ * @return {[type]}		[description]
+ */
+Status.prototype._getRobotModelFromRecv2 = function(data){
+	var robot;
+	var dataRobot = data.robots;
+	var dataParts = data.partList;
+
+	if(!this.robotModel)
+		this.robotModel = [];
+	// console.log("_getRobotModelFromRecv");
+	// console.log(this.robotModel);
+
+	/** Only one robot is manage at the same time currently **/
+	for(var n in dataRobots) {
+		if(!this.robotModel[n])
+			this.robotModel[n]={};
+		this.robotModel[n].robot = data[n].robot;
+
+		// if(this.robotModel.length<data.length) {
+		// 	this.robotModel.push({robot: data[0].robots});
+		// }
+
+		/** extract parts info **/
+		if(data[n] && data[n].parts) {
+			if(!this.robotModel[n].parts)
+				this.robotModel[n].parts = {};
+			var parts = data[n].parts;
+			var rParts = this.robotModel[n].parts;
+			for(var q in rParts) {
+				/** part[q] was not sent because no error **/
+				if(!parts[q]
+				   &&rParts[q].evts&&rParts[q].evts.code) {
+					rParts[q].evts = {
+						code: [0],
+						codeRef: [0],
+						time: [Date.now()] /** update **/
+					};
+				}
+			}
+			for (var p in parts) {
+				if(!rParts[p]) {
+					rParts[p]={};
+				}
+				if(parts[p]) {
+					// Logger.log(n);
+					/* update part category */
+					rParts[p].category=dataParts[p].category;
+					/* update part name */
+					rParts[p].name=dataParts[p].name;
+					/* update part label */
+					rParts[p].label=dataParts[p].label;
+					/* update error time */
+					// console.log(parts[p]);
+					// console.log(parts[p].errors.time);
+					// console.log(rParts[p].time);
+					/* update error */
+					// console.log(parts[p].errors.code);
+
+					/** update errorList **/
+					if(!rParts[p].errorList)
+						rParts[p].errorList={};
+					for( var el in dataParts[p].errorList )
+						if(!rParts[p].errorList[el])
+							rParts[p].errorList[el] = parts[p].errorList[el];
+
+					rParts[p].evts = {
+						code: parts[p].code,
+						codeRef: parts[p].codeRef,
+						time: parts[p].time
+					};
+				}
+				// console.log(rParts[p].error);
+			}
+			// console.log('parts, rParts');
+			// console.log(parts);
+			// console.log(rParts);
+		}
+		else {
+			Logger.error("No parts to read for robot "+data[n].name);
+		}
+	}
+};
+
 
 /**
  * Update internal robot model with received data
@@ -390,7 +479,7 @@ Status.prototype._getRobotModelFromRecv = function(data){
 			// console.log(rParts);
 		}
 		else {
-			Logger.error("No parts to read for robot "+data[n].robot.name);
+			Logger.error("No parts to read for robot "+data[n].name);
 		}
 	}
 };
