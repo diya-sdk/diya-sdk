@@ -234,7 +234,7 @@ Status.prototype.getDataByName = function(sensorNames){
  */
 Status.prototype.watch = function(robotNames, callback){
 	var that = this;
-	console.log(robotNames);
+	// console.log(robotNames);
 	this.selector.subscribe({
 		service: 'status',
 		func: 'Watch',
@@ -251,9 +251,9 @@ Status.prototype.watch = function(robotNames, callback){
 				// initialisation of robot model
 				that.robotModelInit = true;
 			}
-			console.log(data);
+			// console.log(data);
 			if(that.robotModelInit) {
-				that._getRobotModelFromRecv2(data.robots);
+				that._getRobotModelFromRecv2(data);
 				if(typeof callback === 'function')
 					callback(that.robotModel);
 			}
@@ -316,7 +316,7 @@ Status.prototype.getData = function(callback, dataConfig){
  */
 Status.prototype._getRobotModelFromRecv2 = function(data){
 	var robot;
-	var dataRobot = data.robots;
+	var dataRobots = data.robots;
 	var dataParts = data.partList;
 
 	if(!this.robotModel)
@@ -328,26 +328,26 @@ Status.prototype._getRobotModelFromRecv2 = function(data){
 	for(var n in dataRobots) {
 		if(!this.robotModel[n])
 			this.robotModel[n]={};
-		this.robotModel[n].robot = data[n].robot;
+		this.robotModel[n].robot = dataRobots[n].robot;
 
 		// if(this.robotModel.length<data.length) {
 		// 	this.robotModel.push({robot: data[0].robots});
 		// }
 
 		/** extract parts info **/
-		if(data[n] && data[n].parts) {
+		if(dataRobots[n] && dataRobots[n].parts) {
 			if(!this.robotModel[n].parts)
 				this.robotModel[n].parts = {};
-			var parts = data[n].parts;
+			var parts = dataRobots[n].parts;
 			var rParts = this.robotModel[n].parts;
 			for(var q in rParts) {
 				/** part[q] was not sent because no error **/
 				if(!parts[q]
 				   &&rParts[q].evts&&rParts[q].evts.code) {
 					rParts[q].evts = {
-						code: [0],
-						codeRef: [0],
-						time: [Date.now()] /** update **/
+						code: 0,
+						codeRef: 0,
+						time: Date.now() /** update **/
 					};
 				}
 			}
@@ -375,7 +375,7 @@ Status.prototype._getRobotModelFromRecv2 = function(data){
 						rParts[p].errorList={};
 					for( var el in dataParts[p].errorList )
 						if(!rParts[p].errorList[el])
-							rParts[p].errorList[el] = parts[p].errorList[el];
+							rParts[p].errorList[el] = dataParts[p].errorList[el];
 
 					rParts[p].evts = {
 						code: parts[p].code,
