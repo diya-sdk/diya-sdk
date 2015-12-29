@@ -85,6 +85,7 @@ function IEQ(selector){
 
 	return this;
 };
+
 /**
  * Get dataModel :
  * {
@@ -284,6 +285,46 @@ IEQ.prototype.getEnvQualityLevel = function(){
 	return this.envQuality;
 };
 
+
+
+/**
+ * Update internal model with received data
+ * @param  data to configure subscription
+ * @param  callback called on answers (@param : dataModel)
+ */
+IEQ.prototype.watch = function(data, callback){
+	var that = this;
+	// console.log("Request: "+JSON.stringify(dataConfig));
+
+	/// TODO
+	data = data || {timeRange: 'hours'};
+
+	this.selector.subscribe({
+		service: "ieq",
+		func: "Watch",
+		data: data
+	}, function(dnId, err, data){
+		if(err) {
+			Logger.error("WatchIEQRecvErr:"+JSON.stringify(err));
+			return;
+		}
+		if(data.header.error) {
+			// TODO : check/use err status and adapt behavior accordingly
+			Logger.error("WatchIEQ:\n"+JSON.stringify(data.header.dataConfig));
+			Logger.error("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
+			return;
+		}
+		// console.log(data);
+		that._getDataModelFromRecv(data);
+
+		callback = callback.bind(that); // bind callback with IEQ
+		callback(that.getDataModel()); // callback func
+	});
+
+};
+
+
+
 /**
  * Update internal model with received data
  * @param  {Object} data data received from DiyaNode by websocket
@@ -291,7 +332,13 @@ IEQ.prototype.getEnvQualityLevel = function(){
  */
 IEQ.prototype._getDataModelFromRecv = function(data){
 	var dataModel=null;
-	
+
+	if(data.err && data.err.st>0) {
+		Logger.error(err.msg);
+		return null;
+	}
+	delete data.err;
+
 	if(data && data.header) {
 		for (var n in data) {
 			if(n != "header" && n != "err") {
@@ -300,7 +347,7 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 					Logger.error(n+" was in error: "+data[n].err.msg);
 					continue;
 				}
-				
+
 				if(!dataModel)
 					dataModel={};
 
@@ -308,7 +355,7 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 				if(!dataModel[n]) {
 					dataModel[n]={};
 				}
-				/* update data range */
+				/* update data absolute range */
 				dataModel[n].range=data[n].range;
 				/* update data range */
 				dataModel[n].timeRange=data[n].timeRange;
@@ -316,25 +363,65 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 				dataModel[n].label=data[n].label;
 				/* update data unit */
 				dataModel[n].unit=data[n].unit;
+
+				/* suggested y display range */
+				dataModel[n].zoomRange = [0, 100];
+
 				/* update data indexRange */
 				dataModel[n].qualityConfig={
 					/* confortRange: data[n].confortRange, */
 					indexRange: data[n].indexRange
 				};
-				dataModel[n].data = this._coder.from(data[n].data,'b64',4);
 				dataModel[n].time = this._coder.from(data[n].time,'b64',8);
-				dataModel[n].qualityIndex = this._coder.from(data[n].index,'b64',4);
+				dataModel[n].data = (data[n].data?this._coder.from(data[n].data,'b64',4):(data[n].avg?this._coder.from(data[n].avg.d,'b64',4):null));
+				dataModel[n].qualityIndex = (data[n].data?this._coder.from(data[n].index,'b64',4):(data[n].avg?this._coder.from(data[n].avg.i,'b64',4):null));
 				dataModel[n].robotId = this._coder.from(data[n].robotId,'b64',4);
 				dataModel[n].placeId = this._coder.from(data[n].placeId,'b64',4);
+				dataModel[n].x = null;
+				dataModel[n].y = null;
+
+				if(data[n].avg)
+					dataModel[n].avg = {
+						d: this._coder.from(data[n].avg.d,'b64',4),
+						i: this._coder.from(data[n].avg.i,'b64',4)
+					};
+				if(data[n].min)
+					dataModel[n].min = {
+						d: this._coder.from(data[n].min.d,'b64',4),
+						i: this._coder.from(data[n].min.i,'b64',4)
+					};
+				if(data[n].max)
+					dataModel[n].max = {
+						d: this._coder.from(data[n].max.d,'b64',4),
+						i: this._coder.from(data[n].max.i,'b64',4)
+					};
+				if(data[n].stddev)
+					dataModel[n].stddev = {
+						d: this._coder.from(data[n].stddev.d,'b64',4),
+						i: this._coder.from(data[n].stddev.i,'b64',4)
+					};
+				/**
+				 * current quality : {'b'ad, 'm'edium, 'g'ood}
+				 * evolution : {'u'p, 'd'own, 's'table}
+				 * evolution quality : {'b'etter, 'w'orse, 's'ame}
+				 */
+				/// TODO
+				dataModel[n].trend = 'mss';
 			}
 		}
 	}
 	else {
 		Logger.error("No Data to read or header is missing !");
 	}
+	/** list robots **/
+//	dataModel.robots = [{name: 'D2R2', id:1}];
 	this.dataModel=dataModel;
 	return dataModel;
 };
+
+
+
+
 
 /** create IEQ service **/
 DiyaSelector.prototype.IEQ = function(){
