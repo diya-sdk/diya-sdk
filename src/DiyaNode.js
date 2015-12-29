@@ -452,34 +452,35 @@ function SocketHandler(WSocket, addr, timeout) {
 
 	this._status = 'opening';
 
-	try {
-		this._socket = new WSocket(addr);
+		try {
+			this._socket = addr.indexOf("wss://")===-1 ? new WSocket(addr, undefined, {rejectUnauthorized:false}) : new WSocket(addr);
+
+		this._socketOpenCallback = this._onopen.bind(this);
+		this._socketCloseCallback = this._onclose.bind(this);
+		this._socketMessageCallback = this._onmessage.bind(this);
+
+		this._socket.addEventListener('open', this._socketOpenCallback);
+		this._socket.addEventListener('close',this._socketCloseCallback);
+		this._socket.addEventListener('message', this._socketMessageCallback);
+
+		this._socket.addEventListener('error', function(err){
+			Logger.error("[WS] error : "+JSON.stringify(err));
+			that._socket.close();
+		});
+
+		setTimeout(function(){
+			if(that._status === 'opened') return;
+			if(that._status !== 'closed'){
+				Logger.log('d1: ' + that.addr + ' timed out while connecting');
+				that.close();
+				that.emit('timeout', that._socket);
+			}
+		}, timeout);
+
 	} catch(e) {
 		Logger.error(e.stack);
-		return that.close();
+		that.close();
 	}
-
-	this._socketOpenCallback = this._onopen.bind(this);
-	this._socketCloseCallback = this._onclose.bind(this);
-	this._socketMessageCallback = this._onmessage.bind(this);
-
-	this._socket.addEventListener('open', this._socketOpenCallback);
-	this._socket.addEventListener('close',this._socketCloseCallback);
-	this._socket.addEventListener('message', this._socketMessageCallback);
-
-	this._socket.addEventListener('error', function(err){
-		Logger.error("[WS] error : "+JSON.stringify(err));
-		that._socket.close();
-	});
-
-	setTimeout(function(){
-		if(that._status === 'opened') return;
-		if(that._status !== 'closed'){
-			Logger.log('d1: ' + that.addr + ' timed out while connecting');
-			that.close();
-			that.emit('timeout', that._socket);
-		}
-	}, timeout);
 };
 inherits(SocketHandler, EventEmitter);
 
