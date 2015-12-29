@@ -453,6 +453,7 @@ function SocketHandler(WSocket, addr, timeout) {
 	this._status = 'opening';
 
 		try {
+			console.log(addr.indexOf("wss://")===0 ? 'new WSocket(addr, undefined, {rejectUnauthorized:false})' : 'new WSocket(addr)' );
 			this._socket = addr.indexOf("wss://")===0 ? new WSocket(addr, undefined, {rejectUnauthorized:false}) : new WSocket(addr);
 
 		this._socketOpenCallback = this._onopen.bind(this);
