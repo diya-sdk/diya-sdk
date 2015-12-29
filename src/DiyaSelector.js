@@ -6,9 +6,9 @@ var DiyaNode = require('./DiyaNode');
 
 var connection = new DiyaNode();
 var connectionEvents = new EventEmitter();
-var token = null;
 var _user = null;
 var _pass = null;
+var _authenticated = false;
 
 
 //////////////
@@ -28,7 +28,6 @@ d1.connect = function(addr, WSocket){
 };
 
 d1.disconnect = function(){
-	token = null;
 	return connection.disconnect();
 };
 
@@ -38,7 +37,7 @@ d1.self = function() { return connection.self(); };
 d1.addr = function() { return connection.addr(); };
 d1.user = function() { return _user; };
 d1.pass = function() { return _pass; };
-d1.isAuthenticated = function() {return token != null; }
+d1.isAuthenticated = function() { return _authenticated; }
 
 
 /** Try to connect to the given servers list in the list order, until finding an available one */
@@ -74,9 +73,9 @@ d1.connectAsUser = function(ip, user, password, WSocket) {
 	return d1.connect(ip, WSocket).then(function(){
 		return d1("#self").auth(user, password);
 	});
-}
+};
 
-d1.deauthenticate = function(){ 	token = null; _user = null; _pass = null;};
+d1.deauthenticate = function(){ _authenticated = false; _user = null; _pass = null;};
 d1.setSecured = function(bSecured) { connection.setSecured(bSecured); };
 d1.isSecured = function() {return connection._secured; }
 d1.setWSocket = function(WSocket) { connection.setWSocket(WSocket); }
@@ -93,11 +92,14 @@ d1.selfConnect = function(port, signature, WSocket) {
 				data: {	signature: signature }
 			}, function(peerId, err, data){
 				if(err) return deferred.reject(err);
-				if(data && data.authenticated && data.token){
-					token = data.token;
+				if(data && data.authenticated){
+					_authenticated = true;
 					_user = "#DiyaNode#"+peerId;
 					deferred.resolve();
-				} else deferred.reject('AccessDenied');
+				} else {
+					_authenticated = false;
+					deferred.reject('AccessDenied');
+				}
 			});
 			return deferred.promise;
 	});
@@ -158,7 +160,6 @@ DiyaSelector.prototype.request = function(params, callback, timeout, options){
 	var nbExpected = this._select().length;
 	return this.each(function(peerId){
 		params.target = peerId;
-		params.token = token;
 
 		var opts = {};
 		for(var i in options) opts[i] = options[i];
@@ -213,13 +214,14 @@ DiyaSelector.prototype.auth = function(user, password, callback, timeout){
 			return ;
 		}
 
-		if(!err && data && data.authenticated && data.token){
-			token = data.token;
+		if(!err && data && data.authenticated){
+			_authenticated = true;
 			_user = user;
 			_pass = password;
 			if(typeof callback === 'function') callback(peerId, true);
 			else deferred.resolve();
 		} else {
+			_authenticated = false;
 			if(typeof callback === 'function') callback(peerId, false);
 			else deferred.reject('AccessDenied');
 		}
@@ -345,7 +347,6 @@ Subscription.prototype._addSubscription = function(peerId) {
 	params = {};
 	for(var k in this.params) params[k] = this.params[k];
 	params.target = peerId;
-	params.token = token;
 	var subId = connection.subscribe(params, function(err, data){
 		that.callback(peerId, err, data);
 	});
