@@ -299,7 +299,7 @@ IEQ.prototype.watch = function(data, callback){
 	/// TODO
 	data = data || {timeRange: 'hours'};
 
-	this.selector.subscribe({
+	return this.selector.subscribe({
 		service: "ieq",
 		func: "Watch",
 		data: data
