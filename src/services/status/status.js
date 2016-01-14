@@ -40,6 +40,7 @@ function Status(selector){
 	var that = this;
 	this.selector = selector;
 	this._coder = selector.encode();
+	this.subscriptions = [];
 
 	/** model of robot : available parts and status **/
 	this.robotModel = [];
@@ -235,7 +236,8 @@ Status.prototype.getDataByName = function(sensorNames){
 Status.prototype.watch = function(robotNames, callback){
 	var that = this;
 	// console.log(robotNames);
-	this.selector.subscribe({
+
+	var subs = this.selector.subscribe({
 		service: 'status',
 		func: 'Watch',
 		data: robotNames
@@ -264,9 +266,18 @@ Status.prototype.watch = function(robotNames, callback){
 			}
 		}
 	}, { auto: true });
+	this.subscriptions.push(subs);
 };
 
-
+/**
+ * Close all subscriptions
+ */
+Status.prototype.closeSubscriptions = function(){
+	for(var i in this.subscriptions) {
+		this.subscriptions[i].close();
+	}
+	this.subscriptions =[];
+};
 
 
 /**
