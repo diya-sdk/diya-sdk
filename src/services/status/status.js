@@ -246,8 +246,8 @@ Status.prototype.watch = function(robotNames, callback){
 		if (err || (data&&data.err&data.err.st) ) {
 			Logger.error( "StatusSubscribe:"+(err?err:"")+"\n"+(data&&data.err?data.err:"") );
 		} else {
-			if(data && data.header && data.header.reqConfig
-			   && data.header.reqConfig.type === "init") {
+			if(data && data.header
+			   && data.header.type === "init") {
 				// initialisation of robot model
 				that.robotModelInit = true;
 			}
