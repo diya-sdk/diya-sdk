@@ -252,7 +252,8 @@ IEQ.prototype.updateData = function(callback, dataConfig){
 			Logger.error("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
 			return;
 		}
-		//Logger.log(JSON.stringify(that.dataModel));
+
+		// console.log(data);
 		that._getDataModelFromRecv(data);
 
 		// Logger.log(that.getDataModel());
@@ -411,6 +412,15 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 						d: this._coder.from(data[n].stddev.d,'b64',4),
 						i: this._coder.from(data[n].stddev.i,'b64',4)
 					};
+				if(data[n].stddev)
+					dataModel[n].stddev = {
+						d: this._coder.from(data[n].stddev.d,'b64',4),
+						i: this._coder.from(data[n].stddev.i,'b64',4)
+					};
+				if(data[n].x)
+					dataModel[n].x = this._coder.from(data[n].x,'b64',4);
+				if(data[n].y)
+					dataModel[n].y = this._coder.from(data[n].y,'b64',4);
 				/**
 				 * current quality : {'b'ad, 'm'edium, 'g'ood}
 				 * evolution : {'u'p, 'd'own, 's'table}
