@@ -51,6 +51,7 @@ function IEQ(selector){
 	this.selector = selector;
 	this.dataModel={};
 	this._coder = selector.encode();
+	this.subscriptions = [];
 
 
 	/*** structure of data config ***
@@ -251,7 +252,8 @@ IEQ.prototype.updateData = function(callback, dataConfig){
 			Logger.error("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
 			return;
 		}
-		//Logger.log(JSON.stringify(that.dataModel));
+
+		// console.log(data);
 		that._getDataModelFromRecv(data);
 
 		// Logger.log(that.getDataModel());
@@ -299,7 +301,7 @@ IEQ.prototype.watch = function(data, callback){
 	/// TODO
 	data = data || {timeRange: 'hours'};
 
-	return this.selector.subscribe({
+	var subs = this.selector.subscribe({
 		service: "ieq",
 		func: "Watch",
 		data: data
@@ -321,8 +323,18 @@ IEQ.prototype.watch = function(data, callback){
 		callback(that.getDataModel()); // callback func
 	});
 
+	this.subscriptions.push(subs);
 };
 
+/**
+ * Close all subscriptions
+ */
+IEQ.prototype.closeSubscriptions = function(){
+	for(var i in this.subscriptions) {
+		this.subscriptions[i].close();
+	}
+	this.subscriptions =[];
+};
 
 
 /**
@@ -334,7 +346,7 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 	var dataModel=null;
 
 	if(data.err && data.err.st>0) {
-		Logger.error(err.msg);
+		Logger.error(data.err.msg);
 		return null;
 	}
 	delete data.err;
@@ -400,6 +412,15 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 						d: this._coder.from(data[n].stddev.d,'b64',4),
 						i: this._coder.from(data[n].stddev.i,'b64',4)
 					};
+				if(data[n].stddev)
+					dataModel[n].stddev = {
+						d: this._coder.from(data[n].stddev.d,'b64',4),
+						i: this._coder.from(data[n].stddev.i,'b64',4)
+					};
+				if(data[n].x)
+					dataModel[n].x = this._coder.from(data[n].x,'b64',4);
+				if(data[n].y)
+					dataModel[n].y = this._coder.from(data[n].y,'b64',4);
 				/**
 				 * current quality : {'b'ad, 'm'edium, 'g'ood}
 				 * evolution : {'u'p, 'd'own, 's'table}
