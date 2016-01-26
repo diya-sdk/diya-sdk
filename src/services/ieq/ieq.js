@@ -388,6 +388,17 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 				dataModel[n].data = (data[n].data?this._coder.from(data[n].data,'b64',4):(data[n].avg?this._coder.from(data[n].avg.d,'b64',4):null));
 				dataModel[n].qualityIndex = (data[n].data?this._coder.from(data[n].index,'b64',4):(data[n].avg?this._coder.from(data[n].avg.i,'b64',4):null));
 				dataModel[n].robotId = this._coder.from(data[n].robotId,'b64',4);
+				if(dataModel[n].robotId) {
+					/** dico robotId -> robotName **/
+					var dicoRobot = {};
+					data.header.robots.forEach(function(el) {
+						dicoRobot[el.id]=el.name;
+					});
+					dataModel[n].robotId = dataModel[n].robotId.map(function(el) {
+						return dicoRobot[el];
+					});
+				}
+
 				dataModel[n].placeId = this._coder.from(data[n].placeId,'b64',4);
 				dataModel[n].x = null;
 				dataModel[n].y = null;
