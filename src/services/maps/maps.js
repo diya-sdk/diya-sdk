@@ -1,5 +1,9 @@
 EventEmitter = require('node-event-emitter');
 
+function LOG(msg){
+	//console.log(msg);
+}
+
 /**
  * Constructor
  *
@@ -142,7 +146,7 @@ Maps.prototype.connect = function() {
 		obj: this._peerIds 
 	}, function(peerId, err, data) {
 		if (err || data.error) {
-			console.log("Maps: fail to get info from map, error:", err || data.error, "!"); // mostly PeerDisconnected
+			LOG("Maps: fail to get info from map, error:", err || data.error, "!"); // mostly PeerDisconnected
 
 			// remove that peer
 			//that.removePeer(peerId);//...
@@ -154,7 +158,7 @@ Maps.prototype.connect = function() {
 		peerId = data.peerId;
 
 		if(!peerId){
-			console.log("Maps: received info without a peerId");       
+			LOG("Maps: received info without a peerId");       
 			return ;
 		}
 
@@ -246,7 +250,7 @@ Maps.prototype.connect = function() {
 			// existed subscription ??
 			d1("#self").unsubscribe(this._subIds)
 			delete this._subIds[peerId];
-			console.log("Maps: bug: existed subscription ??")
+			LOG("Maps: bug: existed subscription ??")
 		} else {
 			// save subId for later unsubscription
 			this._subIds[peerId] = options.subIds[peerId];
