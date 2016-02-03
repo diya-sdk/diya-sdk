@@ -480,6 +480,7 @@ function SocketHandler(WSocket, addr, timeout) {
 	} catch(e) {
 		Logger.error(e.stack);
 		that.close();
+		throw e;
 	}
 };
 inherits(SocketHandler, EventEmitter);
@@ -531,7 +532,10 @@ SocketHandler.prototype._onmessage = function(evt) {
 	try {
 		var message = JSON.parse(evt.data);
 		this.emit('message', message);
-	} catch(err){ Logger.error("[WS] cannot parse message, dropping..."); }
+	} catch(err){
+		Logger.error("[WS] cannot parse message, dropping...");
+		throw err;
+	}
 };
 
 SocketHandler.prototype.unregisterCallbacks = function() {
