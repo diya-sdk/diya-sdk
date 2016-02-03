@@ -280,17 +280,17 @@ Maps.prototype.disconnect = function() {
  * @param map_info {Object} ({rotate, scale, translate})
  * @param cb {Function} callback with error as argument
  */
-Maps.prototype.saveMap = function (peerId, map_info, cb) {
+Maps.prototype.saveMap = function (targetPeerId, map_info, cb) {
 	var _map_info = Object.create(map_info); // create a duplicate of map_info
 	var that = this;
 	// save map's info
 	_map_info.scale = Array.isArray(_map_info.scale) ? _map_info.scale[0] : _map_info.scale
 
-	if (this.mapIsModified(peerId, _map_info)) {
+	if (this.mapIsModified(targetPeerId, _map_info)) {
 		d1("#self").request({
 			service: 'maps',
 			func: 'UpdateMap',
-			obj: [ peerId ],
+			obj: [ targetPeerId ],
 			data: {
 				scale: _map_info.scale,
 				tx: _map_info.translate[0],
@@ -300,10 +300,10 @@ Maps.prototype.saveMap = function (peerId, map_info, cb) {
 			}
 		}, function(peerId, err, data) {
 			if (err != null) {
-				that._diyas[peerId].path.scale = _map_info.scale;
-				that._diyas[peerId].path.rotate = _map_info.rotate;
-				that._diyas[peerId].path.translate[0] = _map_info.translate[0];
-				that._diyas[peerId].path.translate[1] = _map_info.translate[1];
+				that._diyas[targetPeerId].path.scale = _map_info.scale;
+				that._diyas[targetPeerId].path.rotate = _map_info.rotate;
+				that._diyas[targetPeerId].path.translate[0] = _map_info.translate[0];
+				that._diyas[targetPeerId].path.translate[1] = _map_info.translate[1];
 			}
 			if (cb) cb(err);
 		});
@@ -319,7 +319,7 @@ Maps.prototype.saveMap = function (peerId, map_info, cb) {
  * @param place_info {Object} ({ id, x, y})
  * @param cb {Function} callback with error as argument
  */
-Maps.prototype.savePlace = function (peerId, place_info, cb) {
+Maps.prototype.savePlace = function (targetPeerId, place_info, cb) {
 	// save map's info
 	var that = this;
 	var error = "";
@@ -327,11 +327,11 @@ Maps.prototype.savePlace = function (peerId, place_info, cb) {
 	var _place_info = Object.create(place_info);
 
 	// save place
-	if (this.placeIsModified(peerId, _place_info)) {
+	if (this.placeIsModified(targetPeerId, _place_info)) {
 		d1("#self").request({
 			service: 'maps',
 			func: 'UpdatePlace',
-			obj: [ peerId ],
+			obj: [ targetPeerId ],
 			data: {
 				neuronId: _place_info.id,
 				x: _place_info.x,
@@ -339,8 +339,8 @@ Maps.prototype.savePlace = function (peerId, place_info, cb) {
 			}
 		}, function(peerId, err, data) {
 			if (err != null) {
-				that._diyas[peerId].places[_place_info.id].x = _place_info.x;
-				that._diyas[peerId].places[_place_info.id].y = _place_info.y;
+				that._diyas[targetPeerId].places[_place_info.id].x = _place_info.x;
+				that._diyas[targetPeerId].places[_place_info.id].y = _place_info.y;
 			}
 			if (cb) cb(err);
 		});
@@ -355,17 +355,17 @@ Maps.prototype.savePlace = function (peerId, place_info, cb) {
  * @param peerId {String} peerId of DiyaNode (also robot)
  * @param cb {Function} callback with error as argument
  */
-Maps.prototype.clearPlaces = function(peerId, cb) {
+Maps.prototype.clearPlaces = function(targetPeerId, cb) {
 	var that = this;
 
 	d1("#self").request({
 		service: 'maps',
 		func: 'ClearMap',
-		obj: [ peerId ]
+		obj: [ targetPeerId ]
 	}, function(peerId, err, data) {
 		if (err != null) {
 			// delete from internal list
-			that._diyas[peerId].places = {};
+			that._diyas[targetPeerId].places = {};
 		}
 		if (cb) cb(err);
 	});
