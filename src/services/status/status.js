@@ -335,6 +335,8 @@ Status.prototype._getRobotModelFromRecv2 = function(data){
 	// console.log("_getRobotModelFromRecv");
 	// console.log(this.robotModel);
 
+	console.log(data);
+
 	/** Only one robot is manage at the same time currently **/
 	for(var n in dataRobots) {
 		if(!this.robotModel[n])
@@ -351,17 +353,17 @@ Status.prototype._getRobotModelFromRecv2 = function(data){
 				this.robotModel[n].parts = {};
 			var parts = dataRobots[n].parts;
 			var rParts = this.robotModel[n].parts;
-			for(var q in rParts) {
-				/** part[q] was not sent because no error **/
-				if(!parts[q]
-				   &&rParts[q].evts&&rParts[q].evts.code) {
-					rParts[q].evts = {
-						code: 0,
-						codeRef: 0,
-						time: Date.now() /** update **/
-					};
-				}
-			}
+			// for(var q in rParts) {
+			// 	/** part[q] was not sent because no error **/
+			// 	if(!parts[q]
+			// 	   &&rParts[q].evts&&rParts[q].evts.code) {
+			// 		rParts[q].evts = {
+			// 			code: 0,
+			// 			codeRef: 0,
+			// 			time: Date.now() /** update **/
+			// 		};
+			// 	}
+			// }
 			for (var p in parts) {
 				if(!rParts[p]) {
 					rParts[p]={};
