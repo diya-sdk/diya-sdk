@@ -335,8 +335,6 @@ Status.prototype._getRobotModelFromRecv2 = function(data){
 	// console.log("_getRobotModelFromRecv");
 	// console.log(this.robotModel);
 
-	console.log(data);
-
 	/** Only one robot is manage at the same time currently **/
 	for(var n in dataRobots) {
 		if(!this.robotModel[n])
