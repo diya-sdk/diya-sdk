@@ -12,7 +12,6 @@
   "author": "Sylvain Mahé <sylv.mahe@gmail.com> (https://github.com/nilpotence)",
   "license": "MIT",
   "dependencies": {
-    "q": "^1.4.1",
     "node-event-emitter": "0.0.1",
     "inherits": "~2.0.1",
 	"base-64": "^0.1.0"

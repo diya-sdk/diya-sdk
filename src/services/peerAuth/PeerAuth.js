@@ -1,6 +1,6 @@
 var DiyaSelector = require('../../DiyaSelector').DiyaSelector;
 var d1 = require('../../DiyaSelector');
-var Q = require('q');
+//var Q = require('q');
 
 if(typeof INFO === 'undefined') INFO = function(s) { console.log(s);}
 if(typeof OK === 'undefined') OK = function(s) { console.log(s);}

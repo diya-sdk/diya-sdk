@@ -1,6 +1,6 @@
 var DiyaSelector = require('../../DiyaSelector').DiyaSelector;
 var d1 = require('../../DiyaSelector');
-var Q = require('q');
+//var Q = require('q');
 
 
 d1.knownPeers = function() {

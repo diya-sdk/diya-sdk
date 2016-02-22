@@ -23,5 +23,8 @@
     "tests",
     "examples",
     "package.json"
-  ]
+  ],
+  "dependencies": {
+    "q": "~2.0.2"
+  }
 }

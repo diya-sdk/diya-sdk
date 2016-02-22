@@ -1,4 +1,4 @@
-var Q = require('q');
+//var Q = require('q');
 var EventEmitter = require('node-event-emitter');
 var inherits = require('inherits');
 
