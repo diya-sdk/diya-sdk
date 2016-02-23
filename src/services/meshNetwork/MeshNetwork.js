@@ -1,6 +1,8 @@
 var DiyaSelector = require('../../DiyaSelector').DiyaSelector;
 var d1 = require('../../DiyaSelector');
-//var Q = require('q');
+var isBrowser = !(typeof window === 'undefined');
+if(!isBrowser) { var Q = require('q'); }
+else { var Q = window.Q; }
 
 
 d1.knownPeers = function() {
