@@ -345,7 +345,7 @@ Maps.prototype.savePlace = function (targetPeerId, place_info, cb) {
 			if (cb) cb(err);
 		});
 	} else {
-		if (cb) cb(new Error("No change to place n°" + _place_info.id + "!"));
+		if (cb) cb(new Error("No change to place n " + _place_info.id + "!"));
 	}
 }
 
