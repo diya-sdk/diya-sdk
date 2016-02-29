@@ -10,7 +10,19 @@ if(typeof window !== 'undefined'){
 }
 
 
-function Channel(dnId, name, open_cb){
+
+
+/////////////
+// CHANNEL //
+/////////////
+
+/** Handles a RTC channel (datachannel and/or stream) to a DiyaNode peer
+ *  @param dnId : the DiyaNode peerId
+ *  @param name : the channel's name
+ *  @param datachannel_cb : callback called when a RTC datachannel is open for this channel
+ *  @param stream_cb : callback called when a RTC stream is open for this channel
+ */
+function Channel(dnId, name, datachannel_cb, stream_cb){
 	EventEmitter.call(this);
 	this.name = name;
 	this.dnId = dnId;
@@ -18,23 +30,55 @@ function Channel(dnId, name, open_cb){
 	this.frequency = 20;
 
 	this.channel = undefined;
-	this.onopen = open_cb;
+	this.stream = undefined;
+	this.ondatachannel = datachannel_cb;
+	this.onstream = stream_cb;
 	this.closed = false;
 }
 inherits(Channel, EventEmitter);
 
-Channel.prototype.setChannel = function(datachannel){
+/** Bind an incoming RTC datachannel to this channel */
+Channel.prototype.setDataChannel = function(datachannel){
 	var that = this;
 	this.channel = datachannel;
 	this.channel.binaryType = 'arraybuffer';
-	this._negociate();
+	datachannel.onmessage = function(message){
+		// First message carries channel description header
+		var view = new DataView(message.data);
 
+		var typeChar = String.fromCharCode(view.getUint8(0));
+		if(typeChar === 'O') that.type = 'input'; //Promethe Output = Client Input
+		else if(typeChar === 'I') that.type = 'output'; //Promethe Input = Client Output
+		else throw "Unrecnognized channel type : " + typeChar;
+
+		var size = view.getInt32(1,true);
+		if(!size) throw "Wrong datachannel message size";
+		that.size = size;
+		that._buffer = new Float32Array(size);
+
+		// Subsequent messages are forwarded to appropriate handlers
+		datachannel.onmessage = that._onMessage.bind(that);
+		datachannel.onclose = that._onClose.bind(that);
+
+		if(typeof that.ondatachannel === 'function') that.ondatachannel(that.dnId, that);
+
+		console.log('Datachannel '+that.name+' negociated !')
+	}
 };
 
+/** Bind an incoming RTC stream to this channel */
+Channel.prototype.onAddStream = function(stream) {
+	this.stream = stream;
+	this.onstream(this.dnId, stream);
+};
+
+
+/** Close this channel */
 Channel.prototype.close = function(){
 	this.closed = true;
 };
 
+/** Write a scalar value to the given index on the RTC datachannel */
 Channel.prototype.write = function(index, value){
 	if(index < 0 || index > this.size || isNaN(value)) return false;
 	this._buffer[index] = value;
@@ -42,6 +86,7 @@ Channel.prototype.write = function(index, value){
 	return true;
 };
 
+/** Write an array of values to the RTC datachannel */
 Channel.prototype.writeAll = function(values){
 	if(!Array.isArray(values) || values.length !== this.size)
         return false;
@@ -53,19 +98,19 @@ Channel.prototype.writeAll = function(values){
     this._requestSend();
 };
 
+/** Ask to send the internal data buffer through the datachannel at the defined frequency */
 Channel.prototype._requestSend = function(){
 	var that = this;
 
 	var elapsedTime = new Date().getTime() - this._lastSendTimestamp;
 	var period = 1000 / this.frequency;
-	if(elapsedTime >= period){
-		doSend();
-	}else if(!this._sendRequested){
+	if(elapsedTime >= period) doSend();
+	else if(!this._sendRequested) {
 		this._sendRequested = true;
 		setTimeout(doSend, period - elapsedTime);
 	}
 
-	function doSend(){
+	function doSend() {
 		that._sendRequested = false;
 		that._lastSendTimestamp = new Date().getTime();
 		var ret = that._send(that._buffer);
@@ -74,64 +119,32 @@ Channel.prototype._requestSend = function(){
 	}
 };
 
+/** Actual send the internal data buffer through the RTC datachannel */
 Channel.prototype._send = function(msg){
-	if(this.closed) return false;
-	else if(this.channel.readyState === 'open'){
-		try{
+	if(this.closed || !this.channel) return false;
+	else if(this.channel.readyState === 'open') {
+		try {
 			this.channel.send(msg);
-		}catch(e){
+		} catch(e) {
 			console.log('[rtc.channel.write] exception occured while sending data');
 		}
 		return true;
 	}
-	else{
+	else {
 		console.log('[rtc.channel.write] warning : webrtc datachannel state = '+this.channel.readyState);
 		return false;
 	}
 };
 
-Channel.prototype._negociate = function(){
-	var that = this;
-
-	this.channel.onmessage = function(message){
-		var view = new DataView(message.data);
-
-		var typeChar = String.fromCharCode(view.getUint8(0));
-		if(typeChar === 'O'){
-			//Input
-			that.type = 'input'; //Promethe Output = Client Input
-		}else if(typeChar === 'I'){
-			//Output
-			that.type = 'output'; //Promethe Input = Client Output
-		}else{
-			//Error
-		}
-
-		var size = view.getInt32(1,true);
-		if(size != undefined){
-			that.size = size;
-			that._buffer = new Float32Array(size);
-		}else{
-			//error
-		}
-
-		that.channel.onmessage = that._onMessage.bind(that);
-
-		that.channel.onclose = that._onClose.bind(that);
-
-		if(typeof that.onopen === 'function') that.onopen(that.dnId, that);
-
-		console.log('channel '+that.name+' negociated !')
-	}
-};
-
-Channel.prototype._onMessage = function(message){
+/** Called when a message is received from the channel's RTC datachannel */
+Channel.prototype._onMessage = function(message) {
 	var valArray = new Float32Array(message.data);
 	this.emit('value', valArray);
 };
 
-Channel.prototype._onClose = function(){
-	console.log('channel '+this.name+' closed !');
+/** Called when the channel is closed on the remote side */
+Channel.prototype._onClose = function() {
+	console.log('Datachannel '+this.name+' closed !');
 	this.emit('close');
 };
 
@@ -140,7 +153,13 @@ Channel.prototype._onClose = function(){
 ///////////////////// RTC Peer implementation ////////////////////
 //////////////////////////////////////////////////////////////////
 
-
+/**
+ * An RTC Peer associated to a single (DiyaNode peerId, promId) couple.
+ * @param dnId : The DiyaNode peerId
+ * @param rtc : The RTC diya-sdk instance
+ * @param id : the promId
+ * @param channels : an array of RTC channel names to open
+ */
 function Peer(dnId, rtc, id, channels){
 	this.dn = d1(dnId);
 	this.dnId = dnId;
@@ -149,34 +168,31 @@ function Peer(dnId, rtc, id, channels){
 	this.rtc = rtc;
 	this.peer = null;
 
+	this.streams = [];
+
 	this.connected = false;
 	this.closed = false;
 
 	this._connect();
 }
 
+/** Initiate a RTC connection to this Peer */
 Peer.prototype._connect = function(){
 	var that = this;
 
 	this.subscription = this.dn.subscribe({
-		service: 'rtc',
-		func: 'Connect',
-		obj: this.channels,
-		data: {
-			promID: this.id
+		service: 'rtc', func: 'Connect', obj: this.channels, data: { promID: this.id }
+	}, function(diya, err, data){
+		if(data) {
+			if(data.eventType === 'RemoteOffer') that._createPeer(data);
+			else if(data.eventType === 'RemoteICECandidate') that._addRemoteICECandidate(data);
 		}
-	},
-	function(diya, err, data){
-		if(data) that._handleNegociationMessage(data);
 	});
 
-	setTimeout(function(){
-		if(!that.connected && !that.closed){
-			that._reconnect();
-		}
-	}, 10000);
+	setTimeout(function(){ if(!that.connected && !that.closed) that._reconnect(); }, 10000);
 };
 
+/** Reconnects the RTC peer */
 Peer.prototype._reconnect = function(){
 	this.close();
 
@@ -187,22 +203,19 @@ Peer.prototype._reconnect = function(){
 	this._connect();
 };
 
-
-Peer.prototype._handleNegociationMessage = function(msg){
-	if(msg.eventType === 'RemoteOffer'){
-		this._createPeer(msg);
-	}else if(msg.eventType === 'RemoteICECandidate'){
-		this._addRemoteICECandidate(msg);
-	}
-};
-
 var servers = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
 
+/** Creates a RTCPeerConnection in response to a RemoteOffer */
 Peer.prototype._createPeer = function(data){
 	var that = this;
 
-	var peer = new RTCPeerConnection(servers,  {mandatory: [{DtlsSrtpKeyAgreement: true}, {EnableDtlsSrtp: true}]});
+	console.log("Create RTCPeerConnection");
+	var peer = new RTCPeerConnection(servers,  {mandatory: {DtlsSrtpKeyAgreement: true, EnableDtlsSrtp: true, OfferToReceiveAudio: true, OfferToReceiveVideo:true}});
 	this.peer = peer;
+
+	this.streams.forEach(function(s) {
+		peer.addStream(s);
+	});
 
 	peer.setRemoteDescription(new RTCSessionDescription({sdp: data.sdp, type: data.type}));
 
@@ -220,14 +233,11 @@ Peer.prototype._createPeer = function(data){
 			}
 		});
 	},
-	function(err){
-		console.log("RTC: cannot create answer :");
-		console.log(err);
-	},
-	{'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true}});
+	function(err){ console.log(err); },
+	{'mandatory': { OfferToReceiveAudio: true, OfferToReceiveVideo: true}});
 
 	peer.oniceconnectionstatechange = function(){
-		console.log('RTC: state change('+that.id+':'+that.dnId+') : '+peer.iceConnectionState);
+//		console.log('RTC: state change('+that.id+':'+that.dnId+') : '+peer.iceConnectionState);
 		if(peer.iceConnectionState === 'connected'){
 			that.connected = true;
 			if(that.subscription) that.subscription.close();
@@ -238,8 +248,8 @@ Peer.prototype._createPeer = function(data){
 	};
 
 	peer.onicecandidate = function(evt){
-		console.log("local candidate : ");
-		console.log(evt.candidate);
+//		console.log("local candidate : ");
+//		console.log(evt.candidate);
 		that.dn.request({
 			service: 'rtc',
 			func: 'ICECandidate',
@@ -252,31 +262,44 @@ Peer.prototype._createPeer = function(data){
 	};
 
 	peer.ondatachannel = function(evt){
+		console.log("Recv datachannel");
 		that.connected = true;
 		that.rtc._onDataChannel(that.dnId, evt.channel);
+	};
+
+	peer.onaddstream = function(evt) {
+		that.connected = true;
+		that.rtc._onAddStream(that.dnId, evt.stream);
 	};
 };
 
 
 Peer.prototype._addRemoteICECandidate = function(data){
-	var that = this;
-	
-	console.log("remote candidate : ");
-	console.log(data.candidate);
-
-	try{
+	try {
 		var candidate = new RTCIceCandidate(data.candidate);
-		this.peer.addIceCandidate(candidate, function(){
-			console.log("RTC: candidate added("+that.id+":"+that.dnId+") : "+that.peer.iceConnectionState);
-		},function(err){
-			console.error("RTC: cannot add RemoteICECandidate :");
-			console.error(err);
-		});
-	}catch(err){
-		console.error("RTC: cannot add RemoteICECandidate : ");
-		console.error(err);
-	}
+		this.peer.addIceCandidate(candidate, function(){},function(err){ console.error(err);	});
+	} catch(err) { console.error(err); }
 };
+
+/** Send the mappings from channel names to stream IDs */
+Peer.prototype.sendChannelsStreamsMappings = function() {
+//	console.log("sendChannelsStreamsMappings : ");
+//	console.log(this.rtc[this.dnId].channelsByStream);
+	this.dn.request({
+		service:"rtc",
+		func:"ChannelsStreamsMappings",
+		data:{peerId:0, mappings:this.rtc[this.dnId].channelsByStream}
+	}, function(peerId, err, data){
+		if(err) console.error(err);
+	});
+};
+
+/** Adds a local stream to this Peer */
+Peer.prototype.addStream = function(stream) {
+	this.sendChannelsStreamsMappings();
+	if(!this.streams.filter(function(s){return stream.id === s;})[0]) this.streams.push(stream);
+	this._reconnect();
+}
 
 Peer.prototype.close = function(){
 	if(this.subscription) this.subscription.close();
@@ -290,6 +313,8 @@ Peer.prototype.close = function(){
 };
 
 
+
+
 //////////////////////////////////////////////////////////////////////////////
 /////////////////////////// RTC service implementation ///////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -301,30 +326,20 @@ function RTC(selector){
 	this.selector = selector;
 
 	this.requestedChannels = [];
+	this.channelsByStream = [];
 }
 
-
-RTC.prototype.disconnect = function(){
-	var that = this;
-
-	this.selector.each(function(dnId){
-		if(!that[dnId]) return ;
-		for(var promID in that[dnId].peers){
-			that._closePeer(dnId, promID);
-		}
-	});
-
-	if(this.subscription) this.subscription.close();
+RTC.prototype.use = function(name_regex, type, ondatachannel_callback){
+	this.requestedChannels.push({regex: name_regex, type:type, cb: ondatachannel_callback});
 	return this;
 };
 
-RTC.prototype.use = function(name_regex, onopen_callback){
-	this.requestedChannels.push({regex: name_regex, cb: onopen_callback});
-	return this;
-};
-
+/** Start listening to Peers connections.
+ * A 'Peer' object will be created for each DiyaNode peerId and each promID
+ */
 RTC.prototype.connect = function(){
 	var that = this;
+
 
 	this.subscription = this.selector.subscribe({
 		service: 'rtc',
@@ -347,6 +362,7 @@ RTC.prototype.connect = function(){
 						that[dnId].peers[data.promID] = new Peer(dnId, that, data.promID, channels);
 					}
 				}
+				if(that[dnId].peers[data.promID]) that[dnId].peers[data.promID].sendChannelsStreamsMappings();
 			}
 			else if(data.eventType === 'PeerClosed'){
 				if(that[dnId].peers[data.promID]){
@@ -362,6 +378,21 @@ RTC.prototype.connect = function(){
 	return this;
 };
 
+RTC.prototype.disconnect = function(){
+	var that = this;
+
+	this.selector.each(function(dnId){
+		if(!that[dnId]) return ;
+		for(var promID in that[dnId].peers){
+			that._closePeer(dnId, promID);
+		}
+	});
+
+	if(this.subscription) this.subscription.close();
+	return this;
+};
+
+
 RTC.prototype._createDiyaNode = function(dnId){
 	var that = this;
 
@@ -369,7 +400,8 @@ RTC.prototype._createDiyaNode = function(dnId){
 		dnId: dnId,
 		usedChannels: [],
 		requestedChannels: [],
-		peers: []
+		peers: [],
+		channelsByStream: []
 	}
 
 	this.requestedChannels.forEach(function(c){that[dnId].requestedChannels.push(c)});
@@ -396,6 +428,9 @@ RTC.prototype._closePeer = function(dnId, promID){
 	}
 };
 
+/** Matches the given receivedChannels proposed by the given DiyaNode peerId
+ *  against the requested channels and creates a Channel for each match
+ */
 RTC.prototype._matchChannels = function(dnId, receivedChannels){
 	var that = this;
 
@@ -403,13 +438,27 @@ RTC.prototype._matchChannels = function(dnId, receivedChannels){
 
 	for(var i = 0; i < receivedChannels.length; i++){
 		var name = receivedChannels[i];
+		var remoteStreamId = name.split("_;:_")[1];
+		name = name.split("_;:_")[0];
 
 		for(var j = 0; j < that[dnId].requestedChannels.length; j++){
 			var req = that[dnId].requestedChannels[j];
 
 			if(name && name.match(req.regex) && !that[dnId].usedChannels[name]){
-				that[dnId].usedChannels[name] = new Channel(dnId, name, req.cb);
+				var channel = new Channel(dnId, name, req.cb);
+				that[dnId].usedChannels[name] = channel;
 				channels.push(name);
+
+				// If a stream id is provided for the channel, register the mapping
+				if(remoteStreamId) {
+					that[dnId].channelsByStream.push({stream:remoteStreamId, channel:channel});
+					channel.streamId = streamId;
+				}
+				var localStreamId = that.channelsByStream.filter(function(cbs){return cbs.channel === name; })[0];
+				if(localStreamId) {
+					that[dnId].channelsByStream.push({stream:localStreamId, channel:name});
+					channel.localStreamId = localStreamId;
+				}
 			}
 		}
 	}
@@ -418,69 +467,55 @@ RTC.prototype._matchChannels = function(dnId, receivedChannels){
 };
 
 
+/** Called upon RTC datachannels connections */
 RTC.prototype._onDataChannel = function(dnId, datachannel){
 	var channel = this[dnId].usedChannels[datachannel.label];
 
 	if(!channel){
-		console.log("Channel "+datachannel.label+" unmatched, closing !");
+		console.log("Datachannel "+datachannel.label+" unmatched, closing !");
 		datachannel.close();
 		return ;
 	}
-	console.log("Channel "+datachannel.label+" created !");
+	console.log("Datachannel "+datachannel.label+" created !");
 
-	channel.setChannel(datachannel);
+	channel.setDataChannel(datachannel);
 };
 
+/** Called upon RTC stream channel connections */
+RTC.prototype._onAddStream = function(dnId, stream) {
+	var channel = this[dnId].channelsByStream.filter(function(cbs){return cbs.stream === stream.id;})[0];
 
-
-DiyaSelector.prototype.rtc = function(domNode, selectedNodes){
-	var rtc = new RTC(this);
-
-	if(domNode){
-		createNeuronsFromDOM(domNode, selectedNodes, rtc);
+	if(!channel){
+		console.log("Stream Channel "+ stream.id +" unmatched, closing !");
+		stream.close();
+		return ;
 	}
+	console.log("Stream Channel "+channel.label+" created !");
 
-	return rtc;
+	channel.onAddStream(stream);
 };
 
-///////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////
+/** Add a local stream to be sent through the given RTC channel */
+RTC.prototype.addStream = function(channel, stream) {
+	var that = this;
 
-function createNeuronsFromDOM(domNode, selectedNodes, rtc){
-	if(!domNode || !domNode.querySelectorAll) return ;
+	// Register the channel<->stream mapping
+	this.channelsByStream.push({channel:channel, stream:stream.id});
 
+	console.log("Add stream " + stream.id + " for channel " + channel);
 
-	//Retrieve all tags which name starts with "neuron-"
-	var neuronNodeList = domNode.querySelectorAll('*');
-	var neuronNodes = [];
-	for(var i=0;i<neuronNodeList.length; i++){
-		if(isNeuronTag(neuronNodeList[i])){
-			neuronNodes.push(neuronNodeList[i]);
-			if(Array.isArray(selectedNodes)) selectedNodes.push(neuronNodeList[i]);
+	// Send the channel<->stream mapping to all connected Peers
+	this.selector.each(function(dnId){
+		if(!that[dnId]) return ;
+		that[dnId].channelsByStream.push({channel:channel, stream:stream.id});
+		for(var promID in that[dnId].peers){
+			that[dnId].peers[promID].addStream(stream);
 		}
-	}
-
-	//for each tag that has a name attribute, create a neuron associated with it
-	neuronNodes.forEach(function(neuronNode){
-
-		var channel = getChannel(neuronNode.attributes["name"].value);
-
-		rtc.use(channel, function(dnId, neuron){
-			neuronNode.setNeuron(dnId, neuron);
-		});
-
 	});
 
-}
+};
 
 
-function isNeuronTag(node){
-	return node.tagName.startsWith("NEURON-") &&
-		node.attributes["name"] &&
-		(typeof node.setNeuron === 'function');
-}
+////////////////////////
 
-function getChannel(name){
-	return name.replace(/\s+/, "");
-}
+DiyaSelector.prototype.rtc = function(){ return new RTC(this);};

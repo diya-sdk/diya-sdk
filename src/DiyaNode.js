@@ -71,6 +71,7 @@ DiyaNode.prototype.connect = function(addr, WSocket){
 		else addr = "ws://" + addr;
 	}
 
+
 	if(this._addr === addr){
 		if(this._status === 'opened')
 			return Q(this.self());
@@ -364,6 +365,7 @@ DiyaNode.prototype._handleHandshake = function(message){
 		Logger.error("Missing arguments for Handshake message, dropping...");
 		return ;
 	}
+
 
 	this._self = message.self;
 
