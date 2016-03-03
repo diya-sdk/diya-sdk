@@ -283,8 +283,8 @@ Peer.prototype._addRemoteICECandidate = function(data){
 
 /** Send the mappings from channel names to stream IDs */
 Peer.prototype.sendChannelsStreamsMappings = function() {
-//	console.log("sendChannelsStreamsMappings : ");
-//	console.log(this.rtc[this.dnId].channelsByStream);
+	console.log("sendChannelsStreamsMappings : ");
+	console.log(this.rtc[this.dnId].channelsByStream);
 	this.dn.request({
 		service:"rtc",
 		func:"ChannelsStreamsMappings",
@@ -299,6 +299,11 @@ Peer.prototype.addStream = function(stream) {
 	this.sendChannelsStreamsMappings();
 	if(!this.streams.filter(function(s){return stream.id === s;})[0]) this.streams.push(stream);
 	this._reconnect();
+}
+
+Peer.prototype.removeStream = function(stream) {
+	this.streams = this.streams.filter(function(s){return stream.id !== s;});
+	if(this.peer) this.peer.removeStream(stream);
 }
 
 Peer.prototype.close = function(){
@@ -356,16 +361,24 @@ RTC.prototype.connect = function(){
 		if(data && data.eventType && data.promID !== undefined){
 
 			if(data.eventType === 'PeerConnected'){
+				console.log("PeerConnected " + dnId);
 				if(!that[dnId].peers[data.promID]){
 					var channels = that._matchChannels(dnId, data.channels);
 					if(channels.length > 0){
 						that[dnId].peers[data.promID] = new Peer(dnId, that, data.promID, channels);
 					}
+
+					// Autoreconnect declared streams
+					console.log("RECONNECT TO ");
+					console.log(that.channelsByStream);
+					that.channelsByStream.forEach(function(cbs) {
+						that.addStream(cbs.channel, cbs.mediaStream);
+					});
 				}
 				if(that[dnId].peers[data.promID]) that[dnId].peers[data.promID].sendChannelsStreamsMappings();
 			}
-			else if(data.eventType === 'PeerClosed'){
-				if(that[dnId].peers[data.promID]){
+			else if(data.eventType === 'PeerClosed') {
+				if(that[dnId].peers[data.promID]) {
 					that._closePeer(dnId, data.promID);
 					if(typeof that.onclose === 'function') that.onclose(dnId);
 				}
@@ -451,11 +464,13 @@ RTC.prototype._matchChannels = function(dnId, receivedChannels){
 
 				// If a stream id is provided for the channel, register the mapping
 				if(remoteStreamId) {
+					that[dnId].channelsByStream = that[dnId].channelsByStream.filter(function(cbs){return cbs.stream !== remoteStreamId && cbs.channel !== channel; });
 					that[dnId].channelsByStream.push({stream:remoteStreamId, channel:channel});
 					channel.streamId = streamId;
 				}
 				var localStreamId = that.channelsByStream.filter(function(cbs){return cbs.channel === name; })[0];
 				if(localStreamId) {
+					that[dnId].channelsByStream = that[dnId].channelsByStream.filter(function(cbs){return cbs.stream !== localStreamId && cbs.channel !== name; });
 					that[dnId].channelsByStream.push({stream:localStreamId, channel:name});
 					channel.localStreamId = localStreamId;
 				}
@@ -500,19 +515,39 @@ RTC.prototype.addStream = function(channel, stream) {
 	var that = this;
 
 	// Register the channel<->stream mapping
-	this.channelsByStream.push({channel:channel, stream:stream.id});
+	this.channelsByStream = this.channelsByStream.filter(function(cbs){return cbs.channel !== channel && cbs.stream !== stream.id; });
+ 	this.channelsByStream.push({channel:channel, stream:stream.id, mediaStream:stream});
 
 	console.log("Add stream " + stream.id + " for channel " + channel);
 
 	// Send the channel<->stream mapping to all connected Peers
 	this.selector.each(function(dnId){
 		if(!that[dnId]) return ;
+		that[dnId].channelsByStream = that[dnId].channelsByStream.filter(function(cbs){return cbs.channel !== channel && cbs.stream !== stream.id; });
 		that[dnId].channelsByStream.push({channel:channel, stream:stream.id});
 		for(var promID in that[dnId].peers){
 			that[dnId].peers[promID].addStream(stream);
 		}
 	});
 
+};
+
+RTC.prototype.removeStream = function(channel, stream) {
+	var that = this;
+
+	// Register the channel<->stream mapping
+	this.channelsByStream = this.channelsByStream.filter(function(cbs){return cbs.channel !== channel && cbs.stream !== stream.id; });
+
+	console.log("Remove stream " + stream.id + " for channel " + channel);
+
+	// Send the channel<->stream mapping to all connected Peers
+	this.selector.each(function(dnId){
+		if(!that[dnId]) return ;
+		that[dnId].channelsByStream = that[dnId].channelsByStream.filter(function(cbs){return cbs.channel !== channel && cbs.stream !== stream.id; });
+		for(var promID in that[dnId].peers){
+			that[dnId].peers[promID].removeStream(stream);
+		}
+	});
 };
 
 
