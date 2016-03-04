@@ -189,7 +189,7 @@ Peer.prototype._connect = function(){
 		}
 	});
 
-	setTimeout(function(){ if(!that.connected && !that.closed) that._reconnect(); }, 10000);
+	this._timeoutId = setTimeout(function(){ if(!that.connected && !that.closed) that._reconnect(); }, 10000);
 };
 
 /** Reconnects the RTC peer */
@@ -307,13 +307,17 @@ Peer.prototype.removeStream = function(stream) {
 }
 
 Peer.prototype.close = function(){
+	console.log('PROOOOOUTTT');
 	if(this.subscription) this.subscription.close();
+	clearTimeout(this._timeoutId);
 	if(this.peer){
 		try{
 			this.peer.close();
 		}catch(e){}
 		this.connected = false;
 		this.closed = true;
+	} else {
+		console.error('POULPE');
 	}
 };
 
@@ -354,6 +358,7 @@ RTC.prototype.connect = function(){
 		if(!that[dnId]) that._createDiyaNode(dnId);
 
 		if(err === 'SubscriptionClosed' || err === 'PeerDisconnected'){
+			console.log("ZOB");
 			that._closeDiyaNode(dnId);
 			return ;
 		}
@@ -484,6 +489,7 @@ RTC.prototype._matchChannels = function(dnId, receivedChannels){
 
 /** Called upon RTC datachannels connections */
 RTC.prototype._onDataChannel = function(dnId, datachannel){
+	if(!this[dnId]) return console.warn("Tried to open a data channel on a closed peer");
 	var channel = this[dnId].usedChannels[datachannel.label];
 
 	if(!channel){
