@@ -62,7 +62,7 @@ Channel.prototype.setDataChannel = function(datachannel){
 
 		if(typeof that.ondatachannel === 'function') that.ondatachannel(that.dnId, that);
 
-		console.log('Datachannel '+that.name+' negociated !')
+		console.log('Open datachannel '+that.name);
 	}
 };
 
@@ -70,6 +70,8 @@ Channel.prototype.setDataChannel = function(datachannel){
 Channel.prototype.onAddStream = function(stream) {
 	this.stream = stream;
 	this.onstream(this.dnId, stream);
+
+	console.log('Open stream '+that.name);
 };
 
 
@@ -144,7 +146,7 @@ Channel.prototype._onMessage = function(message) {
 
 /** Called when the channel is closed on the remote side */
 Channel.prototype._onClose = function() {
-	console.log('Datachannel '+this.name+' closed !');
+	console.log('Close datachannel '+this.name);
 	this.emit('close');
 };
 
@@ -209,7 +211,6 @@ var servers = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
 Peer.prototype._createPeer = function(data){
 	var that = this;
 
-	console.log("Create RTCPeerConnection");
 	var peer = new RTCPeerConnection(servers,  {mandatory: {DtlsSrtpKeyAgreement: true, EnableDtlsSrtp: true, OfferToReceiveAudio: true, OfferToReceiveVideo:true}});
 	this.peer = peer;
 
@@ -237,7 +238,6 @@ Peer.prototype._createPeer = function(data){
 	{'mandatory': { OfferToReceiveAudio: true, OfferToReceiveVideo: true}});
 
 	peer.oniceconnectionstatechange = function(){
-//		console.log('RTC: state change('+that.id+':'+that.dnId+') : '+peer.iceConnectionState);
 		if(peer.iceConnectionState === 'connected'){
 			that.connected = true;
 			if(that.subscription) that.subscription.close();
@@ -248,8 +248,6 @@ Peer.prototype._createPeer = function(data){
 	};
 
 	peer.onicecandidate = function(evt){
-//		console.log("local candidate : ");
-//		console.log(evt.candidate);
 		that.dn.request({
 			service: 'rtc',
 			func: 'ICECandidate',
@@ -262,7 +260,6 @@ Peer.prototype._createPeer = function(data){
 	};
 
 	peer.ondatachannel = function(evt){
-		console.log("Recv datachannel");
 		that.connected = true;
 		that.rtc._onDataChannel(that.dnId, evt.channel);
 	};
@@ -283,8 +280,6 @@ Peer.prototype._addRemoteICECandidate = function(data){
 
 /** Send the mappings from channel names to stream IDs */
 Peer.prototype.sendChannelsStreamsMappings = function() {
-	console.log("sendChannelsStreamsMappings : ");
-	console.log(this.rtc[this.dnId].channelsByStream);
 	this.dn.request({
 		service:"rtc",
 		func:"ChannelsStreamsMappings",
@@ -307,7 +302,6 @@ Peer.prototype.removeStream = function(stream) {
 }
 
 Peer.prototype.close = function(){
-	console.log('PROOOOOUTTT');
 	if(this.subscription) this.subscription.close();
 	clearTimeout(this._timeoutId);
 	if(this.peer){
@@ -316,8 +310,6 @@ Peer.prototype.close = function(){
 		}catch(e){}
 		this.connected = false;
 		this.closed = true;
-	} else {
-		console.error('POULPE');
 	}
 };
 
@@ -358,7 +350,6 @@ RTC.prototype.connect = function(){
 		if(!that[dnId]) that._createDiyaNode(dnId);
 
 		if(err === 'SubscriptionClosed' || err === 'PeerDisconnected'){
-			console.log("ZOB");
 			that._closeDiyaNode(dnId);
 			return ;
 		}
@@ -366,7 +357,6 @@ RTC.prototype.connect = function(){
 		if(data && data.eventType && data.promID !== undefined){
 
 			if(data.eventType === 'PeerConnected'){
-				console.log("PeerConnected " + dnId);
 				if(!that[dnId].peers[data.promID]){
 					var channels = that._matchChannels(dnId, data.channels);
 					if(channels.length > 0){
@@ -374,8 +364,6 @@ RTC.prototype.connect = function(){
 					}
 
 					// Autoreconnect declared streams
-					console.log("RECONNECT TO ");
-					console.log(that.channelsByStream);
 					that.channelsByStream.forEach(function(cbs) {
 						that.addStream(cbs.channel, cbs.mediaStream);
 					});
@@ -497,22 +485,19 @@ RTC.prototype._onDataChannel = function(dnId, datachannel){
 		datachannel.close();
 		return ;
 	}
-	console.log("Datachannel "+datachannel.label+" created !");
-
 	channel.setDataChannel(datachannel);
 };
 
 /** Called upon RTC stream channel connections */
 RTC.prototype._onAddStream = function(dnId, stream) {
+	if(!this[dnId]) return console.warn("Tried to open a stream on a closed peer");
 	var channel = this[dnId].channelsByStream.filter(function(cbs){return cbs.stream === stream.id;})[0];
 
 	if(!channel){
-		console.log("Stream Channel "+ stream.id +" unmatched, closing !");
+		console.warn("Stream Channel "+ stream.id +" unmatched, closing !");
 		stream.close();
 		return ;
 	}
-	console.log("Stream Channel "+channel.label+" created !");
-
 	channel.onAddStream(stream);
 };
 
@@ -524,7 +509,7 @@ RTC.prototype.addStream = function(channel, stream) {
 	this.channelsByStream = this.channelsByStream.filter(function(cbs){return cbs.channel !== channel && cbs.stream !== stream.id; });
  	this.channelsByStream.push({channel:channel, stream:stream.id, mediaStream:stream});
 
-	console.log("Add stream " + stream.id + " for channel " + channel);
+	console.log("Open local stream " + channel);
 
 	// Send the channel<->stream mapping to all connected Peers
 	this.selector.each(function(dnId){
@@ -544,7 +529,7 @@ RTC.prototype.removeStream = function(channel, stream) {
 	// Register the channel<->stream mapping
 	this.channelsByStream = this.channelsByStream.filter(function(cbs){return cbs.channel !== channel && cbs.stream !== stream.id; });
 
-	console.log("Remove stream " + stream.id + " for channel " + channel);
+	console.log("Close local stream " + channel);
 
 	// Send the channel<->stream mapping to all connected Peers
 	this.selector.each(function(dnId){
