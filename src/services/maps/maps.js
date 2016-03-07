@@ -12,7 +12,7 @@ function LOG(msg){
 function Maps(peerIds) {
 
 
-	this._peerIds = peerIds;
+	this._peerIds = JSON.parse(JSON.stringify(peerIds));
 	this._subIds = {}; // list of subscription Id (for unsubscription purpose) e.g {peerId0: subId0, ...}
 
 	// list of registered place by Diya
@@ -266,10 +266,10 @@ Maps.prototype.connect = function() {
 Maps.prototype.disconnect = function() {
 	var that = this;
 	d1("#self").unsubscribe(this._subIds);
-	this._diyas = {};// delete ?
-	this._peerIds.forEach(function(peerId) {
+	for(var peerId in this._diyas){
 		that.emit("peer-unsubscribed", peerId);
-	});
+	}
+	this._diyas = {};// delete ?
 	this.removeAllListeners();
 }
 
