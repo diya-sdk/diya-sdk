@@ -69,6 +69,10 @@ d1.on = function(event, callback){
 	return d1;
 };
 
+d1.removeListener = function(event, callback){
+	connection.removeListener(event, callback);
+	return d1;
+};
 
 /** Shorthand function to connect and login with the given (user,password) */
 d1.connectAsUser = function(ip, user, password, WSocket) {
