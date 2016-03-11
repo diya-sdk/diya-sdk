@@ -69,9 +69,10 @@ Channel.prototype.setDataChannel = function(datachannel){
 /** Bind an incoming RTC stream to this channel */
 Channel.prototype.onAddStream = function(stream) {
 	this.stream = stream;
-	this.onstream(this.dnId, stream);
+	if(typeof this.onstream === 'function') this.onstream(this.dnId, stream);
+	else console.warn("Ignore stream " + stream.id);
 
-	console.log('Open stream '+that.name);
+	console.log('Open stream '+this.name);
 };
 
 
@@ -330,8 +331,8 @@ function RTC(selector){
 	this.channelsByStream = [];
 }
 
-RTC.prototype.use = function(name_regex, type, ondatachannel_callback){
-	this.requestedChannels.push({regex: name_regex, type:type, cb: ondatachannel_callback});
+RTC.prototype.use = function(name_regex, type, ondatachannel_callback, onaddstream_callback){
+	this.requestedChannels.push({regex: name_regex, type:type, cb: ondatachannel_callback, stream_cb: onaddstream_callback});
 	return this;
 };
 
@@ -451,7 +452,7 @@ RTC.prototype._matchChannels = function(dnId, receivedChannels){
 			var req = that[dnId].requestedChannels[j];
 
 			if(name && name.match(req.regex) && !that[dnId].usedChannels[name]){
-				var channel = new Channel(dnId, name, req.cb);
+				var channel = new Channel(dnId, name, req.cb, req.stream_cb);
 				that[dnId].usedChannels[name] = channel;
 				channels.push(name);
 
@@ -491,7 +492,8 @@ RTC.prototype._onDataChannel = function(dnId, datachannel){
 /** Called upon RTC stream channel connections */
 RTC.prototype._onAddStream = function(dnId, stream) {
 	if(!this[dnId]) return console.warn("Tried to open a stream on a closed peer");
-	var channel = this[dnId].channelsByStream.filter(function(cbs){return cbs.stream === stream.id;})[0];
+
+	var channel = this[dnId].usedChannels[stream.id];
 
 	if(!channel){
 		console.warn("Stream Channel "+ stream.id +" unmatched, closing !");
