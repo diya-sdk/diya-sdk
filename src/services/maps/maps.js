@@ -142,8 +142,8 @@ Maps.prototype.connect = function() {
 	// subscribe for map service
 	d1("#self").subscribe({
 		service: 'maps',
-		func: 'ListenMap',
-		obj: this._peerIds 
+		func: 'Robots',
+		obj: this._peerIds
 	}, function(peerId, err, data) {
 		if (err || data.error) {
 			LOG("Maps: fail to get info from map, error:", err || data.error, "!"); // mostly PeerDisconnected
@@ -158,7 +158,7 @@ Maps.prototype.connect = function() {
 		peerId = data.peerId;
 
 		if(!peerId){
-			LOG("Maps: received info without a peerId");       
+			LOG("Maps: received info without a peerId");
 			return ;
 		}
 

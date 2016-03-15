@@ -25,5 +25,5 @@ DiyaSelector.prototype.knownPeers = function(callback) {
 
 
 d1.listenMeshNetwork = function(callback) {
-	return d1(/.*/).subscribe({ service: 'meshNetwork', func: 'SubscribeMeshNetwork' }, callback, {auto: true});
+	return d1(/.*/).subscribe({ service: 'meshNetwork', func: 'MeshNetwork' }, callback, {auto: true});
 };
