@@ -239,7 +239,7 @@ Status.prototype.watch = function(robotNames, callback){
 
 	var subs = this.selector.subscribe({
 		service: 'status',
-		func: 'Watch',
+		func: 'Status',
 		data: robotNames
 	}, function (peerId, err, data) {
 		// console.log(peerId);

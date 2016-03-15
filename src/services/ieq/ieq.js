@@ -303,7 +303,7 @@ IEQ.prototype.watch = function(data, callback){
 
 	var subs = this.selector.subscribe({
 		service: "ieq",
-		func: "Watch",
+		func: "Data",
 		data: data
 	}, function(dnId, err, data){
 		if(err) {
@@ -350,7 +350,6 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 		return null;
 	}
 	delete data.err;
-
 	if(data && data.header) {
 		for (var n in data) {
 			if(n != "header" && n != "err") {
