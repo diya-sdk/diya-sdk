@@ -266,6 +266,7 @@ Peer.prototype._createPeer = function(data){
 	};
 
 	peer.onaddstream = function(evt) {
+		console.error("sfudsduidfgufdsywgwdsuygdw!!!!");
 		that.connected = true;
 		that.rtc._onAddStream(that.dnId, evt.stream);
 	};
