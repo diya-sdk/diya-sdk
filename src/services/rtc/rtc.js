@@ -346,7 +346,7 @@ RTC.prototype.connect = function(){
 
 	this.subscription = this.selector.subscribe({
 		service: 'rtc',
-		func: 'ListenPeers'
+		func: 'Peers'
 	}, function(dnId, err, data){
 
 		if(!that[dnId]) that._createDiyaNode(dnId);
