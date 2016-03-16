@@ -11,6 +11,7 @@ d1.knownPeers = function() {
 d1.kp = d1.knownPeers;
 
 
+
 DiyaSelector.prototype.knownPeers = function(callback) {
 	var deferred = Q.defer();
 	this.request({service: 'meshNetwork',func: 'ListKnownPeers'}, function(peerId, err, data){

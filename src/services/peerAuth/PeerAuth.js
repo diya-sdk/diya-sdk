@@ -196,3 +196,18 @@ d1.trustedPeers = function() {
 	return deferred.promise;
 };
 d1.tp = d1.trustedPeers; // Shorthand
+
+d1.blacklistedPeers = function() {
+	var deferred = Q.defer();
+	d1("#self").request(
+		{ service: 'peerAuth',	func: 'GetBlacklistedPeers' },
+		function(peerId, err, data) {
+			if(err) return deferred.reject(err);
+			var peers = [];
+			for(var i=0; i<data.peers.length; i++) peers.push(data.peers[i].name);
+			return deferred.resolve(peers);
+		}
+	);
+	return deferred.promise;
+};
+d1.bp = d1.blacklistedPeers; // Shorthand
