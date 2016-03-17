@@ -243,7 +243,7 @@ Peer.prototype._createPeer = function(data){
 			that.connected = true;
 			if(that.subscription) that.subscription.close();
 		}
-		else if(peer.iceConnectionState === 'disconnected'){
+		else if(peer.iceConnectionState === 'disconnected' || peer.iceConnectionState === 'closed'){
 			if(!that.closed) that._reconnect();
 		}
 	};
@@ -266,7 +266,6 @@ Peer.prototype._createPeer = function(data){
 	};
 
 	peer.onaddstream = function(evt) {
-		console.error("sfudsduidfgufdsywgwdsuygdw!!!!");
 		that.connected = true;
 		that.rtc._onAddStream(that.dnId, evt.stream);
 	};
