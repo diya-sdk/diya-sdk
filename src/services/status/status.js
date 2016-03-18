@@ -347,8 +347,7 @@ Status.prototype._getRobotModelFromRecv2 = function(data){
 
 		/** extract parts info **/
 		if(dataRobots[n] && dataRobots[n].parts) {
-			if(!this.robotModel[n].parts)
-				this.robotModel[n].parts = {};
+			this.robotModel[n].parts = {};
 			var parts = dataRobots[n].parts;
 			var rParts = this.robotModel[n].parts;
 			// for(var q in rParts) {
@@ -398,7 +397,7 @@ Status.prototype._getRobotModelFromRecv2 = function(data){
 			}
 			// console.log('parts, rParts');
 			// console.log(parts);
-			// console.log(rParts);
+ 		// 	console.log(rParts);
 		}
 		else {
 			Logger.error("No parts to read for robot "+data[n].name);
