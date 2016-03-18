@@ -194,7 +194,11 @@ Base64Coding.prototype.to = function(array, byteCoding) {
 		break;
 	}
 	var buffChar = new Uint8Array(buffer);
-	var str = String.fromCharCode.apply(null, buffChar);
+	var buffCharCoded = new Array(buffChar.length);
+	for(var n =0; n<buffChar.length; n++) {
+		buffCharCoded[n] = String.fromCharCode(buffChar[n]);
+	}
+	var str = new String(buffCharCoded.join(''));
 	var b64Buff = base64.encode(str);
 	return {
 		t: 'b64', /* type */
