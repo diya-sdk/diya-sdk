@@ -342,7 +342,7 @@ IEQ.prototype.closeSubscriptions = function(){
 IEQ.prototype.getCSVData = function(sensorNames,callback){
 	var dataConfig = {
 		criteria: {
-			time: { rangeUnit: 'hour', range: 720}, // 720h -> 30d
+			time: { rangeUnit: 'hour', range: 360}, // 360h -> 15d
 			places: [],
 			robots: []
 		},
