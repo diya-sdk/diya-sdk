@@ -336,6 +336,22 @@ IEQ.prototype.closeSubscriptions = function(){
 	this.subscriptions =[];
 };
 
+/**
+ * request Data to make CSV file
+ */
+IEQ.prototype.getCSVData = function(sensorNames,callback){
+	var dataConfig = {
+		criteria: {
+			time: { rangeUnit: 'hour', range: 720}, // 720h -> 30d
+			places: [],
+			robots: []
+		},
+		sensors: sensorNames
+	};
+
+	this.updateData(callback, dataConfig);
+};
+
 
 /**
  * Update internal model with received data
