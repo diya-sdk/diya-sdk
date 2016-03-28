@@ -504,12 +504,13 @@ DiyaSelector.prototype.Status = function(){
  * @param robotName to find status to modify
  * @param partName 	to find status to modify
  * @param code		newCode
+ * @param source		source
  * @param callback		return callback (<bool>success)
  */
 DiyaSelector.prototype.setStatus = function(robotName, partName, code, source, callback) {
 	var funcName = "SetStatus_"+partName;
 	this.request(
-		{service:"status",func:funcName,data: {robotName: robotName, statusCode: code, source: source|1}}, function(peerId, err, data) {
+		{service:"status",func:funcName,data: {robotName: robotName, statusCode: code, partName: partName, source: source|1}}, function(peerId, err, data) {
 			if(err) {
 				if(callback) callback(false);
 			}
