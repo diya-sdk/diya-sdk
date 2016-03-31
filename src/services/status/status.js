@@ -335,8 +335,10 @@ Status.prototype._getRobotModelFromRecv2 = function(data){
 	// console.log("_getRobotModelFromRecv");
 	// console.log(this.robotModel);
 
-	for(var n in this.robotModel)
+	for(var n in this.robotModel) {
+		// console.log(n);
 		this.robotModel[n].parts = {}; // reset parts
+	}
 
 	for(var n in dataRobots) {
 		if(!this.robotModel[n])
@@ -350,6 +352,7 @@ Status.prototype._getRobotModelFromRecv2 = function(data){
 		/** extract parts info **/
 		if(dataRobots[n] && dataRobots[n].parts) {
 			var parts = dataRobots[n].parts;
+			this.robotModel[n].parts = {};
 			var rParts = this.robotModel[n].parts;
 			// for(var q in rParts) {
 			// 	/** part[q] was not sent because no error **/
