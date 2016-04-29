@@ -2,12 +2,13 @@ DiyaSelector = require('../../DiyaSelector').DiyaSelector;
 EventEmitter = require('node-event-emitter');
 inherits = require('inherits');
 
+require('webrtc-adapter');
 
-if(typeof window !== 'undefined'){
+/*if(typeof window !== 'undefined'){
 	var RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
 	var RTCIceCandidate = window.RTCIceCandidate || window.mozRTCIceCandidate || window.webkitRTCIceCandidate;
 	var RTCSessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription || window.webkitRTCSessionDescription;
-}
+}*/
 
 
 
@@ -22,7 +23,7 @@ if(typeof window !== 'undefined'){
  *  @param datachannel_cb : callback called when a RTC datachannel is open for this channel
  *  @param stream_cb : callback called when a RTC stream is open for this channel
  */
-function Channel(dnId, name, datachannel_cb, stream_cb){
+function Channel(dnId, name, datachannel_cb, stream_cb) {
 	EventEmitter.call(this);
 	this.name = name;
 	this.dnId = dnId;
@@ -42,6 +43,7 @@ Channel.prototype.setDataChannel = function(datachannel){
 	var that = this;
 	this.channel = datachannel;
 	this.channel.binaryType = 'arraybuffer';
+	console.log("set data channel :"+this.name);
 	datachannel.onmessage = function(message){
 		// First message carries channel description header
 		var view = new DataView(message.data);
@@ -187,12 +189,13 @@ Peer.prototype._connect = function(){
 		service: 'rtc', func: 'Connect', obj: this.channels, data: { promID: this.id }
 	}, function(diya, err, data){
 		if(data) {
-			if(data.eventType === 'RemoteOffer') that._createPeer(data);
+			if(data.eventType === 'TurnInfo') that._turninfo = data.turn;
+			else if(data.eventType === 'RemoteOffer') that._createPeer(data);
 			else if(data.eventType === 'RemoteICECandidate') that._addRemoteICECandidate(data);
 		}
 	});
 
-	this._timeoutId = setTimeout(function(){ if(!that.connected && !that.closed) that._reconnect(); }, 10000);
+	this._timeoutId = setTimeout(function(){ if(!that.connected && !that.closed) that._reconnect(); }, 40000);
 };
 
 /** Reconnects the RTC peer */
@@ -206,13 +209,31 @@ Peer.prototype._reconnect = function(){
 	this._connect();
 };
 
-var servers = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
 
 /** Creates a RTCPeerConnection in response to a RemoteOffer */
 Peer.prototype._createPeer = function(data){
 	var that = this;
 
-	var peer = new RTCPeerConnection(servers,  {mandatory: {DtlsSrtpKeyAgreement: true, EnableDtlsSrtp: true, OfferToReceiveAudio: true, OfferToReceiveVideo:true}});
+	var iceServers = [];
+	if(this._turninfo) {
+		iceServers.push({ urls: [ this._turninfo.url ], username: this._turninfo.username, credential: this._turninfo.password });
+	} else {
+		iceServers.push({urls: [ "stun:stun.l.google.com:19302" ]});
+	}
+	
+	var config = {
+		iceServers: iceServers,
+		iceTransportPolicy: 'all'	
+	};
+
+	var constraints = {
+		mandatory: {DtlsSrtpKeyAgreement: true, EnableDtlsSrtp: true, OfferToReceiveAudio: true, OfferToReceiveVideo:true}
+	}
+	
+	console.log(config);
+	console.log(constraints);
+
+	var peer = new RTCPeerConnection(config,  constraints);
 	this.peer = peer;
 
 	this.streams.forEach(function(s) {
@@ -243,7 +264,7 @@ Peer.prototype._createPeer = function(data){
 			that.connected = true;
 			if(that.subscription) that.subscription.close();
 		}
-		else if(peer.iceConnectionState === 'disconnected' || peer.iceConnectionState === 'closed'){
+		else if(peer.iceConnectionState === 'disconnected' || peer.iceConnectionState === 'closed' || peer.iceConnectionState === 'failed'){
 			if(!that.closed) that._reconnect();
 		}
 	};
@@ -274,6 +295,8 @@ Peer.prototype._createPeer = function(data){
 
 Peer.prototype._addRemoteICECandidate = function(data){
 	try {
+		//console.log('remote ice :');
+		//console.log(data.candidate.candidate);
 		var candidate = new RTCIceCandidate(data.candidate);
 		this.peer.addIceCandidate(candidate, function(){},function(err){ console.error(err);	});
 	} catch(err) { console.error(err); }
