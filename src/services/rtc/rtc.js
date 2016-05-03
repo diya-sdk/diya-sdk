@@ -227,7 +227,7 @@ Peer.prototype._createPeer = function(data){
 	};
 
 	var constraints = {
-		mandatory: {DtlsSrtpKeyAgreement: true, EnableDtlsSrtp: true, OfferToReceiveAudio: true, OfferToReceiveVideo:true}
+		mandatory: {DtlsSrtpKeyAgreement: true, OfferToReceiveAudio: true, OfferToReceiveVideo:true}
 	}
 	
 	console.log(config);
