@@ -132,7 +132,6 @@ Maps.prototype.removePeer = function(peerId) {
  */
 Maps.prototype.connect = function() {
 	var that = this;
-
 	// options for subscription
 	var options = {
 		auto: true, // auto resubscribe?
@@ -140,7 +139,7 @@ Maps.prototype.connect = function() {
 	};
 
 	// subscribe for map service
-	d1("#self").subscribe({
+	this.subMap = d1("#self").subscribe({
 		service: 'maps',
 		func: 'Robots',
 		obj: this._peerIds
@@ -265,12 +264,12 @@ Maps.prototype.connect = function() {
  */
 Maps.prototype.disconnect = function() {
 	var that = this;
-	d1("#self").unsubscribe(this._subIds);
+	if(subMap)
+		subMap.close();
 	for(var peerId in this._diyas){
 		that.emit("peer-unsubscribed", peerId);
 	}
 	this._diyas = {};// delete ?
-	this.removeAllListeners();
 }
 
 /**
