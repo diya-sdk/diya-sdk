@@ -329,7 +329,6 @@ Status.prototype._getRobotModelFromRecv2 = function(data){
 	var robot;
 	var dataRobots = data.robots;
 	var dataParts = data.partList;
-
 	if(!this.robotModel)
 		this.robotModel = [];
 	// console.log("_getRobotModelFromRecv");
@@ -352,6 +351,7 @@ Status.prototype._getRobotModelFromRecv2 = function(data){
 		/** extract parts info **/
 		if(dataRobots[n] && dataRobots[n].parts) {
 			var parts = dataRobots[n].parts;
+			var pastParts = dataRobots[n].pastParts;
 			this.robotModel[n].parts = {};
 			var rParts = this.robotModel[n].parts;
 			// for(var q in rParts) {
@@ -396,6 +396,7 @@ Status.prototype._getRobotModelFromRecv2 = function(data){
 						codeRef: parts[p].codeRef,
 						time: parts[p].time
 					};
+					rParts[p].lastEvts = pastParts[p];
 				}
 				// console.log(rParts[p].error);
 			}
