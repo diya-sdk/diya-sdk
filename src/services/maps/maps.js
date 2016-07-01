@@ -264,16 +264,12 @@ Maps.prototype.connect = function() {
  */
 Maps.prototype.disconnect = function() {
 	var that = this;
-	try{
-		if(this.subMap)
-			this.subMap.close();
-		for(var peerId in this._diyas){
-			that.emit("peer-unsubscribed", peerId);
-		}
-		this._diyas = {};// delete ?
-	}catch(err){
-		console.log(err);
+	if(this.subMap)
+		this.subMap.close();
+	for(var peerId in this._diyas){
+		that.emit("peer-unsubscribed", peerId);
 	}
+	this._diyas = {};// delete ?
 }
 
 /**
