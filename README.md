@@ -29,15 +29,15 @@ bower install partnering/diya-sdk
 
 #### example code
 ```html
-<script type="text/javascript" src="bower_components/diya-sdk.min.js"></script>
+<script type="text/javascript" src="bower_components/diya-sdk/build/diya-sdk.min.js"></script>
 
 <script>
 d1.connectAsUser('wss://localhost/api', 'toto', 'toto_password').then(function() {
     console.log('connected !');
 
     d1("#self").request({
-        service: 'mon_service',
-        func: 'ma_function',
+        service: 'my_service',
+        func: 'my_function',
         data: {
             foo: 'bar'
     }, function(peerId, err, data) {
@@ -69,8 +69,8 @@ d1.connectAsUser('wss://localhost/api', 'toto', 'toto_password', WebSocket).then
     console.log('connected !');
 
     d1("#self").request({
-        service: 'mon_service',
-        func: 'ma_function',
+        service: 'my_service',
+        func: 'my_function',
         data: {
             foo: 'bar'
     }, function(peerId, err, data) {
