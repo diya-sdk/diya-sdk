@@ -6,11 +6,6 @@ var inherits = require('inherits');
 
 var DiyaNode = require('./DiyaNode');
 
-var connection = new DiyaNode();
-var connectionEvents = new EventEmitter();
-var _user = null;
-var _pass = null;
-var _authenticated = false;
 
 
 //////////////
@@ -18,81 +13,89 @@ var _authenticated = false;
 //////////////
 
 
-function d1(selector){
-	return new DiyaSelector(selector);
-}
 
-d1.DiyaNode = DiyaNode;
-d1.DiyaSelector = DiyaSelector;
+function newInstance () {
+	
+	var connection = new DiyaNode();	
+	var _user = null;
+	var _pass = null;
+	var _authenticated = false;
 
-d1.connect = function(addr, WSocket){
-	return connection.connect(addr, WSocket);
-};
-
-d1.disconnect = function(){
-	return connection.disconnect();
-};
-
-d1.isConnected = function() {	return connection.isConnected();};
-d1.peers = function() { return connection.peers();};
-d1.self = function() { return connection.self(); };
-d1.addr = function() { return connection.addr(); };
-d1.user = function() { return _user; };
-d1.pass = function() { return _pass; };
-d1.isAuthenticated = function() { return _authenticated; }
-
-
-/** Try to connect to the given servers list in the list order, until finding an available one */
-d1.tryConnect = function(servers, WSocket){
-	var deferred = Q.defer();
-	function tc(i) {
-		d1.connect(servers[i], WSocket).then(function(e){
-			return deferred.resolve(servers[i]);
-		}).catch(function(e){
-			d1.disconnect().then(function() {
-				i++;
-				if(i<servers.length) setTimeout(function() {tc(i);}, 100);
-				else return deferred.reject("Timeout");
-			});
-		});
+	var d1inst = function (selector) {
+		return new DiyaSelector(selector, connection);
 	}
-	tc(0);
-	return deferred.promise;
-}
 
-d1.currentServer = function(){
-	return connection._addr;
-};
+	d1inst.DiyaNode = DiyaNode;
+	d1inst.DiyaSelector = DiyaSelector;
 
-d1.on = function(event, callback){
-	connection.on(event, callback);
-	return d1;
-};
+	d1inst.connect = function(addr, WSocket){
+		return connection.connect(addr, WSocket);
+	};
 
-d1.removeListener = function(event, callback){
-	connection.removeListener(event, callback);
-	return d1;
-};
+	d1inst.disconnect = function(){
+		return connection.disconnect();
+	};
 
-/** Shorthand function to connect and login with the given (user,password) */
-d1.connectAsUser = function(ip, user, password, WSocket) {
-	return d1.connect(ip, WSocket).then(function(){
-		return d1("#self").auth(user, password);
-	});
-};
-
-d1.deauthenticate = function(){ _authenticated = false; _user = null; _pass = null;};
-d1.setSecured = function(bSecured) { connection.setSecured(bSecured); };
-d1.isSecured = function() {return connection._secured; }
-d1.setWSocket = function(WSocket) { connection.setWSocket(WSocket); }
+	d1inst.isConnected = function() {	return connection.isConnected();};
+	d1inst.peers = function() { return connection.peers();};
+	d1inst.self = function() { return connection.self(); };
+	d1inst.addr = function() { return connection.addr(); };
+	d1inst.user = function() { return _user; };
+	d1inst.pass = function() { return _pass; };
+	d1inst.isAuthenticated = function() { return _authenticated; }
 
 
-/** Self-authenticate the local DiyaNode bound to port <port>, using its RSA signature */
-d1.selfConnect = function(port, signature, WSocket) {
-	return d1.connect('ws://localhost:' + port, WSocket)
+	/** Try to connect to the given servers list in the list order, until finding an available one */
+	d1inst.tryConnect = function(servers, WSocket){
+		var deferred = Q.defer();
+		function tc(i) {
+			d1inst.connect(servers[i], WSocket).then(function(e){
+				return deferred.resolve(servers[i]);
+			}).catch(function(e){
+				d1inst.disconnect().then(function() {
+					i++;
+					if(i<servers.length) setTimeout(function() {tc(i);}, 100);
+					else return deferred.reject("Timeout");
+				});
+			});
+		}
+		tc(0);
+		return deferred.promise;
+	}
+
+	d1inst.currentServer = function(){
+		return connection._addr;
+	};
+
+	d1inst.on = function(event, callback){
+		connection.on(event, callback);
+		return d1inst;
+	};
+
+	d1inst.removeListener = function(event, callback){
+		connection.removeListener(event, callback);
+		return d1inst;
+	};
+
+	/** Shorthand function to connect and login with the given (user,password) */
+	d1inst.connectAsUser = function(ip, user, password, WSocket) {
+		return d1inst.connect(ip, WSocket).then(function(){
+			return d1inst("#self").auth(user, password);
+		});
+	};
+
+	d1inst.deauthenticate = function(){ _authenticated = false; _user = null; _pass = null;};
+	d1inst.setSecured = function(bSecured) { connection.setSecured(bSecured); };
+	d1inst.isSecured = function() {return connection._secured; }
+	d1inst.setWSocket = function(WSocket) { connection.setWSocket(WSocket); }
+
+
+	/** Self-authenticate the local DiyaNode bound to port <port>, using its RSA signature */
+	d1inst.selfConnect = function(port, signature, WSocket) {
+		return d1inst.connect('ws://localhost:' + port, WSocket)
 		.then(function() {
 			var deferred = Q.defer();
-			d1("#self").request({
+			d1inst("#self").request({
 				service: 'peerAuth',
 				func: 'SelfAuthenticate',
 				data: {	signature: signature }
@@ -108,8 +111,14 @@ d1.selfConnect = function(port, signature, WSocket) {
 				}
 			});
 			return deferred.promise;
-	});
+		});
+	}
+
+	return d1inst;
 }
+
+var d1 = newInstance(defaultConnection);
+d1.newInstance = newInstance;
 
 
 
@@ -117,9 +126,10 @@ d1.selfConnect = function(port, signature, WSocket) {
 // DiyaSelector //
 //////////////////
 
-function DiyaSelector(selector){
+function DiyaSelector(selector, connection){
 	EventEmitter.call(this);
 
+	this._connection = connection;
 	this._selector = selector;
 	this._listenerCount = 0;
 	this._listenCallback = null;
