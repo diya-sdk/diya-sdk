@@ -282,7 +282,7 @@ DiyaNode.prototype._notifyListener = function(handler, error, data){
 };
 
 DiyaNode.prototype._send = function(message){
-	return this._socketHandler.send(message);
+	return this._socketHandler && this._socketHandler.send(message);
 };
 
 DiyaNode.prototype._setupPingResponse = function(){
