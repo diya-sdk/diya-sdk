@@ -72,7 +72,7 @@ DiyaNode.prototype.setWSocket = function(WSocket) {this._WSocket = WSocket;}
 /** @return {Promise<String>} the connected peer name */
 DiyaNode.prototype.connect = function(addr, WSocket){
 	var that = this;
-	this.bDontReconnected = false;
+	this.bDontReconnect = false;
 
 	if(WSocket) this._WSocket = WSocket;
 	else if(!this._WSocket) this._WSocket = window.WebSocket;
@@ -80,74 +80,74 @@ DiyaNode.prototype.connect = function(addr, WSocket){
 
 	// Check and Format URI (FQDN)
 	if(addr.indexOf("ws://") === 0 && this._secured) return Q.reject("Please use a secured connection (" + addr + ")");
-		if(addr.indexOf("wss://") === 0 && this._secured === false) return Q.reject("Please use a non-secured connection (" + addr + ")");
-			if(addr.indexOf("ws://") !== 0 && addr.indexOf("wss://") !== 0) {
-				if(this._secured) addr = "wss://" + addr;
-					else addr = "ws://" + addr;
+	if(addr.indexOf("wss://") === 0 && this._secured === false) return Q.reject("Please use a non-secured connection (" + addr + ")");
+	if(addr.indexOf("ws://") !== 0 && addr.indexOf("wss://") !== 0) {
+		if(this._secured) addr = "wss://" + addr;
+		else addr = "ws://" + addr;
+	}
+
+
+	if(this._addr === addr){
+		if(this._status === 'opened')
+			return Q(this.self());
+		else if(this._connectionDeferred && this._connectionDeferred.promise && this._connectionDeferred.promise.isPending())
+			return this._connectionDeferred.promise;
+	}
+
+	return this.close().then(function(){
+		that._addr = addr;
+		that._connectionDeferred = Q.defer();
+		Logger.log('d1: connect to ' + that._addr);
+		var sock = new SocketHandler(WSocket, that._addr, that._connectTimeout);
+
+		if(!that._socketHandler) that._socketHandler = sock;
+
+		that._onopening();
+
+		sock.on('open', function(){
+			if(that._socketHandler !== sock) {
+				console.log("[d1] Websocket responded but already connected to a different one");
+				return;
 			}
+			that._socketHandler = sock;
+			that._status = 'opened';
+			that._setupPingResponse();
+		});
 
+		sock.on('closing', function() {
+			if(that._socketHandler !== sock) return ;
+			that._onclosing();
+		});
 
-if(this._addr === addr){
-	if(this._status === 'opened')
-		return Q(this.self());
-	else if(this._connectionDeferred && this._connectionDeferred.promise && this._connectionDeferred.promise.isPending())
-		return this._connectionDeferred.promise;
-}
+		sock.on('close', function() {
+			if(that._socketHandler !== sock) return;
+			that._socketHandler = null;
+			that._status = 'closed';
+			that._stopPingResponse();
+			that._onclose();
+			if(that._connectionDeferred) { that._connectionDeferred.reject("closed"); that._connectionDeferred = null;}
+		});
 
-return this.close().then(function(){
-	that._addr = addr;
-	that._connectionDeferred = Q.defer();
-	Logger.log('d1: connect to ' + that._addr);
-	var sock = new SocketHandler(WSocket, that._addr, that._connectTimeout);
+		sock.on('error', function(error) {
+			if(that._socketHandler !== sock) return;
+			that._onerror(error);
+		});
 
-	if(!that._socketHandler) that._socketHandler = sock;
+		sock.on('timeout', function() {
+			if(that._socketHandler !== sock) return;
+			that._socketHandler = null;
+			that._status = 'closed';
+			if(that._connectionDeferred) { that._connectionDeferred.reject("closed"); that._connectionDeferred = null;}
+		})
 
-	that._onopening();
+		sock.on('message', function(message) { that._onmessage(message); });
 
-	sock.on('open', function(){
-		if(that._socketHandler !== sock) {
-			console.log("[d1] Websocket responded but already connected to a different one");
-			return;
-		}
-		that._socketHandler = sock;
-		that._status = 'opened';
-		that._setupPingResponse();
+		return that._connectionDeferred.promise;
 	});
-
-	sock.on('closing', function() {
-		if(that._socketHandler !== sock) return ;
-		that._onclosing();
-	});
-
-	sock.on('close', function() {
-		if(that._socketHandler !== sock) return;
-		that._socketHandler = null;
-		that._status = 'closed';
-		that._stopPingResponse();
-		that._onclose();
-		if(that._connectionDeferred) { that._connectionDeferred.reject("closed"); that._connectionDeferred = null;}
-	});
-
-	sock.on('error', function(error) {
-		if(that._socketHandler !== sock) return;
-		that._onerror(error);
-	});
-
-	sock.on('timeout', function() {
-		if(that._socketHandler !== sock) return;
-		that._socketHandler = null;
-		that._status = 'closed';
-		if(that._connectionDeferred) { that._connectionDeferred.reject("closed"); that._connectionDeferred = null;}
-	})
-
-	sock.on('message', function(message) { that._onmessage(message); });
-
-	return that._connectionDeferred.promise;
-});
 };
 
 DiyaNode.prototype.disconnect = function() {
-	this.bDontReconnected = true;
+	this.bDontReconnect = true;
 	return this.close();
 };
 
@@ -338,10 +338,10 @@ DiyaNode.prototype._onmessage = function(message){
 	switch(handler.type){
 		case "Request":
 			this._handleRequest(handler, message);
-		break;
+			break;
 		case "Subscription":
 			this._handleSubscription(handler, message);
-		break;
+			break;
 	}
 };
 
@@ -363,11 +363,12 @@ DiyaNode.prototype._onclose = function(){
 	this._clearMessages('PeerDisconnected');
 	this._clearPeers();
 
-	Logger.log('d1: connection lost, try reconnecting');
-	setTimeout(function(){
-		that.connect(that._addr, that._WSocket).catch(function(err){});
-	}, that._reconnectTimeout);
-
+	if(!this.bDontReconnect) {
+		Logger.log('d1: connection lost, try reconnecting');
+		setTimeout(function(){
+			that.connect(that._addr, that._WSocket).catch(function(err){});
+		}, that._reconnectTimeout);
+	}	
 	this.emit('close', this._addr);
 };
 
@@ -379,16 +380,16 @@ DiyaNode.prototype._handleInternalMessage = function(message){
 	switch(message.type){
 		case "PeerConnected":
 			this._handlePeerConnected(message);
-		break;
+			break;
 		case "PeerDisconnected":
 			this._handlePeerDisconnected(message);
-		break;
+			break;
 		case "Handshake":
 			this._handleHandshake(message);
-		break;
+			break;
 		case "Ping":
 			this._handlePing(message);
-		break;
+			break;
 	}
 };
 
