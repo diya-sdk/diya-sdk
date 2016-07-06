@@ -290,8 +290,9 @@ function matchArray(selector, str){
 // Overrides EventEmitter's behavior to proxy and filter events from the connection
 DiyaSelector.prototype._on = DiyaSelector.prototype.on;
 DiyaSelector.prototype.on = function(type, callback){
+	var that = this;
 	callback.___DiyaSelector_hidden_wrapper = function(peerId) {
-		if(this._match(this._selector, peerId)) this.emit(type, peerId);
+		if(that._match(that._selector, peerId)) that.emit(type, peerId);
 	};
 	this._connection.on(type, callback.___DiyaSelector_hidden_wrapper);
 	var ret = this._on(type, callback);

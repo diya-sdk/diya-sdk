@@ -102,6 +102,8 @@ return this.close().then(function(){
 
 	if(!that._socketHandler) that._socketHandler = sock;
 
+	that._onopening();
+
 	sock.on('open', function(){
 		if(that._socketHandler !== sock) {
 			console.log("[d1] Websocket responded but already connected to a different one");
@@ -112,6 +114,11 @@ return this.close().then(function(){
 		that._setupPingResponse();
 	});
 
+	sock.on('closing', function() {
+		if(that._socketHandler !== sock) return ;
+		that._onclosing();
+	});
+
 	sock.on('close', function() {
 		if(that._socketHandler !== sock) return;
 		that._socketHandler = null;
@@ -119,6 +126,11 @@ return this.close().then(function(){
 		that._stopPingResponse();
 		that._onclose();
 		if(that._connectionDeferred) { that._connectionDeferred.reject("closed"); that._connectionDeferred = null;}
+	});
+
+	sock.on('error', function(error) {
+		if(that._socketHandler !== sock) return;
+		that._onerror(error);
 	});
 
 	sock.on('timeout', function() {
@@ -333,6 +345,18 @@ DiyaNode.prototype._onmessage = function(message){
 	}
 };
 
+DiyaNode.prototype._onopening = function() {
+	this.emit('opening', this);
+};
+
+DiyaNode.prototype._onerror = function(error) {
+	this.emit('error', new Error(error));
+};
+
+DiyaNode.prototype._onclosing = function() {
+	this.emit('closing', this);
+};
+
 DiyaNode.prototype._onclose = function(){
 	var that = this;
 
@@ -478,10 +502,12 @@ function SocketHandler(WSocket, addr, timeout) {
 		this._socketOpenCallback = this._onopen.bind(this);
 		this._socketCloseCallback = this._onclose.bind(this);
 		this._socketMessageCallback = this._onmessage.bind(this);
+		this._socketErrorCallback = this._onerror.bind(this);
 
 		this._socket.addEventListener('open', this._socketOpenCallback);
 		this._socket.addEventListener('close',this._socketCloseCallback);
 		this._socket.addEventListener('message', this._socketMessageCallback);
+		this._socket.addEventListener('error', this._socketErrorCallback);
 
 		this._socket.addEventListener('error', function(err){
 			Logger.error("[WS] error : "+JSON.stringify(err));
@@ -509,6 +535,7 @@ SocketHandler.prototype.close = function() {
 	if(this._disconnectionDeferred && this._disconnectionDeferred.promise) return this._disconnectionDeferred.promise;
 	this._disconnectionDeferred = Q.defer();
 	this._status = 'closing';
+	this.emit('closing', this._socket);
 	if(this._socket) this._socket.close();
 	return this._disconnectionDeferred.promise;
 };
@@ -541,7 +568,7 @@ SocketHandler.prototype._onopen = function() {
 	this.emit('open', this._socket);
 };
 
-SocketHandler.prototype._onclose = function() {
+SocketHandler.prototype._onclose = function(evt) {
 	this._status = 'closed';
 	this.unregisterCallbacks();
 	this.emit('close', this._socket);
@@ -556,6 +583,10 @@ SocketHandler.prototype._onmessage = function(evt) {
 		Logger.error("[WS] cannot parse message, dropping...");
 		throw err;
 	}
+};
+
+SocketHandler.prototype._onerror = function(evt) {
+	this.emit('error', evt);
 };
 
 SocketHandler.prototype.unregisterCallbacks = function() {
