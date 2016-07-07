@@ -6,7 +6,7 @@ var inherits = require('inherits');
 
 var DiyaNode = require('./DiyaNode');
 
-
+var IP_REGEX = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
 
 //////////////
 //  D1 API  //
@@ -39,7 +39,54 @@ function newInstance () {
 	d1inst.addr = function() { return connection.addr(); };
 	d1inst.user = function() { return connection.user(); };
 	d1inst.pass = function() { return connection.pass(); };
-	d1inst.isAuthenticated = function() { return connection.authenticated(); }
+	d1inst.isAuthenticated = function() { return connection.authenticated(); };
+
+	d1inst.parsePeer = function(addrStr) {
+		var peer = {};
+
+		// <nothing> -> wss://localhost/api
+		if(!addrStr || addrStr === "") {
+			peer.addr = "wss://localhost/api";
+			peer.addrNet = "wss://localhost/net";
+		}
+		// 1234 -> ws://localhost:1234
+		else if(/^[0-9]*$/.test(addrStr)) {
+			peer.addr = "ws://localhost:"+addrStr;
+		}
+		// 10.42.0.1 -> wss://10.42.0.1/api
+		//          -> wss://10.24.0.1/net
+		else if (IP_REGEX.test(addrStr)) {
+			peer.addr = "wss://"+addrStr+"/api";
+			peer.addrNet = "wss://"+addrStr+"/net";
+		}
+		// 10.42.0.1:1234 -> ws://10.42.0.1:1234
+	       	else if (IP_REGEX.test(addrStr.split(':')[0]) && /^[0-9]*$/.test(addrStr.split(':')[1])) {
+			peer.addr = "ws://"+addrStr;
+		}
+		// wss://someaddress.com/stuff -> wss://someaddress.com/stuff
+		// ws://someaddress.com/stuff -> ws://someaddress.com/stuff
+		else if (addrStr.indexOf("wss://") === 0 || addrStr.indexOf("ws://") === 0) {
+			peer.addr = addrStr;
+		} 
+		// somedomain/somesite -> "wss://somedomain/somesite/api
+		//                     -> "wss://somedomain/somesite/net
+		//                     -> somesite
+		else if(addrStr.split('/').length === 2) {
+			peer.addr = "wss://" + addrStr + '/api';
+			peer.addrNet = "wss://" + addrStr + '/net'; 
+			peer.name = addrStr.split('/')[1];
+		} 
+		// somesite -> "wss://partnering-cloud.com/somesite/api"
+		//          -> "wss://partnering-cloud.com/somesite/net"
+		//          -> somesite
+		else {
+			peer.addr = "wss://partnering-cloud.com/"+addrStr+"/api";
+			peer.addrNet = "wss://partnering-cloud.com/"+addrStr+"/net";
+			peer.name = addrStr;
+		}
+
+		return peer;
+	};
 
 
 	/** Try to connect to the given servers list in the list order, until finding an available one */
