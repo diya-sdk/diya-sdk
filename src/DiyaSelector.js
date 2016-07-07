@@ -76,6 +76,14 @@ function newInstance () {
 			peer.addrNet = "wss://" + addrStr + '/net'; 
 			peer.name = addrStr.split('/')[1];
 		} 
+		// somedomain/somesite/api -> "wss://somedomain/somesite/api"
+		//                         -> "wss://somedomain/somesite/net"
+		//                         -> somesite
+		else if(addrStr.split('/').length === 3 && addrStr.split('/')[2] === "api") {
+			peer.addr = "wss://"+addrStr;
+			peer.addrNet = "wss://"+addrStr.substr(0, addrStr.length - 4);
+			peer.name = addrStr.split('/')[1];
+		}
 		// somesite -> "wss://partnering-cloud.com/somesite/api"
 		//          -> "wss://partnering-cloud.com/somesite/net"
 		//          -> somesite
