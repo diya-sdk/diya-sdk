@@ -57,7 +57,7 @@ function IEQ(selector){
 	/*** structure of data config ***
 		 criteria :
 		   time: all 3 time criteria should not be defined at the same time. (range would be given up)
-		     beg: {[null],time} (null means most recent) // stored a UTC in ms (num)
+		     start: {[null],time} (null means most recent) // stored a UTC in ms (num)
 		     end: {[null], time} (null means most oldest) // stored as UTC in ms (num)
 		     range: {[null], time} (range of time(positive) ) // in s (num)
 		   robot: {ArrayOf ID or ["all"]}
@@ -72,7 +72,7 @@ function IEQ(selector){
 	this.dataConfig = {
 		criteria: {
 			time: {
-				beg: null,
+				start: null,
 				end: null,
 				range: null // in s
 			},
@@ -161,24 +161,24 @@ IEQ.prototype.DataSampling = function(numSamples){
 		return this.dataConfig.sampling;
 };
 /**
- * Set or get data time criteria beg and end.
+ * Set or get data time criteria start and end.
  * If param defined
- *	@param {Date} newTimeBeg // may be null
+ *	@param {Date} newTimeStart // may be null
  *	@param {Date} newTimeEnd // may be null
  *	@return {IEQ} this
  * If no param defined:
- *	@return {Object} Time object: fields beg and end.
+ *	@return {Object} Time object: fields start and end.
  */
-IEQ.prototype.DataTime = function(newTimeBeg,newTimeEnd, newRange){
-	if(newTimeBeg || newTimeEnd || newRange) {
-		this.dataConfig.criteria.time.beg = newTimeBeg.getTime();
+IEQ.prototype.DataTime = function(newTimeStart,newTimeEnd, newRange){
+	if(newTimeStart || newTimeEnd || newRange) {
+		this.dataConfig.criteria.time.start = newTimeStart.getTime();
 		this.dataConfig.criteria.time.end = newTimeEnd.getTime();
 		this.dataConfig.criteria.time.range = newRange;
 		return this;
 	}
 	else
 		return {
-			beg: new Date(this.dataConfig.criteria.time.beg),
+			start: new Date(this.dataConfig.criteria.time.start),
 			end: new Date(this.dataConfig.criteria.time.end),
 			range: new Date(this.dataConfig.criteria.time.range)
 		};
@@ -339,10 +339,11 @@ IEQ.prototype.closeSubscriptions = function(){
 /**
  * request Data to make CSV file
  */
-IEQ.prototype.getCSVData = function(sensorNames,callback){
+IEQ.prototype.getCSVData = function(sensorNames,_firstDay,callback){
+	var firstDay = new Date(_firstDay);
 	var dataConfig = {
 		criteria: {
-			time: { rangeUnit: 'hour', range: 180}, // 360h -> 15d // 180h -> 7j
+			time: { start: firstDay.getTime(), rangeUnit: 'hour', range: 180}, // 360h -> 15d // 180h -> 7j
 			places: [],
 			robots: []
 		},
