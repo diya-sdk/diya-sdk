@@ -28,28 +28,22 @@ var base64 = require('base-64');
 
 /**
  * Default : no encoding
- * Effective for string based channels (like JSON based WS)
  * */
 function NoCoding(){
 	return this;
 };
 
 /**
-* Convert buffer coded in base64 and containing numbers coded by
-* byteCoding bytes into array
-* @param buffer in base64
-* @param byteCoding number of bytes for each number (4 or 8)
-* @return array of float (32 or 64). null if could not convert.
+*
 */
 NoCoding.prototype.from = function(data) {
-	return data.d;
+	if(data.d === 'number' || Array.isArray(data.d))
+		return data.d;
+	else
+		return data;
 };
 
 /**
-* Convert array containing numbers coded by byteCoding bytes into buffer coded in base64
-* @param 	{Array<Float>} 	array of float (32 or 64 bits)
-* @param 	{integer} 	byteCoding number of bytes for each float (4 or 8)
-* @return  	{String} 	buffer in base64. null if could not convert.
 */
 NoCoding.prototype.to = function(array) {
 	return {
@@ -223,7 +217,7 @@ function CodingHandler(){
 
 
 CodingHandler.prototype.from = function(data) {
-	if(!data || data===null)
+	if(typeof data == 'undefined' || data==null)
 		return null;
 	switch(data.t) {
 	case 'b64':
