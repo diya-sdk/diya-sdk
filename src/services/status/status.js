@@ -352,8 +352,6 @@ Status.prototype._getRobotModelFromRecv2 = function(data){
 		/** extract parts info **/
 		if(dataRobots[n] && dataRobots[n].parts) {
 			var parts = dataRobots[n].parts;
-			if (dataRobots[n].pastParts)
-				var pastParts = dataRobots[n].pastParts;
 			this.robotModel[n].parts = {};
 			var rParts = this.robotModel[n].parts;
 			// for(var q in rParts) {
@@ -392,14 +390,34 @@ Status.prototype._getRobotModelFromRecv2 = function(data){
 					for( var el in dataParts[p].errorList )
 						if(!rParts[p].errorList[el])
 							rParts[p].errorList[el] = dataParts[p].errorList[el];
-
-					rParts[p].evts = {
-						code: parts[p].code,
-						codeRef: parts[p].codeRef,
-						time: parts[p].time
+					var evts_tmp = {
+						time: this._coder.from(parts[p].time),
+						code: this._coder.from(parts[p].code),
+						codeRef: this._coder.from(parts[p].codeRef)
 					};
-					if (pastParts)
-						rParts[p].lastEvts = pastParts[p];
+					/** if received list of events **/
+					if(Array.isArray(evts_tmp.code) || Array.isArray(evts_tmp.time)
+					   || Array.isArray(evts_tmp.codeRef)) {
+						if(evts_tmp.code.length === evts_tmp.codeRef.length
+						   && evts_tmp.code.length === evts_tmp.time.length) {
+							/** build list of events **/
+							rParts[p].evts = [];
+							for(var i=0; i<evts_tmp.code.length; i++) {
+								rParts[p].evts.push({
+									time: evts_tmp.time[i],
+									code: evts_tmp.code[i],
+									codeRef: evts_tmp.codeRef[i]});
+							}
+						}
+						else Logger.error("Status:Inconsistant lengths of buffers (time/code/codeRef)");
+					}
+					else { /** just in case, to provide backward compatibility **/
+						/** set received event **/
+						rParts[p].evts = [{
+							time: evts_tmp.time,
+							code: evts_tmp.code,
+							codeRef: evts_tmp.codeRef}];
+					}
 				}
 				// console.log(rParts[p].error);
 			}
