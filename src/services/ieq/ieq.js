@@ -60,6 +60,7 @@ function IEQ(selector){
 		     start: {[null],time} (null means most recent) // stored a UTC in ms (num)
 		     end: {[null], time} (null means most oldest) // stored as UTC in ms (num)
 		     range: {[null], time} (range of time(positive) ) // in s (num)
+				 sampling: {[null], ID}  (null means all data)  // sampling to use: minute, hour, day, week,...
 		   robot: {ArrayOf ID or ["all"]}
 		   place: {ArrayOf ID or ["all"]}
 		 operator: {[last], max, moy, sd} -( maybe moy should be default
@@ -241,7 +242,7 @@ IEQ.prototype.updateData = function(callback, dataConfig){
 			type:"splReq",
 			dataConfig: that.dataConfig
 		}
-	}, function(dnId, err, data){
+	}, function(dnId, err, data){ //dnId name of diyanode responding
 		if(err) {
 			Logger.error("["+that.dataConfig.sensors+"] Recv err: "+JSON.stringify(err));
 			return;
@@ -256,7 +257,7 @@ IEQ.prototype.updateData = function(callback, dataConfig){
 		// console.log(data);
 		that._getDataModelFromRecv(data);
 
-		// Logger.log(that.getDataModel());
+	//	console.log(that.getDataModel());
 
 		callback = callback.bind(that); // bind callback with IEQ
 		callback(that.getDataModel()); // callback func
@@ -339,19 +340,45 @@ IEQ.prototype.closeSubscriptions = function(){
 /**
  * request Data to make CSV file
  */
-IEQ.prototype.getCSVData = function(sensorNames,_firstDay,callback){
-	var firstDay = new Date(_firstDay);
+
+ IEQ.prototype.getCSVData = function(sensorNames,_firstDay,callback){
+ 	var firstDay = new Date(_firstDay);
+ 	var dataConfig = {
+ 		criteria: {
+ 			time: { start: firstDay.getTime(), rangeUnit: 'hour', range: 180}, // 360h -> 15d // 180h -> 7j
+ 			places: [],
+ 			robots: []
+ 		},
+ 		sensors: sensorNames
+ 	};
+
+ 	this.updateData(callback, dataConfig);
+ };
+
+IEQ.prototype.getHeatMapData = function(sensorNames, callback){
+	var now = new Date();
+	var year = now.getUTCFullYear().toString();
+	var month = (now.getMonth() +1).toString();
+	var day = now.getDate().toString();
+	var hour = now.getHours();
+	var epoch = Date.parse(year + '/' + month + '/' + day + ' ' + hour.toString() + ':00')
+	var startEpoch = epoch - 3600*1000;
+	var endEpoch = epoch - 1000
+	//var startParse = new Date(startEpoch);
+	//var endParse = new Date(endEpoch);
 	var dataConfig = {
 		criteria: {
-			time: { start: firstDay.getTime(), rangeUnit: 'hour', range: 180}, // 360h -> 15d // 180h -> 7j
+			time: {start: startEpoch, end: endEpoch, sampling: 'hour'}, // 360h -> 15d // 180h -> 7j
 			places: [],
 			robots: []
 		},
 		sensors: sensorNames
 	};
-
 	this.updateData(callback, dataConfig);
 };
+
+
+
 
 
 /**
