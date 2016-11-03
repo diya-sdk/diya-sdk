@@ -272,7 +272,8 @@ DiyaSelector.prototype.auth = function(user, password, callback, timeout){
 		service: 'auth',
 		func: 'Authenticate',
 		data: {
-			user: user,
+			user: user, // Deprecated, kept for now for backward compatiblity (will be dropped)
+			username: user, // New syntax since switching to DBus
 			password: password
 		}
 	}, function(peerId, err, data){
