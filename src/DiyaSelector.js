@@ -272,7 +272,7 @@ DiyaSelector.prototype.auth = function(user, password, callback, timeout){
 		service: 'auth',
 		func: 'Authenticate',
 		data: {
-			user: user, // Deprecated, kept for now for backward compatiblity (will be dropped)
+			user: user, // DEPRECATED, kept for now for backward compatiblity (will be dropped)
 			username: user, // New syntax since switching to DBus
 			password: password
 		}
@@ -284,7 +284,8 @@ DiyaSelector.prototype.auth = function(user, password, callback, timeout){
 			return ;
 		}
 
-		if(!err && data && data === true){
+		// data.authenticated is DEPRECATED, kept for backward compatibility
+		if(!err && data && (data === true || data.authenticated === true)){
 			that._connection.authenticated(true);
 			that._connection.user(user);
 			that._connection.pass(password);
