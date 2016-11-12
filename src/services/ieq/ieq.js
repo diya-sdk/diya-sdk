@@ -52,7 +52,7 @@ function IEQ(selector){
 	this.dataModel={};
 	this._coder = selector.encode();
 	this.subscriptions = [];
-
+//	that.subscriptionErrorNum = 0;
 
 	/*** structure of data config ***
 		 criteria :
@@ -298,16 +298,29 @@ IEQ.prototype.watch = function(data, callback){
 	var that = this;
 	// console.log("Request: "+JSON.stringify(dataConfig));
 
-	/// TODO
-	data = data || {timeRange: 'hours'};
+	/** default **/
+	data = data || {};
+	data.timeRange = data.timeRange  || 'hours';
+	data.cat = data.cat || 'ieq'; /* category */
 
 	var subs = this.selector.subscribe({
 		service: "ieq",
 		func: "Data",
-		data: data
+		data: data,
+		obj: data.cat /* provide category of sensor to be watched, filtered according to CRM */
 	}, function(dnId, err, data){
 		if(err) {
 			Logger.error("WatchIEQRecvErr:"+JSON.stringify(err));
+			// console.log(e);
+			// console.log(that.selector);
+			// if(err==="SubscriptionClosed") {
+			// 	that.closeSubscriptions(); // should not be necessary
+			// 	that.subscriptionError = that.subscriptionErrorNum+1; // increase error counter
+			// 	setTimeout(that.subscriptionErrorNum*60000, that.watch(data,callback)); // try again later
+			// }
+			// else {
+			// 	console.error("Unmanage cases : should the subscription be regenerated ?");
+			// }
 			return;
 		}
 		if(data.header.error) {
@@ -318,6 +331,7 @@ IEQ.prototype.watch = function(data, callback){
 		}
 		// console.log(data);
 		that._getDataModelFromRecv(data);
+//		that.subscriptionError = 0; // reset error counter
 
 		callback = callback.bind(that); // bind callback with IEQ
 		callback(that.getDataModel()); // callback func
@@ -391,6 +405,8 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 				dataModel[n].label=data[n].label;
 				/* update data unit */
 				dataModel[n].unit=data[n].unit;
+				/* update data precision */
+				dataModel[n].precision=data[n].precision;
 
 				/* suggested y display range */
 				dataModel[n].zoomRange = [0, 100];
