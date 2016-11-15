@@ -407,6 +407,8 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 				dataModel[n].unit=data[n].unit;
 				/* update data precision */
 				dataModel[n].precision=data[n].precision;
+				/* update data categories */
+				dataModel[n].category=data[n].category;
 
 				/* suggested y display range */
 				dataModel[n].zoomRange = [0, 100];
