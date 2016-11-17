@@ -15,8 +15,8 @@ var IP_REGEX = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[0
 
 
 function newInstance () {
-	
-	var connection = new DiyaNode();	
+
+	var connection = new DiyaNode();
 
 	var d1inst = function (selector) {
 		return new DiyaSelector(selector, connection);
@@ -67,15 +67,15 @@ function newInstance () {
 		// ws://someaddress.com/stuff -> ws://someaddress.com/stuff
 		else if (addrStr.indexOf("wss://") === 0 || addrStr.indexOf("ws://") === 0) {
 			peer.addr = addrStr;
-		} 
+		}
 		// somedomain/somesite -> "wss://somedomain/somesite/api
 		//                     -> "wss://somedomain/somesite/net
 		//                     -> somesite
 		else if(addrStr.split('/').length === 2) {
 			peer.addr = "wss://" + addrStr + '/api';
-			peer.addrNet = "wss://" + addrStr + '/net'; 
+			peer.addrNet = "wss://" + addrStr + '/net';
 			peer.name = addrStr.split('/')[1];
-		} 
+		}
 		// somedomain/somesite/api -> "wss://somedomain/somesite/api"
 		//                         -> "wss://somedomain/somesite/net"
 		//                         -> somesite
@@ -272,7 +272,8 @@ DiyaSelector.prototype.auth = function(user, password, callback, timeout){
 		service: 'auth',
 		func: 'Authenticate',
 		data: {
-			user: user,
+			user: user, // DEPRECATED, kept for now for backward compatiblity (will be dropped)
+			username: user, // New syntax since switching to DBus
 			password: password
 		}
 	}, function(peerId, err, data){
@@ -283,7 +284,8 @@ DiyaSelector.prototype.auth = function(user, password, callback, timeout){
 			return ;
 		}
 
-		if(!err && data && data.authenticated){
+		// data.authenticated is DEPRECATED, kept for backward compatibility
+		if(!err && data && (data === true || data.authenticated === true)){
 			that._connection.authenticated(true);
 			that._connection.user(user);
 			that._connection.pass(password);
