@@ -1,6 +1,6 @@
 {
   "name": "diya-sdk",
-  "version": "2.0.0",
+  "version": "1.0.1",
   "description": "SDK for accessing Diya One services",
   "main": "src/diya-sdk.js",
   "scripts": {
