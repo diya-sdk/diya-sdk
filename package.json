@@ -1,6 +1,6 @@
 {
   "name": "diya-sdk",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "SDK for accessing Diya One services",
   "main": "src/diya-sdk.js",
   "scripts": {
@@ -13,10 +13,10 @@
   "license": "MIT",
   "dependencies": {
     "node-event-emitter": "0.0.1",
-    "inherits": "~2.0.1",
-    "base-64": "^0.1.0",
+    "inherits": "2.0.3",
+    "base-64": "0.1.0",
     "r": "0.0.5",
-    "webrtc-adapter": "~1.1.0"
+    "webrtc-adapter": "1.1.0"
   },
   "devDependencies": {
     "browserify": "^5.12.0",
