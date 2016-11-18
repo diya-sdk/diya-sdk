@@ -155,14 +155,23 @@ DiyaSelector.prototype.givePublicKey = function(callback){
  * Add a new trusted peer RSA public key to the selected DiyaNodes
  * NOTE : This operation requires root role
  *
- * @param name : the name of the new trusted DiyaNode peer
+ * @param peer_name : the name of the new trusted DiyaNode peer
  * @param public_key : the RSA public key of the new trusted DiyaNode peer
  */
-DiyaSelector.prototype.addTrustedPeer = function(name, public_key, callback){
-	return this.request({ service: 'peerAuth',	func: 'AddTrustedPeer',	data: { name: name, public_key: public_key }},
-		function(peerId,err,data){callback(peerId,err,data);}
-	);
-};
+DiyaSelector.prototype.addTrustedPeer = function(name, public_key, callback) {
+	return this.request({
+		service: 'peerAuth',
+		func: 'AddTrustedPeer',
+		data: {
+			peer_name: name,
+			public_key: public_key
+		}
+	},
+		function (peerId,err,data) {
+			callback (peerId,err,data)
+		}
+	)
+}
 
 
 /**
