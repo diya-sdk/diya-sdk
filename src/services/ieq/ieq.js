@@ -353,6 +353,21 @@ IEQ.prototype.getCSVData = function(sensorNames,_firstDay,callback){
 	this.updateData(callback, dataConfig);
 };
 
+IEQ.prototype.getHeatMapData = function(sensorNames,time, callback){
+	//var startParse = new Date(startEpoch);
+	//var endParse = new Date(endEpoch);
+	console.log(time);
+	var dataConfig = {
+		criteria: {
+			time: {start: time.startEpoch, end: time.endEpoch, sampling: 'hour'}, // 360h -> 15d // 180h -> 7j
+			places: [],
+			robots: []
+		},
+		sensors: sensorNames
+	};
+	this.updateData(callback, dataConfig);
+};
+
 
 /**
  * Update internal model with received data
