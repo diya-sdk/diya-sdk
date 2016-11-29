@@ -217,6 +217,9 @@ IEQ.prototype.DataPlaceIds = function(placeIds){
  * Get data by sensor name.
  *	@param {Array[String]} sensorName list of sensors
  */
+
+
+
 IEQ.prototype.getDataByName = function(sensorNames){
 	var data=[];
 	for(var n in sensorNames) {
@@ -229,8 +232,15 @@ IEQ.prototype.getDataByName = function(sensorNames){
  * @param {func} callback : called after update
  * TODO USE PROMISE
  */
+
+
+
+
+
+
 IEQ.prototype.updateData = function(callback, dataConfig){
 	var that=this;
+
 	if(dataConfig)
 		this.DataConfig(dataConfig);
 	// console.log("Request: "+JSON.stringify(dataConfig));
@@ -252,8 +262,6 @@ IEQ.prototype.updateData = function(callback, dataConfig){
 			Logger.error("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
 			return;
 		}
-
-		// console.log(data);
 		that._getDataModelFromRecv(data);
 
 		// Logger.log(that.getDataModel());
@@ -329,7 +337,8 @@ IEQ.prototype.watch = function(data, callback){
 			Logger.error("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
 			return;
 		}
-		// console.log(data);
+	//	console.log('watch');
+	//	console.log(data);
 		that._getDataModelFromRecv(data);
 //		that.subscriptionError = 0; // reset error counter
 
@@ -363,10 +372,23 @@ IEQ.prototype.getCSVData = function(sensorNames,_firstDay,callback){
 		},
 		sensors: sensorNames
 	};
-
 	this.updateData(callback, dataConfig);
 };
 
+
+IEQ.prototype.getHeatMapData = function(sensorNames,time, callback){
+	//var startParse = new Date(startEpoch);
+	//var endParse = new Date(endEpoch);
+	var dataConfig = {
+		criteria: {
+			time: {start: time.startEpoch, end: time.endEpoch, sampling: 'hour'}, // 360h -> 15d // 180h -> 7j
+			places: [],
+			robots: []
+		},
+		sensors: sensorNames
+	};
+	this.updateData(callback, dataConfig);
+};
 
 /**
  * Update internal model with received data
@@ -375,6 +397,8 @@ IEQ.prototype.getCSVData = function(sensorNames,_firstDay,callback){
  */
 IEQ.prototype._getDataModelFromRecv = function(data){
 	var dataModel=null;
+//	console.log('getDataModel');
+//	console.log(data);
 
 	if(data.err && data.err.st>0) {
 		Logger.error(data.err.msg);
