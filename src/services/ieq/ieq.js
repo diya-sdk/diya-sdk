@@ -217,6 +217,9 @@ IEQ.prototype.DataPlaceIds = function(placeIds){
  * Get data by sensor name.
  *	@param {Array[String]} sensorName list of sensors
  */
+
+
+
 IEQ.prototype.getDataByName = function(sensorNames){
 	var data=[];
 	for(var n in sensorNames) {
@@ -229,6 +232,26 @@ IEQ.prototype.getDataByName = function(sensorNames){
  * @param {func} callback : called after update
  * TODO USE PROMISE
  */
+
+
+
+IEQ.prototype.getHeatMapData = function(sensorNames,time, callback){
+	//var startParse = new Date(startEpoch);
+	//var endParse = new Date(endEpoch);
+	console.log(time);
+	var dataConfig = {
+		criteria: {
+			time: {start: time.startEpoch, end: time.endEpoch, sampling: 'hour'}, // 360h -> 15d // 180h -> 7j
+			places: [],
+			robots: []
+		},
+		sensors: sensorNames
+	};
+	this.updateData(callback, dataConfig);
+};
+
+
+
 IEQ.prototype.updateData = function(callback, dataConfig){
 	var that=this;
 	if(dataConfig)
