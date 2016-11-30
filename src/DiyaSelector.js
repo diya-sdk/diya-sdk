@@ -226,6 +226,7 @@ DiyaSelector.prototype.request = function(params, callback, timeout, options){
 
 	var nbAnswers = 0;
 	var nbExpected = this._select().length;
+	if (nbExpected === 0 && options.bNotifyWhenFinished) callback(null, null, "##END##");
 	return this.each(function(peerId){
 		params.target = peerId;
 
