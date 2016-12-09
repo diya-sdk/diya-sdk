@@ -248,22 +248,9 @@ Status.prototype.watch = function(robotNames, callback){
 		if (err || (data&&data.err&data.err.st) ) {
 			Logger.error( "StatusSubscribe:"+(err?err:"")+"\n"+(data&&data.err?data.err:"") );
 		} else {
-			if(data && data.header
-			   && data.header.type === "init") {
-				// initialisation of robot model
-				that.robotModelInit = true;
-			}
-			// console.log(data);
-			if(that.robotModelInit) {
-				that._getRobotModelFromRecv2(data);
-				if(typeof callback === 'function')
-					callback(that.robotModel);
-			}
-			else {
-				// Error
-				Logger.error("Robot model has not been initialised, cannot be updated");
-				/// TODO unsubscribe
-			}
+			that._getRobotModelFromRecv2(data);
+			if(typeof callback === 'function')
+				callback(that.robotModel);
 		}
 	}, { auto: true });
 	this.subscriptions.push(subs);
