@@ -48,6 +48,7 @@ var Logger = {
  * */
 function IEQ(selector){
 	var that = this;
+	console.log('in')
 	this.selector = selector;
 	this.dataModel={};
 	this._coder = selector.encode();
