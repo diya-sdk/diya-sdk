@@ -76,7 +76,7 @@ d1.connectAsUser('wss://localhost/api', 'toto', 'toto_password').then(function (
         func: 'my_function',
         data: {
             foo: 'bar'
-	}
+        }
     }, function(peerId, err, data) {
         /* 
          * this callback is call for each node that answers the request. the 'peerId' 
@@ -94,7 +94,7 @@ d1.connectAsUser('wss://localhost/api', 'toto', 'toto_password').then(function (
         func: 'my_function',
         data: {
             zorblax: 42
-	}
+        }
     }, function (peerId, err, data) {
         //same as requests    
     });
