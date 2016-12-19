@@ -160,31 +160,43 @@ d1.connectAsUser('wss://localhost/api', 'toto', 'toto_password', WebSocket).then
 The diya-sdk exposes a global ```d1``` object (instance of DiyaSelector) that is used to perform all operation
 at the application level.
 
+#### d1.newInstance()
+
 #### d1.connect(addr, [WebSocket])
 
 #### d1.connectAsUser(addr, user, password, [WebSocket])
 
 #### d1.deauthenticate()
+Deauthenticate from the currently connected node.
 
 #### d1.setSecured(bSecured)
 
 #### d1.setWSocket(WebSocket)
+Provide a custom WebSocket implementation (defaults to window.WebSocket)
 
 #### d1.disconnect()
+Disconnect from the currently connected node.
 
 #### d1.isConnected()
+Check whether the d1 singleton is currently connected to any node
 
 #### d1.peers()
+Get an array of all reachable node names
 
 #### d1.self()
+Get the name of the directly connected node.
 
 #### d1.addr()
+Get the address of the currently connected node.
 
 #### d1.user()
+Get the user authenticated to the currently connected node.
 
 #### d1.isAuthenticated()
+Check whether the d1 singleton is authenticated to the currently connected node.
 
-#### d1.parsePeer()
+#### d1.parsePeer(peerString)
+Helper method for formatting a peer name into a proper websocket address.
 
 #### d1.tryConnect()
 
