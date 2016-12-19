@@ -73,7 +73,7 @@ d1.connectAsUser('wss://localhost/api', 'toto', 'toto_password').then(function (
      */
     d1("#self").request({
         service: 'my_service',
-        func: 'my_function',
+        func: 'my_request',
         data: {
             foo: 'bar'
         }
@@ -89,14 +89,22 @@ d1.connectAsUser('wss://localhost/api', 'toto', 'toto_password').then(function (
     });
 
 
+    /*
+     * The subscribe method works almost exaclty like the request method, except that it
+     * returns a subscription handler that can be used to end the subscription once it's
+     * not needed anymore.
+     */
     let sub = d1(/.*/).subscribe({
         service: 'my_service',
-        func: 'my_function',
+        func: 'my_subscription',
         data: {
             zorblax: 42
         }
     }, function (peerId, err, data) {
-        //same as requests    
+        /* 
+         * same as requests, but will be call for each service event until the subscription
+         * is closed
+         */
     });
 
     ...
@@ -148,7 +156,11 @@ d1.connectAsUser('wss://localhost/api', 'toto', 'toto_password', WebSocket).then
 }); 
 ```
 
-## Develop
+
+## API
+
+
+## Hack the code
 Install dependencies with : 
 ```sh
 npm install
