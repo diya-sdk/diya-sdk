@@ -178,20 +178,20 @@ myD1.connectAsUser('wss://some/server/api', 'foo', 'bar').then(function () {
 
 #### d1.connect(addr, [WebSocket])
 
-- ```addr``` <String> A valid WebSocket address
-- ```WebSocket``` <WebSocket> A WebSocket implementation - defaults to window.WebSocket
-- Returns: <Promise<>> A promise that resolves upon successful connection
+- **addr** ```<String>``` A valid WebSocket address
+- **WebSocket** ```<WebSocket>``` A WebSocket implementation - defaults to window.WebSocket
+- Returns: ```<Promise<>>``` A promise that resolves upon successful connection
 
 Connects to a network node by using its websocket address.
 
 
 #### d1.connectAsUser(addr, user, password, [WebSocket])
 
-- ```addr``` <String> A valid WebSocket address
-- ```user``` <String> user name on the target network node
-- ```password``` <String> user's password on the target network node
-- ```WebSocket``` <WebSocket> A WebSocket implementation - defaults to window.WebSocket
-- Returns: <Promise<>> A promise that resolves upon successful connection
+- **addr** ```<String>``` A valid WebSocket address
+- **user** ```<String>``` user name on the target network node
+- **password** ```<String>``` user's password on the target network node
+- **WebSocket** ```<WebSocket>``` A WebSocket implementation - defaults to window.WebSocket
+- Returns: ```<Promise<>>``` A promise that resolves upon successful connection
 
 
 #### d1.deauthenticate()
