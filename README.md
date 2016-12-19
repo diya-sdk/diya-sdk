@@ -312,16 +312,29 @@ Examples :
 	- **data** ```<Object>``` node's answer
 - **timeout** <Integer> number of milliseconds after which the request is cancelled
 - **options** ```<Object>```
-	- **bNotifyWhenFinished** <Boolean> if true, callback will be executed one more time with ```data = '##END##'``` once all peer answered
-	- **callback_partial** <Function> callback executed when a matched peer sends a partial answer
+	- **bNotifyWhenFinished** <Boolean> if ```true```, callback will be executed one more time with ```data = '##END##'``` once all peer answered
+	- **callback_partial** ```<Function>``` callback executed when a matched peer sends a partial answer
 		- **peerId** ```<String>``` id of the node which answered
-		- **err** ```<Object>``` error while executing request or undefined if all when fine
+		- **err** ```<Object>``` error while executing request or undefined if everything went fine
 		- **data** ```<Object>``` node's partial answer
 
 
 
 #### d1(selector).subscribe(subscription, callback, option, timeout)
- 
+
+- **selector** ```<String | Array<String> | RegExp>``` selector that matches the target nodes
+- **subscription** ```<Object>```
+	- **service** ```<String>``` target service
+	- **func** ```<String>``` target subscription 
+	- **[obj]** ```<String | Array<String>>``` Optional target object's identifiers
+	- **data** ```<Object>``` subscription's arguments
+- **callback** ```<Function>``` callback executed when a matched peer emits an event 
+	- **peerId** ```<String>``` id of the node which emitted an event
+	- **err** ```<Object>``` error while executing request or undefined if all when fine
+	- **data** ```<Object>``` node's event 
+
+
+
 
 ### Services
 
