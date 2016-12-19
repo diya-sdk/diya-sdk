@@ -1,4 +1,4 @@
-diya-sdk
+diya-sdk v1.x
 ========
 
 diya-sdk is a javascript library that enables one to interact with a DiyaOne Network. It communicates over a 
@@ -21,7 +21,9 @@ Nodes are selected using a simple selector system :
 
 ### Services 
 
-Services running on any network node expose two types of commands that can be queried from a diya-sdk client
+Services running on any network node expose two types of commands that can be queried from a diya-sdk client : requests and 
+subscriptions. A service can be used directly by calling its requests and subscriptions provided they are documented (see below).
+However for some services, some client-side logic must be followed. For these services, modules that wrap requests and subscriptions are provided in the diya-sdk library.
 
 #### Requests
 
