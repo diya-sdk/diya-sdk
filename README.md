@@ -142,14 +142,10 @@ var Q = require('q');
 d1.connectAsUser('wss://localhost/api', 'toto', 'toto_password', WebSocket).then(function() {
     console.log('connected !');
 
-    d1("#self").request({
-        service: 'my_service',
-        func: 'my_function',
-        data: {
-            foo: 'bar'
-    }, function(peerId, err, data) {
-        console.log(data);
-    });
+    d1("#self").request(...)
+    d1("D1R00018").subscribe(...)
+
+    ...
 
 }).catch(function(error) {
     console.log('game over : '+ error);
