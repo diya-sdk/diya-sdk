@@ -1,25 +1,29 @@
-Diya-SDK
+diya-sdk
 ========
 
-Client-side Javascript library for interacting with Diya One Robots
+diya-sdk is a javascript library that enables one to interact with a DiyaOne Network. It communicate over a 
+WebSocket transport and can be used on both browsers and NodeJS (using (ws)[https://github.com/websockets/ws]).
 
-## Develop
-Install dependencies with : 
-```sh
-npm install
-```
 
-Compile debug and minify with : 
-```sh
-npm run build
-```
+## Architecture
 
-Compile minify only with : 
-```sh
-npm run build-min
-```
+### The DiyaOne network 
 
-## Use 
+The DiyaOne network is designed as a decentralized network of nodes, each of them supporting a set of services. Typical network
+nodes include DiyaOne robots, DiyaOne docking stations, or Partnering servers. Using the diya-sdk, one can connect to any one of the reachable network nodes and from there query services of any subset of the network nodes.
+
+Nodes are selected using a simple selector system :
+
+- ```"D1R00018"``` -> selects the D1R00018 node
+- ```['D1R0018', 'D1R00019']``` -> selects the D1R00018 and D1R00019 nodes
+- ```/^D1R.*$/``` -> selects all nodes whose names start with "D1R"
+
+
+### diya services
+
+
+
+## Getting Started 
 
 ### Browser
 #### install
@@ -80,5 +84,21 @@ d1.connectAsUser('wss://localhost/api', 'toto', 'toto_password', WebSocket).then
 }).catch(function(error) {
     console.log('game over : '+ error);
 }); 
+```
+
+## Develop
+Install dependencies with : 
+```sh
+npm install
+```
+
+Compile debug and minify with : 
+```sh
+npm run build
+```
+
+Compile minify only with : 
+```sh
+npm run build-min
 ```
 
