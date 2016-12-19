@@ -2,7 +2,7 @@ diya-sdk
 ========
 
 diya-sdk is a javascript library that enables one to interact with a DiyaOne Network. It communicate over a 
-WebSocket transport and can be used on both browsers and NodeJS (using (ws)[https://github.com/websockets/ws]).
+WebSocket transport and can be used on both browsers and NodeJS (using [ws](https://github.com/websockets/ws)).
 
 
 ## Architecture
