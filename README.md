@@ -56,15 +56,20 @@ bower install partnering/diya-sdk
 
 <script>
 
-/* Connect to the node located at 'wss://localhost/api' using the 'toto' login and the 'toto_password' password */
+/* 
+ * Connect to the node located at 'wss://localhost/api' using the 'toto' login and
+ * the 'toto_password' password 
+ */
 d1.connectAsUser('wss://localhost/api', 'toto', 'toto_password').then(function() {
     /* The connectAsUser method returns a promise that resolve upon successful connection */
     console.log('connected !');
 
     //From then on, you can perform any requests or subscriptions you want
 
-    /* this call creates a request 'my_function' to the service 'my_service' with the data { foo: 'bar' } that 
-     * will be applied to all nodes of the 'wss://localhost/api' network that match the "#self" selector.
+    /* 
+     * this call creates a request 'my_function' to the service 'my_service' with
+     * the data { foo: 'bar' } that will be applied to all nodes of the 'wss://localhost/api'
+     * network that match the "#self" selector.
      */
     d1("#self").request({
         service: 'my_service',
@@ -72,9 +77,10 @@ d1.connectAsUser('wss://localhost/api', 'toto', 'toto_password').then(function()
         data: {
             foo: 'bar'
     }, function(peerId, err, data) {
-	/* this callback is call for each node that answers the request. the 'peerId' corresponds to the id of
-         * the node that answered, 'err' is defined if there was an error while executing the request, and 'data'
-         * is the request's answer
+	/* 
+         * this callback is call for each node that answers the request. the 'peerId' 
+         * corresponds to the id of the node that answered, 'err' is defined if there
+         * was an error while executing the request, and 'data' is the request's answer
 	 */
         console.log(peerId);
         console.log('err');
