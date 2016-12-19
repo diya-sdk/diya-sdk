@@ -155,6 +155,50 @@ d1.connectAsUser('wss://localhost/api', 'toto', 'toto_password', WebSocket).then
 
 ## API
 
+### Core 
+
+The diya-sdk exposes a global ```d1``` object (instance of DiyaSelector) that is used to perform all operation
+at the application level.
+
+#### d1.connect(addr, [WebSocket])
+
+#### d1.connectAsUser(addr, user, password, [WebSocket])
+
+#### d1.deauthenticate()
+
+#### d1.setSecured(bSecured)
+
+#### d1.setWSocket(WebSocket)
+
+#### d1.disconnect()
+
+#### d1.isConnected()
+
+#### d1.peers()
+
+#### d1.self()
+
+#### d1.addr()
+
+#### d1.user()
+
+#### d1.isAuthenticated()
+
+#### d1.parsePeer()
+
+#### d1.tryConnect()
+
+#### d1.on(event, callback)
+
+#### d1(selector).auth(user, password)
+
+#### d1(selector).request(request, callback, options, timeout)
+
+#### d1(selector).subscribe(subscription, callback, option, timeout)
+ 
+
+### Services
+
 
 ## Hack the code
 Install dependencies with : 
