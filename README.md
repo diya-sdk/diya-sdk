@@ -125,6 +125,12 @@ var d1 = require('diya-sdk');
 var WebSocket = require('ws');
 var Q = require('q');
 
+/*
+ * The only difference with the browser example is that we must pass a WebSocket implementation
+ * object to the connectAsUser method in order to allow diya-sdk to open the WebSocket channel
+ * to the network node. Altough only tested with _ws_, any WebSocket implementation should work 
+ * as long as it follows the HTML5 WebSocket API.
+ */
 d1.connectAsUser('wss://localhost/api', 'toto', 'toto_password', WebSocket).then(function() {
     console.log('connected !');
 
