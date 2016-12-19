@@ -19,17 +19,21 @@ Nodes are selected using a simple selector system :
 - ```/^D1R.*$/``` -> selects all nodes whose names start with "D1R"
 - ```"#self"``` -> selects the node that the client directly connects to
 
-### diya services
+### Services 
 
 Services running on any network node expose two types of commands that can be queried from a diya-sdk client
 
 #### Requests
 
-A Request acts exactly like an HTTP request. The client asks for something, the request is executed on the server, and the answer is sent back to the client. The Only difference is that if the given ```selector``` matches multiple nodes, the request will be executed on each nodes, and an answer is sent back for each node.
+A Request acts exactly like an HTTP request. The client asks for something, the request is executed on the server, and the answer
+ is sent back to the client. The Only difference is that if the given ```selector``` matches multiple nodes, the request will be 
+executed on each nodes, and an answer is sent back for each node.
 
 #### Subscriptions
 
-A subscription acts as a simple pub/sub mecanism. The client asks a service to listen for one of its events. When the event happens on the service side, the client is notified. As with the requests system, if the selector matches multiple nodes, events will be sent back to the client for each selected nodes.
+A subscription acts as a simple pub/sub mecanism. The client asks a service to listen for one of its events. When the event
+ happens on the service side, the client is notified. As with the requests system, if the ```selector``` matches multiple nodes, events
+ will be sent back to the client for each selected nodes.
 
 
 ## Getting Started 
