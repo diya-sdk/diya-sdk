@@ -287,11 +287,38 @@ Examples :
 
 #### d1.tryConnect()
 
+
 #### d1.on(event, callback)
+
 
 #### d1(selector).auth(user, password)
 
-#### d1(selector).request(request, callback, options, timeout)
+- **user** ```<String>``` user's name
+- **password** ```<String>``` user's password
+- Returns: ```<Promise<>>``` A promise that resolves upon successful user authentication
+
+
+#### d1(selector).request(request, callback, timeout, options)
+
+- **selector** ```<String | Array<String> | RegExp>``` selector that matches the target nodes
+- **request** ```<Object>```
+	- **service** ```<String>``` target service
+	- **func** ```<String>``` target request
+	- **[obj]** ```<String | Array<String>>``` Optional target object's identifiers
+	- **data** ```<Object>``` request's arguments
+- **callback** ```<Function>``` callback executed when a matched peer answers
+	- **peerId** ```<String>``` id of the node which answered
+	- **err** ```<Object>``` error while executing request or undefined if all when fine
+	- **data** ```<Object>``` node's answer
+- **timeout** <Integer> number of milliseconds after which the request is cancelled
+- **options** ```<Object>```
+	- **bNotifyWhenFinished** <Boolean> if true, callback will be executed one more time with ```data = '##END##'``` once all peer answered
+	- **callback_partial** <Function> callback executed when a matched peer sends a partial answer
+		- **peerId** ```<String>``` id of the node which answered
+		- **err** ```<Object>``` error while executing request or undefined if all when fine
+		- **data** ```<Object>``` node's partial answer
+
+
 
 #### d1(selector).subscribe(subscription, callback, option, timeout)
  
