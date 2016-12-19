@@ -340,7 +340,12 @@ Examples :
 
 #### IEQ
 
+See [doc/IEQ.md](doc/IEQ.md)
+
+
 #### RTC
+
+See [doc/RTC.md](doc/RTC.md)
 
 
 ## Hack the code
