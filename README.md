@@ -200,27 +200,38 @@ Deauthenticate from the currently connected node.
 #### d1.setSecured(bSecured)
 
 #### d1.setWSocket(WebSocket)
-Provide a custom WebSocket implementation (defaults to window.WebSocket)
+- **WebSocket** ```<WebSocket>``` A WebSocket implementation.
+
+Provide a custom WebSocket implementation (defaults to window.WebSocket). This must be called
+before ```d1.connect```.
 
 #### d1.disconnect()
+- Returns: ```<Promise<>>``` a promise that is resolved upon successful disconnection
+
 Disconnect from the currently connected node.
 
 #### d1.isConnected()
+- Returns: ```<Boolean>``` ```true``` if the d1 instance is currently connected, ```false``` otherwise.
 Check whether the d1 singleton is currently connected to any node
 
 #### d1.peers()
+- Returns: ```<Array<String>>``` An array of all reachable node names.
 Get an array of all reachable node names
 
 #### d1.self()
+- Returns: ```<String>``` the name of the directly connected node.
 Get the name of the directly connected node.
 
 #### d1.addr()
+- Returns: ```<String>``` the websocket address of the currently connected/connecting node
 Get the address of the currently connected node.
 
 #### d1.user()
+- Returns: ```<String>``` the user authenticated to the currently connected node
 Get the user authenticated to the currently connected node.
 
 #### d1.isAuthenticated()
+- Returns: ```<Boolean>``` ```true``` if the user is authenticated to the currently connected node, ```false``` otherwise.
 Check whether the d1 singleton is authenticated to the currently connected node.
 
 #### d1.parsePeer(peerString)
