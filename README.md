@@ -162,9 +162,37 @@ at the application level.
 
 #### d1.newInstance()
 
+- Returns: ```<DiyaSelector>``` A new instance of DiyaSelector
+
+This call is useful if you don't want to use the d1 singleton object to connect and interact with a network node.
+
+```js
+let myD1 = d1.newInstance()
+
+myD1.connectAsUser('wss://some/server/api', 'foo', 'bar').then(function () {
+	myD1(/.*/).request(...)
+	...
+	myD1.disconnect()
+})
+```
+
 #### d1.connect(addr, [WebSocket])
 
+- ```addr``` <String> A valid WebSocket address
+- ```WebSocket``` <WebSocket> A WebSocket implementation - defaults to window.WebSocket
+- Returns: <Promise<>> A promise that resolves upon successful connection
+
+Connects to a network node by using its websocket address.
+
+
 #### d1.connectAsUser(addr, user, password, [WebSocket])
+
+- ```addr``` <String> A valid WebSocket address
+- ```user``` <String> user name on the target network node
+- ```password``` <String> user's password on the target network node
+- ```WebSocket``` <WebSocket> A WebSocket implementation - defaults to window.WebSocket
+- Returns: <Promise<>> A promise that resolves upon successful connection
+
 
 #### d1.deauthenticate()
 Deauthenticate from the currently connected node.
@@ -210,6 +238,10 @@ Helper method for formatting a peer name into a proper websocket address.
  
 
 ### Services
+
+#### IEQ
+
+#### RTC
 
 
 ## Hack the code
