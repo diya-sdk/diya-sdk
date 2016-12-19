@@ -14,10 +14,10 @@ nodes include DiyaOne robots, DiyaOne docking stations, or Partnering servers. U
 
 Nodes are selected using a simple selector system :
 
-- ```js"D1R00018"``` -> selects the D1R00018 node
-- ```js['D1R0018', 'D1R00019']``` -> selects the D1R00018 and D1R00019 nodes
-- ```js/^D1R.*$/``` -> selects all nodes whose names start with "D1R"
-
+- ```"D1R00018"``` -> selects the D1R00018 node
+- ```['D1R0018', 'D1R00019']``` -> selects the D1R00018 and D1R00019 nodes
+- ```/^D1R.*$/``` -> selects all nodes whose names start with "D1R"
+- ```"#self"``` -> selects the node that the client directly connects to
 
 ### diya services
 
