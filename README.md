@@ -271,18 +271,18 @@ Helper method for formatting a peer name into a proper websocket address.
 
 Examples :
 
-- "partnering":
-	- addr: "wss://partnering-cloud.com/partnering/api"
-	- addrNet: "wss://partnering-cloud.com/partnering/net"
-	- name: "partnering"
-- "somedomain.com/somesite":
-	- addr: "wss://somedomain.com/somesite/api"
-	- addrNet: "wss://somedomain.com/somesite/net"
-	- name: "somesite"
-- "wss://websocketaddress":
-	- addr: "wss://websocketaddress"
-- "1234":
-	- addr: "ws://localhost:1234"
+- ```"partnering"```:
+	- **addr**: ```"wss://partnering-cloud.com/partnering/api"```
+	- **addrNet**: ```"wss://partnering-cloud.com/partnering/net"```
+	- **name**: ```"partnering"```
+- ```"somedomain.com/somesite"```:
+	- **addr**: ```"wss://somedomain.com/somesite/api"```
+	- **addrNet**: ```"wss://somedomain.com/somesite/net"```
+	- **name**: ```"somesite"```
+- ```"wss://websocketaddress"```:
+	- **addr**: ```"wss://websocketaddress"```
+- ```"1234"```:
+	- **addr**: ```"ws://localhost:1234"```
 
 
 #### d1.tryConnect()
