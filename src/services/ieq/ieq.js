@@ -48,7 +48,6 @@ var Logger = {
  * */
 function IEQ(selector){
 	var that = this;
-	console.log('in')
 	this.selector = selector;
 	this.dataModel={};
 	this._coder = selector.encode();
@@ -263,8 +262,6 @@ IEQ.prototype.updateData = function(callback, dataConfig){
 			Logger.error("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
 			return;
 		}
-		console.log('update Data')
-		console.log(data);
 		that._getDataModelFromRecv(data);
 
 		// Logger.log(that.getDataModel());
