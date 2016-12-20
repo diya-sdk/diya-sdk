@@ -342,12 +342,12 @@ Examples :
 
 #### IEQ
 
-See [doc/IEQ](doc/IEQ.md)
+See [doc/IEQ](docs/IEQ.md)
 
 
 #### RTC
 
-See [doc/RTC](doc/RTC.md)
+See [doc/RTC](docs/RTC.md)
 
 
 ## Hack the code
