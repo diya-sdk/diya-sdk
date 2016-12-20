@@ -353,11 +353,11 @@ IEQ.prototype.closeSubscriptions = function(){
 /**
  * request Data to make CSV file
  */
-IEQ.prototype.getCSVData = function(sensorNames,_firstDay,callback){
-	var firstDay = new Date(_firstDay);
+IEQ.prototype.getCSVData = function(sensorNames,timeConfig,callback){
+	var firstDay = Date(_firstDay.start);
 	var dataConfig = {
 		criteria: {
-			time: { start: firstDay.getTime(), rangeUnit: 'hour', range: 180}, // 360h -> 15d // 180h -> 7j
+			time: timeConfig, // 360h -> 15d // 180h -> 7j
 			places: [],
 			robots: []
 		},
