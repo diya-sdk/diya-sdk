@@ -1,7 +1,7 @@
 diya-sdk v1.x
 ========
 
-![Logo Partnering Robotics](https://partnering-robotics.com/ressources/img/logo/logo_robotics_horizontal.png)
+<img src="https://partnering-robotics.com/ressources/img/logo/logo_robotics_horizontal.png" alt="Partnering Robotics" style="width: 50%; float: right" />
 
 diya-sdk is a javascript library that enables one to interact with a DiyaOne Network. It communicates over a 
 WebSocket transport and can be used on both browsers and NodeJS (using [ws](https://github.com/websockets/ws)).
