@@ -354,7 +354,6 @@ IEQ.prototype.closeSubscriptions = function(){
  * request Data to make CSV file
  */
 IEQ.prototype.getCSVData = function(sensorNames,timeConfig,callback){
-	var firstDay = Date(_firstDay.start);
 	var dataConfig = {
 		criteria: {
 			time: timeConfig, // 360h -> 15d // 180h -> 7j
