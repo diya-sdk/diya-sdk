@@ -153,7 +153,7 @@ function newInstance () {
 				data: {	signature: signature }
 			}, function(peerId, err, data){
 				if(err) return deferred.reject(err);
-				if(data && data.authenticated){
+				if(data === true){
 					connection.authenticated(true);
 					connection.user("#DiyaNode#"+peerId);
 					deferred.resolve();
