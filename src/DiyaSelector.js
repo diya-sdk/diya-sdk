@@ -55,7 +55,7 @@ function newInstance () {
 		}
 		// 'localhost' alone -> UNIX socket /var/run/diya/diya-node.sock
 		else if (addrStr === 'localhost') {
-			peer.addr = '/var/run/diya/diya-node.sock'
+			peer.addr = 'unix:///var/run/diya/diya-node.sock'
 		}
 		// 10.42.0.1 -> wss://10.42.0.1/api
 		//          -> wss://10.24.0.1/net
@@ -144,31 +144,6 @@ function newInstance () {
 	d1inst.setSecured = function(bSecured) { connection.setSecured(bSecured); };
 	d1inst.isSecured = function() {return connection._secured; }
 	d1inst.setWSocket = function(WSocket) { connection.setWSocket(WSocket); }
-
-
-	/** Self-authenticate the local DiyaNode bound to port <port>, using its RSA signature */
-	d1inst.selfConnect = function(port, signature, WSocket) {
-		return d1inst.connect('ws://localhost:' + port, WSocket)
-		.then(function() {
-			var deferred = Q.defer();
-			d1inst("#self").request({
-				service: 'peerAuth',
-				func: 'SelfAuthenticate',
-				data: {	signature: signature }
-			}, function(peerId, err, data){
-				if(err) return deferred.reject(err);
-				if(data === true){
-					connection.authenticated(true);
-					connection.user("#DiyaNode#"+peerId);
-					deferred.resolve();
-				} else {
-					connection.authenticated(false);
-					deferred.reject('AccessDenied');
-				}
-			});
-			return deferred.promise;
-		});
-	}
 
 	return d1inst;
 }

@@ -7,8 +7,6 @@ else { var Q = window.Q; }
 var EventEmitter = require('node-event-emitter');
 var inherits = require('inherits');
 
-const UNIX_SOCK_PATH = '/var/run/diya/diya-node.sock'
-
 //////////////////////////////////////////////////////////////
 /////////////////// Logging utility methods //////////////////
 //////////////////////////////////////////////////////////////
@@ -78,7 +76,7 @@ DiyaNode.prototype.connect = function (addr, WSocket) {
 	this.bDontReconnect = false
 
 	// Handle local clients on UNIX sockets
-	if (addr === UNIX_SOCK_PATH) {
+	if (addr.startsWith('unix://')) {
 		// If we've trying to connect to the same address we're already connected to
 		if (this._addr === addr) {
 			console.log(`[SDK/DiyaNode] Address is identical to our address...`)
@@ -97,7 +95,7 @@ DiyaNode.prototype.connect = function (addr, WSocket) {
 			this._addr = addr
 			this._connectionDeferred = Q.defer()
 			Logger.log('d1: connect to ' + this._addr)
-			let sock = new UNIXSocketHandler(this._addr, this._connectTimeout)
+			let sock = new UNIXSocketHandler(this._addr.substr('unix://'.length), this._connectTimeout)
 
 			if (!this._socketHandler)
 				this._socketHandler = sock
