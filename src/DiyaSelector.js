@@ -53,6 +53,10 @@ function newInstance () {
 		else if(/^[0-9]*$/.test(addrStr)) {
 			peer.addr = "ws://localhost:"+addrStr;
 		}
+		// 'localhost' alone -> UNIX socket /var/run/diya/diya-node.sock
+		else if (addrStr === 'localhost') {
+			peer.addr = '/var/run/diya/diya-node.sock'
+		}
 		// 10.42.0.1 -> wss://10.42.0.1/api
 		//          -> wss://10.24.0.1/net
 		else if (IP_REGEX.test(addrStr)) {
