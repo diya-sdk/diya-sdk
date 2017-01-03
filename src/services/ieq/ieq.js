@@ -335,18 +335,13 @@ IEQ.prototype.watch = function(data, callback){
 	}, function(dnId, err, data){
 		if(err) {
 			Logger.error("WatchIEQRecvErr:"+JSON.stringify(err));
-			// console.log(e);
-			// console.log(that.selector);
-			// if(err==="SubscriptionClosed") {
-			// 	that.closeSubscriptions(); // should not be necessary
-			// 	that.subscriptionError = that.subscriptionErrorNum+1; // increase error counter
-			// 	setTimeout(that.subscriptionErrorNum*60000, that.watch(data,callback)); // try again later
-			// }
-			// else {
-			// 	console.error("Unmanage cases : should the subscription be regenerated ?");
-			// }
+			that.closeSubscriptions(); // should not be necessary
+			that.subscriptionReqPeriod = that.subscriptionReqPeriod+1000||1000; // increase delay by 1 sec
+			if(that.subscriptionReqPeriod > 300000) that.subscriptionReqPeriod=300000; // max 5min
+			setTimeout(function() {	that.watch(data,callback); }, that.subscriptionReqPeriod); // try again later
 			return;
 		}
+		that.subscriptionReqPeriod=0; // reset period on subscription requests
 		if(data.header.error) {
 			// TODO : check/use err status and adapt behavior accordingly
 			Logger.error("WatchIEQ:\n"+JSON.stringify(data.header.dataConfig));

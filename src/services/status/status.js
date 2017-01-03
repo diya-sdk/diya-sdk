@@ -267,10 +267,18 @@ Status.prototype.watch = function(robotNames, callback){
 		data: robotNames
 	}, function (peerId, err, data) {
 		// console.log(peerId);
-		// console.log(err);
 		// console.log(data);
-		if (err || (data&&data.err&data.err.st) ) {
-			Logger.error( "StatusSubscribe:"+(err?err:"")+"\n"+(data&&data.err?data.err:"") );
+		if (err) {
+			Logger.error( "StatusSubscribe:"+err );
+			that.closeSubscriptions(); // should not be necessary
+			that.subscriptionReqPeriod = that.subscriptionReqPeriod+1000||1000; // increase delay by 1 sec
+			if(that.subscriptionReqPeriod > 60000) that.subscriptionReqPeriod=60000; // max 1min
+			setTimeout(function() {	that.watch(data,callback); }, that.subscriptionReqPeriod); // try again later
+			return;
+		}
+		that.subscriptionReqPeriod=0; // reset period on subscription requests
+		if (data&&data.err&&data.err.st) {
+			Logger.error( "WatchStatusErr:"+JSON.stringify(data.err));
 		} else {
 			that._getRobotModelFromRecv2(data);
 			if(typeof callback === 'function')
