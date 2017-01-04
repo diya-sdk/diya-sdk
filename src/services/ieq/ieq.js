@@ -39,7 +39,6 @@
    Todo :
    check err for each data
    improve API : getData(sensorName, dataConfig)
-   return adapted vector for display with D3 to reduce code in IHM ?
    updateData(sensorName, dataConfig)
    set and get for the different dataConfig params
 
@@ -68,8 +67,8 @@ var Logger = {
 };
 
 /**
- *	callback : function called after model updated
- * */
+ * IEQ API handler
+ */
 function IEQ(selector){
 	var that = this;
 	this.selector = selector;
