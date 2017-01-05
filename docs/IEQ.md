@@ -20,6 +20,7 @@ select the time range. Depending on the time range, data will be averaged on dif
 - week: data averaged by hours
 - month: data averaged by days
 - year: data averaged by weeks
+
 A callback provide the result formatted in a model containing the
 different received data (see Reference).
 
