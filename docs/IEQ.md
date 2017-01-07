@@ -4,16 +4,16 @@ diya-sdk v1.x - IEQ
 
 ## IEQ API
 
-The IEQ API allows to request data or subscribe to data from the IEQ
-service available on diya-node server instances.
+The Indoor Environment Quality (IEQ) API allows fetching and subscribing to
+air quality data streams available in various diya network nodes.
 
 When the IEQ API is to be used, an IEQ singleton should be
-instantiated with ```d1(selector).IEQ()```.  This singleton is the
+instantiated with the ```d1(selector).IEQ()``` call.  This singleton is the
 handler to perform the different requests to the diya-node server.
 
 A client can subscribe once or several times to different data
-channels with ```watch()```. The subscription can be parameterized to
-select the time range. Depending on the time range, data will be averaged on different time unit :
+channels with the ```IEQ.watch``` method. The subscription can be parameterized to
+select the time range. Depending on the time range, data will be averaged on different time units :
 - minute: raw data
 - hour: data averaged by minutes
 - day: data averaged by hours
@@ -21,14 +21,13 @@ select the time range. Depending on the time range, data will be averaged on dif
 - month: data averaged by days
 - year: data averaged by weeks
 
-A callback provide the result formatted in a model containing the
-different received data (see Reference).
+A callback will provide one with the result formatted in a model containing relevant 
+data (see Reference).
 
 
-In order to reset subscriptions, ```closeSubscriptions()``` will close
-all subscriptions.
+In order to end all running subscriptions, use the ```IEQ.closeSubscriptions``` method.
 
-Data can also be requested with the ```getCSVData()``` function. The data
+Data can also be requested with the ```IEQ.getCSVData``` method. The data
 on 7 days starting from the ```firstDay``` parameter are exported and
 available in the callback. Data are provided averaged by minutes.
 
@@ -123,7 +122,7 @@ available in the callback. Data are provided averaged by minutes.
 ## Example
 
 
-```
+```js
 // Upon new selection of diya-node
 
 // close all existing subscription before changing selection of diya-node
