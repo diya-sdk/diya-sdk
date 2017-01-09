@@ -445,7 +445,7 @@ this.ieq_handler.watch({timeRange:timeRange}}, function(data) {
 ```js
 
 this.ieq_handler.getCSVData(['Temperature','Ozone'],'2016-01-01 12:12:12'}, function(data) {  
-	// Name of sensor is case sensitive. Check name in fields from output examples above.
+	// Name of sensor is case sensitive. Check names as fields from output examples above.
 	// NB using null or undefined instead of array of sensor names will export all available sensors 
 	try {
 		// data contains the received data
