@@ -317,27 +317,26 @@ IEQ.prototype.getEnvQualityLevel = function(){
  * @param  data to configure subscription
  * @param  callback called on answers (@param : dataModel)
  */
-IEQ.prototype.watch = function(data, callback){
+IEQ.prototype.watch = function(config, callback){
 	var that = this;
-	// console.log("Request: "+JSON.stringify(dataConfig));
 
 	/** default **/
-	data = data || {};
-	data.timeRange = data.timeRange  || 'hours';
-	data.cat = data.cat || 'ieq'; /* category */
+	config = config || {};
+	config.timeRange = config.timeRange  || 'hours';
+	config.cat = config.cat || 'ieq'; /* category */
 
 	var subs = this.selector.subscribe({
 		service: "ieq",
 		func: "Data",
-		data: data,
-		obj: data.cat /* provide category of sensor to be watched, filtered according to CRM */
+		data: config,
+		obj: config.cat /* provide category of sensor to be watched, filtered according to CRM */
 	}, function(dnId, err, data){
 		if(err) {
 			Logger.error("WatchIEQRecvErr:"+JSON.stringify(err));
 			that.closeSubscriptions(); // should not be necessary
 			that.subscriptionReqPeriod = that.subscriptionReqPeriod+1000||1000; // increase delay by 1 sec
 			if(that.subscriptionReqPeriod > 300000) that.subscriptionReqPeriod=300000; // max 5min
-			setTimeout(function() {	that.watch(data,callback); }, that.subscriptionReqPeriod); // try again later
+			setTimeout(function() {	that.watch(config,callback); }, that.subscriptionReqPeriod); // try again later
 			return;
 		}
 		that.subscriptionReqPeriod=0; // reset period on subscription requests
