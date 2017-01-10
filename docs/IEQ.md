@@ -45,6 +45,7 @@ available in the callback. Data are provided averaged by minutes.
 
 - **data** ```<Object>```
 	- **[timeRange]** ```String:{'minutes','hours','days','weeks','months'}``` Filter to keep only data in time range : i.e. period between now and 1 timeRange. Ex: data on the past minute.
+	- **[robots]** ```Array<String>``` Default is undefined: data are aggregated across robots. Array is a list of robot name (ex: D1R00015) which will be selected and exported.
 - **callback** ```<Function>``` callback
 	- **dataModel** ```<Object>``` model filled with the received IEQ data
 		- **Sensor 1** ```<Object>```
@@ -61,6 +62,7 @@ available in the callback. Data are provided averaged by minutes.
 			- **stddev** ```<Object>```	not implemented yet
 				- **d** ```< Array<float> >``` array of stddev data value
 				- **i** ```< Array<float> >``` array of stddev quality estimation (%)
+			- **robotId** ```< Array<int> >``` array of robots, each item correspond to an item in time and thus tags the sample by the name of the robot which captured the data
 			- **x** ```< Array<float> >``` array of x positions
 			- **y** ```< Array<float> >``` array of y positions
 			- **precision** ```<float>``` accuracy of data value
@@ -72,7 +74,6 @@ available in the callback. Data are provided averaged by minutes.
 			- **data** ```<Object>``` array of data value. Mainly duplicate of avg.d. deprecated.
 			- **qualityIndex** ```< Array<float> >``` array of quality index, duplicate of avg.i, deprecated
 			- **placeId** ```< Array<int> >``` array of place indexes, deprecated
-			- **robotId** ```< Array<int> >``` array of robots, deprecated
 			- **trend** ```<String>``` not implemented
 			- **zoomRange** ```< Array<float> >``` not implemented
 		- ...
@@ -103,6 +104,7 @@ available in the callback. Data are provided averaged by minutes.
 			- **stddev** ```<Object>```	not implemented yet
 				- **d** ```< Array<float> >``` array of stddev data value
 				- **i** ```< Array<float> >``` array of stddev quality estimation (%)
+			- **robotId** ```< Array<int> >``` array of robots, each item correspond to an item in time and thus tags the sample by the name of the robot which captured the data
 			- **x** ```< Array<float> >``` array of x positions
 			- **y** ```< Array<float> >``` array of y positions
 			- **precision** ```<float>``` accuracy of data value
@@ -114,7 +116,6 @@ available in the callback. Data are provided averaged by minutes.
 			- **data** ```<Object>``` array of data value. Mainly duplicate of avg.d. deprecated.
 			- **qualityIndex** ```< Array<float> >``` array of quality index, duplicate of avg.i, deprecated
 			- **placeId** ```< Array<int> >``` array of place indexes, deprecated
-			- **robotId** ```< Array<int> >``` array of robots, deprecated
 			- **trend** ```<String>``` not implemented
 			- **zoomRange** ```< Array<float> >``` not implemented
 		- ...
@@ -125,6 +126,7 @@ available in the callback. Data are provided averaged by minutes.
 ## Example
 
 
+### Example 1 : default subscription
 ```js
 // Upon new selection of diya-node
 
@@ -368,7 +370,7 @@ this.ieq_handler.watch({}, function(data) {
 
 
 
-
+### Example 2 : subscription with time range defined
 ```js
 // Upon new selection of diya-node
 
@@ -441,6 +443,56 @@ this.ieq_handler.watch({timeRange:timeRange}}, function(data) {
 });
 
 ```
+
+### Example 3 : selection of robot
+```js
+// Upon new selection of diya-node
+
+// close all existing subscription before changing selection of diya-node
+if(this.ieq_handler) this.ieq_handler.closeSubscriptions();
+
+// instantiate new ieq handler with new selector
+this.ieq_handler = d1(this.selector).IEQ();
+
+// subscribe to 'ieq' data on past day
+var timeRange = 'day';
+this.ieq_handler.watch({timeRange:timeRange, robots: ['D1R00015']}}, function(data) {
+	try {
+		// data contains the received data
+		console.log(data);
+		/** Example of output
+		{
+		"Confinement":{
+			"range":[0,1],
+			"timeRange":[1484091180000,1484091180000],
+			"label":"Confinement",
+			"unit":" ",
+			"precision":1,
+			"category":"ieq,index",
+			"zoomRange":[0,100],
+			"qualityConfig":{"indexRange":1},
+			"time":[1484091180000],
+			"data":[1],
+			"qualityIndex":[1],
+			"robotId":["D1R00015"],   // Only 1 item from D1R00015
+			"placeId":null,
+			"x":[0],
+			"y":[0],
+			"avg":{
+				"d":[1],
+				"i":[1]},
+			"trend":"mss"},
+		...		
+		**/
+
+	}
+	catch(e) { console.error(e); }
+});
+
+```
+
+
+### Example 4 : get history of data (like in CSV export)
 
 ```js
 
