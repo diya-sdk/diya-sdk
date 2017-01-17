@@ -1,3 +1,27 @@
+/*
+ * Copyright : Partnering 3.0 (2007-2016)
+ * Author : Sylvain Mahé <sylvain.mahe@partnering.fr>
+ *
+ * This file is part of diya-sdk.
+ *
+ * diya-sdk is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ *
+ * diya-sdk is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with diya-sdk.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
+
+
+
 /* maya-client
  * Copyright (c) 2014, Partnering Robotics, All rights reserved.
  * This library is free software; you can redistribute it and/or
@@ -243,27 +267,22 @@ Status.prototype.watch = function(robotNames, callback){
 		data: robotNames
 	}, function (peerId, err, data) {
 		// console.log(peerId);
-		// console.log(err);
 		// console.log(data);
-		if (err || (data&&data.err&data.err.st) ) {
-			Logger.error( "StatusSubscribe:"+(err?err:"")+"\n"+(data&&data.err?data.err:"") );
+		if (err) {
+			Logger.error( "StatusSubscribe:"+err );
+			that.closeSubscriptions(); // should not be necessary
+			that.subscriptionReqPeriod = that.subscriptionReqPeriod+1000||1000; // increase delay by 1 sec
+			if(that.subscriptionReqPeriod > 60000) that.subscriptionReqPeriod=60000; // max 1min
+			setTimeout(function() {	that.watch(data,callback); }, that.subscriptionReqPeriod); // try again later
+			return;
+		}
+		that.subscriptionReqPeriod=0; // reset period on subscription requests
+		if (data&&data.err&&data.err.st) {
+			Logger.error( "WatchStatusErr:"+JSON.stringify(data.err));
 		} else {
-			if(data && data.header
-			   && data.header.type === "init") {
-				// initialisation of robot model
-				that.robotModelInit = true;
-			}
-			// console.log(data);
-			if(that.robotModelInit) {
-				that._getRobotModelFromRecv2(data);
-				if(typeof callback === 'function')
-					callback(that.robotModel);
-			}
-			else {
-				// Error
-				Logger.error("Robot model has not been initialised, cannot be updated");
-				/// TODO unsubscribe
-			}
+			that._getRobotModelFromRecv2(data);
+			if(typeof callback === 'function')
+				callback(that.robotModel);
 		}
 	}, { auto: true });
 	this.subscriptions.push(subs);

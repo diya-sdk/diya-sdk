@@ -1,3 +1,27 @@
+/*
+ * Copyright : Partnering 3.0 (2007-2016)
+ * Author : Sylvain Mahé <sylvain.mahe@partnering.fr>
+ *
+ * This file is part of diya-sdk.
+ *
+ * diya-sdk is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ *
+ * diya-sdk is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with diya-sdk.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
+
+
+
 /* maya-client
  * Copyright (c) 2014, Partnering Robotics, All rights reserved.
  * This library is free software; you can redistribute it and/or
@@ -15,7 +39,6 @@
    Todo :
    check err for each data
    improve API : getData(sensorName, dataConfig)
-   return adapted vector for display with D3 to reduce code in IHM ?
    updateData(sensorName, dataConfig)
    set and get for the different dataConfig params
 
@@ -44,8 +67,8 @@ var Logger = {
 };
 
 /**
- *	callback : function called after model updated
- * */
+ * IEQ API handler
+ */
 function IEQ(selector){
 	var that = this;
 	this.selector = selector;
@@ -302,35 +325,29 @@ IEQ.prototype.getEnvQualityLevel = function(){
  * @param  data to configure subscription
  * @param  callback called on answers (@param : dataModel)
  */
-IEQ.prototype.watch = function(data, callback){
+IEQ.prototype.watch = function(config, callback){
 	var that = this;
-	// console.log("Request: "+JSON.stringify(dataConfig));
 
 	/** default **/
-	data = data || {};
-	data.timeRange = data.timeRange  || 'hours';
-	data.cat = data.cat || 'ieq'; /* category */
+	config = config || {};
+	config.timeRange = config.timeRange  || 'hours';
+	config.cat = config.cat || 'ieq'; /* category */
 
 	var subs = this.selector.subscribe({
 		service: "ieq",
 		func: "Data",
-		data: data,
-		obj: data.cat /* provide category of sensor to be watched, filtered according to CRM */
+		data: config,
+		obj: config.cat /* provide category of sensor to be watched, filtered according to CRM */
 	}, function(dnId, err, data){
 		if(err) {
 			Logger.error("WatchIEQRecvErr:"+JSON.stringify(err));
-			// console.log(e);
-			// console.log(that.selector);
-			// if(err==="SubscriptionClosed") {
-			// 	that.closeSubscriptions(); // should not be necessary
-			// 	that.subscriptionError = that.subscriptionErrorNum+1; // increase error counter
-			// 	setTimeout(that.subscriptionErrorNum*60000, that.watch(data,callback)); // try again later
-			// }
-			// else {
-			// 	console.error("Unmanage cases : should the subscription be regenerated ?");
-			// }
+			that.closeSubscriptions(); // should not be necessary
+			that.subscriptionReqPeriod = that.subscriptionReqPeriod+1000||1000; // increase delay by 1 sec
+			if(that.subscriptionReqPeriod > 300000) that.subscriptionReqPeriod=300000; // max 5min
+			setTimeout(function() {	that.watch(config,callback); }, that.subscriptionReqPeriod); // try again later
 			return;
 		}
+		that.subscriptionReqPeriod=0; // reset period on subscription requests
 		if(data.header.error) {
 			// TODO : check/use err status and adapt behavior accordingly
 			Logger.error("WatchIEQ:\n"+JSON.stringify(data.header.dataConfig));
