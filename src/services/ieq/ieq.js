@@ -433,9 +433,10 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 				dataModel[n].precision=data[n].precision;
 				/* update data categories */
 				dataModel[n].category=data[n].category;
-
 				/* suggested y display range */
 				dataModel[n].zoomRange = [0, 100];
+				// update sensor confort range
+				dataModel[n].confortRange = data[n].confortRange;
 
 				/* update data indexRange */
 				dataModel[n].qualityConfig={
