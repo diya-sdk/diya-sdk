@@ -240,23 +240,34 @@ Peer.prototype._createPeer = function(data){
 
 	var iceServers = [];
 	if(this._turninfo) {
-		iceServers.push({ urls: [ this._turninfo.url ], username: this._turninfo.username, credential: this._turninfo.password });
+		if (!Array.isArray(this._turninfo)) {
+			iceServers.push({ 
+				urls: [ this._turninfo.url ], 
+				username: this._turninfo.username, 
+				credential: this._turninfo.password 
+			});
+		} else {
+			iceServers = this._turninfo.map(function(turn) { 
+				return { 
+					urls: [ turn.url ], 
+					username: turn.username, 
+					credential: turn.password 
+				} 
+			});
+		}
 	} else {
 		iceServers.push({urls: [ "stun:stun.l.google.com:19302" ]});
 	}
 	
 	var config = {
 		iceServers: iceServers,
-		iceTransportPolicy: 'all'	
+		iceTransportPolicy: 'all'
 	};
 
 	var constraints = {
 		mandatory: {DtlsSrtpKeyAgreement: true, OfferToReceiveAudio: true, OfferToReceiveVideo:true}
 	}
 	
-	console.log(config);
-	console.log(constraints);
-
 	var peer = new RTCPeerConnection(config,  constraints);
 	this.peer = peer;
 
@@ -322,8 +333,6 @@ Peer.prototype._createPeer = function(data){
 
 Peer.prototype._addRemoteICECandidate = function(data){
 	try {
-		//console.log('remote ice :');
-		//console.log(data.candidate.candidate);
 		var candidate = new RTCIceCandidate(data.candidate);
 		this.peer.addIceCandidate(candidate, function(){},function(err){ console.error(err);	});
 	} catch(err) { console.error(err); }
