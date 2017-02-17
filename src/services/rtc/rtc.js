@@ -261,16 +261,13 @@ Peer.prototype._createPeer = function(data){
 	
 	var config = {
 		iceServers: iceServers,
-		iceTransportPolicy: 'relay'	
+		iceTransportPolicy: 'all'
 	};
 
 	var constraints = {
 		mandatory: {DtlsSrtpKeyAgreement: true, OfferToReceiveAudio: true, OfferToReceiveVideo:true}
 	}
 	
-	console.log(config);
-	console.log(constraints);
-
 	var peer = new RTCPeerConnection(config,  constraints);
 	this.peer = peer;
 
@@ -308,8 +305,6 @@ Peer.prototype._createPeer = function(data){
 	};
 
 	peer.onicecandidate = function(evt){
-		console.log('LOCAL CANDIDATE : ')
-		console.log(evt.candidate)
 		that.dn.request({
 			service: 'rtc',
 			func: 'ICECandidate',
@@ -335,8 +330,6 @@ Peer.prototype._createPeer = function(data){
 
 Peer.prototype._addRemoteICECandidate = function(data){
 	try {
-		console.log('REMOTE CANDIDATE : ');
-		console.log(data.candidate.candidate);
 		var candidate = new RTCIceCandidate(data.candidate);
 		this.peer.addIceCandidate(candidate, function(){},function(err){ console.error(err);	});
 	} catch(err) { console.error(err); }
