@@ -284,7 +284,7 @@ Status.prototype.watch = function(robotNames, callback){
 			if(typeof callback === 'function')
 				callback(that.robotModel);
 		}
-	}, { auto: true });
+	});
 	this.subscriptions.push(subs);
 };
 
@@ -296,6 +296,7 @@ Status.prototype.closeSubscriptions = function(){
 		this.subscriptions[i].close();
 	}
 	this.subscriptions =[];
+	this.robotModel = [];
 };
 
 
@@ -332,7 +333,6 @@ Status.prototype.getData = function(callback, dataConfig){
 		dataModel = that._getDataModelFromRecv(data);
 
 		Logger.log(that.getDataModel());
-
 		callback = callback.bind(that); // bind callback with Status
 		callback(dataModel); // callback func
 	});
@@ -348,7 +348,6 @@ Status.prototype._getRobotModelFromRecv2 = function(data){
 	var robot;
 	var dataRobots = data.robots;
 	var dataParts = data.partList;
-
 	if(!this.robotModel)
 		this.robotModel = [];
 	// console.log("_getRobotModelFromRecv");
