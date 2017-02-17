@@ -267,6 +267,9 @@ Peer.prototype._createPeer = function(data){
 	peer.setRemoteDescription(new RTCSessionDescription({sdp: data.sdp, type: data.type}));
 
 	peer.createAnswer(function(session_description){
+		//favor VP9 instead of VP8
+		session_description.sdp = session_description.sdp.replace(/SAVPF 100 101/g, 'SAVPF 101 100');
+
 		peer.setLocalDescription(session_description);
 
 		that.dn.request({
