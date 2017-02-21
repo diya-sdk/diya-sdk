@@ -16,7 +16,9 @@
     "inherits": "2.0.3",
     "base-64": "0.1.0",
     "r": "0.0.5",
-    "webrtc-adapter": "1.1.0"
+    "webrtc-adapter": "1.1.0",
+    "q": "1.4.1",
+    "json-socket": "0.2.1"
   },
   "devDependencies": {
     "browserify": "^5.12.0",
