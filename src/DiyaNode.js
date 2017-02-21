@@ -716,7 +716,8 @@ DiyaNode.prototype._createMessage = function(params, type){
 		target: params.target,
 		func: params.func,
 		obj: params.obj,
-		data: params.data
+		data: params.data,
+		bus: params.bus,
 	};
 };
 
