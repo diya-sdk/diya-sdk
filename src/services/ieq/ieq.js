@@ -398,7 +398,7 @@ IEQ.prototype.getHeatMapData = function(sensorNames,time, callback){
 	//var endParse = new Date(endEpoch);
 	var dataConfig = {
 		criteria: {
-			time: {start: time.startEpoch, end: time.endEpoch, sampling: 'hour'}, // 360h -> 15d // 180h -> 7j
+			time: {start: time.startEpoch, end: time.endEpoch, sampling: 'minute'}, // 360h -> 15d // 180h -> 7j
 			places: [],
 			robots: []
 		},
