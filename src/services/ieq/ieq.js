@@ -393,12 +393,12 @@ IEQ.prototype.getCSVData = function(sensorNames,_firstDay,callback){
 };
 
 
-IEQ.prototype.getHeatMapData = function(sensorNames,time, callback){
+IEQ.prototype.getHeatMapData = function(sensorNames,time, sample, callback){
 	//var startParse = new Date(startEpoch);
 	//var endParse = new Date(endEpoch);
 	var dataConfig = {
 		criteria: {
-			time: {start: time.startEpoch, end: time.endEpoch, sampling: 'minute'}, // 360h -> 15d // 180h -> 7j
+			time: {start: time.startEpoch, end: time.endEpoch, sampling: sample}, // 360h -> 15d // 180h -> 7j
 			places: [],
 			robots: []
 		},
