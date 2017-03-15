@@ -261,7 +261,7 @@ IEQ.prototype.getDataByName = function(sensorNames){
 
 
 
-IEQ.prototype.updateData = function(callback, dataConfig){
+IEQ.prototype.updateData = function(callback, funcName, dataConfig){
 	var that=this;
 
 	if(dataConfig)
@@ -269,7 +269,7 @@ IEQ.prototype.updateData = function(callback, dataConfig){
 	// console.log("Request: "+JSON.stringify(dataConfig));
 	this.selector.request({
 		service: "ieq",
-		func: "DataRequest",
+		func: funcName,
 		data: {
 			type:"splReq",
 			dataConfig: that.dataConfig
@@ -379,30 +379,31 @@ IEQ.prototype.closeSubscriptions = function(){
 /**
  * request Data to make CSV file
  */
-IEQ.prototype.getCSVData = function(sensorNames,_firstDay,callback){
+IEQ.prototype.getCSVData = function(sensorNames,_firstDay, timeSample ,_nlines, callback){
 	var firstDay = new Date(_firstDay);
 	var dataConfig = {
 		criteria: {
-			time: { start: firstDay.getTime(), rangeUnit: 'hour', range: 180}, // 360h -> 15d // 180h -> 7j
+			time: { start: firstDay.getTime(), rangeUnit: 'hour', range: 180, sampling: timeSample}, // 360h -> 15d // 180h -> 7j
 			places: [],
-			robots: []
+			robots: [],
 		},
-		sensors: sensorNames
+		sensors: sensorNames,
+		sampling: _nlines
 	};
-	this.updateData(callback, dataConfig);
+	this.updateData(callback,"DataRequest", dataConfig);
 };
 
 
 IEQ.prototype.getHeatMapData = function(sensorNames,time, sample, callback){
 	var dataConfig = {
 		criteria: {
-			time: {start: time.startEpoch, end: time.endEpoch, sampling: sample}, 
+			time: {start: time.startEpoch, end: time.endEpoch, sampling: sample},
 			places: [],
 			robots: []
 		},
 		sensors: sensorNames
 	};
-	this.updateData(callback, dataConfig);
+	this.updateData(callback,"DataRequest", dataConfig);
 };
 
 /**
