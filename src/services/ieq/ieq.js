@@ -250,26 +250,34 @@ IEQ.prototype.getDataByName = function(sensorNames){
 	}
 	return data;
 };
+
 /**
  * Update data given dataConfig.
  * @param {func} callback : called after update
+ * @param {object} dataConfig: data to config request
  * TODO USE PROMISE
  */
 
-
-
-
-
-
 IEQ.prototype.updateData = function(callback, dataConfig){
-	var that=this;
+	this._updateData(callback, dataConfig, "DataRequest")
+};
 
+/**
+ * Update data given dataConfig.
+ * @param {func} callback : called after update
+ * @param {object} dataConfig: data to config request
+ * @param {string} funcName: name of requested function in diya-node-ieq. Default: "DataRequest".
+ * TODO USE PROMISE
+ */
+
+IEQ.prototype._updateData = function(callback, dataConfig, funcName){
+	var that = this;
 	if(dataConfig)
 		this.DataConfig(dataConfig);
 	// console.log("Request: "+JSON.stringify(dataConfig));
 	this.selector.request({
 		service: "ieq",
-		func: "DataRequest",
+		func: funcName,
 		data: {
 			type:"splReq",
 			dataConfig: that.dataConfig
@@ -286,9 +294,7 @@ IEQ.prototype.updateData = function(callback, dataConfig){
 			return;
 		}
 		that._getDataModelFromRecv(data);
-
 		// Logger.log(that.getDataModel());
-
 		callback = callback.bind(that); // bind callback with IEQ
 		callback(that.getDataModel()); // callback func
 	});
@@ -377,32 +383,49 @@ IEQ.prototype.closeSubscriptions = function(){
 };
 
 /**
- * request Data to make CSV file
- */
-IEQ.prototype.getCSVData = function(sensorNames,_firstDay,callback){
+* Request Data to make CSV file
+	* @param {list} sensorNames : list of sensor and index names
+	* @param {number} _firstDay: timestamp of beginning time
+  	* @param {string} timeSample: timeinterval for data. Parameters: "second", "minute", "hour", "day", "week", "month"
+	* @param {number} _nlines: maximum number of lines requested
+	* @param {callback} callback: called after update
+*/
+
+
+IEQ.prototype.getCSVData = function(sensorNames,_firstDay, timeSample ,_nlines, callback){
+	console.log(_firstDay, typeof _firstDay)
 	var firstDay = new Date(_firstDay);
 	var dataConfig = {
 		criteria: {
-			time: { start: firstDay.getTime(), rangeUnit: 'hour', range: 180}, // 360h -> 15d // 180h -> 7j
+			time: { start: firstDay.getTime(), rangeUnit: 'hour', range: 180, sampling: timeSample}, // 360h -> 15d // 180h -> 7j
 			places: [],
-			robots: []
+			robots: [],
 		},
-		sensors: sensorNames
+		sensors: sensorNames,
+		sampling: _nlines
 	};
-	this.updateData(callback, dataConfig);
+	this._updateData(callback, dataConfig,"DataRequest");
 };
+
+/**
+ * Request Data to make heatmap
+  * @param {list} sensorNames : list of sensor and index names
+  * @param {object} time: object containing timestamps for begin and end of data for heatmap
+  * @param {string} sample: timeinterval for data. Parameters: "second", "minute", "hour", "day", "week", "month"
+  * @param {callback} callback: called after update
+  */
 
 
 IEQ.prototype.getHeatMapData = function(sensorNames,time, sample, callback){
 	var dataConfig = {
 		criteria: {
-			time: {start: time.startEpoch, end: time.endEpoch, sampling: sample}, 
+			time: {start: time.startEpoch, end: time.endEpoch, sampling: sample},
 			places: [],
 			robots: []
 		},
 		sensors: sensorNames
 	};
-	this.updateData(callback, dataConfig);
+	this._updateData(callback, dataConfig,"DataRequest");
 };
 
 /**
