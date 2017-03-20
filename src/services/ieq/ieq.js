@@ -283,11 +283,12 @@ IEQ.prototype._updateData = function(callback, dataConfig, funcName){
 			dataConfig: that.dataConfig
 		}
 	}, function(dnId, err, data){
-
 		if(err) {
 			if (that.dataConfig && that.dataConfig.sensors) Logger.error("["+that.dataConfig.sensors+"] Recv err: "+JSON.stringify(err));
-			else Logger.error(err);
-			callback('', 'err1');
+			if (typeof err == "object" && typeof err.name =='string' && typeof err.error =='string') {
+				callback(null, err.name);
+				Logger.error(err.error);
+			}
 			return;
 		}
 		if(data.header.error) {
@@ -396,7 +397,6 @@ IEQ.prototype.closeSubscriptions = function(){
 
 
 IEQ.prototype.getCSVData = function(sensorNames,_firstDay, timeSample ,_nlines, callback){
-	console.log(_firstDay, typeof _firstDay)
 	var firstDay = new Date(_firstDay);
 	var dataConfig = {
 		criteria: {
