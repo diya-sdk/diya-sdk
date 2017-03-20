@@ -284,10 +284,10 @@ IEQ.prototype._updateData = function(callback, dataConfig, funcName){
 		}
 	}, function(dnId, err, data){
 		if(err) {
-			if (that.dataConfig && that.dataConfig.sensors) Logger.error("["+that.dataConfig.sensors+"] Recv err: "+JSON.stringify(err));
-			if (typeof err == "object" && typeof err.name =='string' && typeof err.message =='string') {
+			if (typeof err =="string") Logger.error("Recv err: "+ err);
+			else if (typeof err == "object" && typeof err.name =='string') {
 				callback(null, err.name);
-				Logger.error(err.message);
+				if (typeof err.message=="string") Logger.error(err.message);
 			}
 			return;
 		}
