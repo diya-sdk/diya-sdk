@@ -291,7 +291,7 @@ IEQ.prototype._updateData = function(callback, dataConfig, funcName){
 			}
 			return;
 		}
-		if(data.header.error) {
+		if(data && data.header && data.header.error) {
 			// TODO : check/use err status and adapt behavior accordingly
 			Logger.error("UpdateData:\n"+JSON.stringify(data.header.dataConfig));
 			Logger.error("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
@@ -299,7 +299,6 @@ IEQ.prototype._updateData = function(callback, dataConfig, funcName){
 		}
 		that._getDataModelFromRecv(data);
 		// Logger.log(that.getDataModel());
-		callback = callback.bind(that); // bind callback with IEQ
 		callback(that.getDataModel()); // callback func
 	});
 };
@@ -397,18 +396,51 @@ IEQ.prototype.closeSubscriptions = function(){
 
 
 IEQ.prototype.getCSVData = function(sensorNames,_firstDay, timeSample ,_nlines, callback){
+	var that = this;
 	var firstDay = new Date(_firstDay);
 	var dataConfig = {
 		criteria: {
 			time: { start: firstDay.getTime(), rangeUnit: 'hour', range: 180, sampling: timeSample}, // 360h -> 15d // 180h -> 7j
 			places: [],
-			robots: [],
+			robots: []
 		},
 		sensors: sensorNames,
 		sampling: _nlines
 	};
 
-	this._updateData(callback, dataConfig,"CsvDataRequest");
+	// console.log("Request: "+JSON.stringify(dataConfig));
+	this.selector.request({
+		service: "ieq",
+		func: "CsvDataRequest",
+		data: {
+			type:"splReq",
+			dataConfig: dataConfig
+		}
+	}, function(dnId, err, data){
+		if(err) {
+			if (typeof err =="string") Logger.error("Recv err: "+ err);
+			else if (typeof err == "object" && typeof err.name =='string') {
+				callback(null, err.name);
+				if (typeof err.message=="string") Logger.error(err.message);
+			}
+			return;
+		}
+		if(typeof data === 'string') {
+			callback(data);
+		}
+		else {
+			// DEPRECATED
+			if(data && data.header && data.header.error) {
+			// TODO : check/use err status and adapt behavior accordingly
+			Logger.error("UpdateData:\n"+JSON.stringify(data.header.dataConfig));
+			Logger.error("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
+				return;
+			}
+			that._getDataModelFromRecv(data);
+			// Logger.log(that.getDataModel());
+			callback(that.getDataModel()); // callback func
+		}
+	});
 };
 
 /**
