@@ -284,7 +284,11 @@ IEQ.prototype._updateData = function(callback, dataConfig, funcName){
 		}
 	}, function(dnId, err, data){
 		if(err) {
-			Logger.error("["+that.dataConfig.sensors+"] Recv err: "+JSON.stringify(err));
+			if (typeof err =="string") Logger.error("Recv err: "+ err);
+			else if (typeof err == "object" && typeof err.name =='string') {
+				callback(null, err.name);
+				if (typeof err.message=="string") Logger.error(err.message);
+			}
 			return;
 		}
 		if(data.header.error) {
@@ -393,7 +397,6 @@ IEQ.prototype.closeSubscriptions = function(){
 
 
 IEQ.prototype.getCSVData = function(sensorNames,_firstDay, timeSample ,_nlines, callback){
-	console.log(_firstDay, typeof _firstDay)
 	var firstDay = new Date(_firstDay);
 	var dataConfig = {
 		criteria: {
@@ -404,7 +407,8 @@ IEQ.prototype.getCSVData = function(sensorNames,_firstDay, timeSample ,_nlines, 
 		sensors: sensorNames,
 		sampling: _nlines
 	};
-	this._updateData(callback, dataConfig,"DataRequest");
+
+	this._updateData(callback, dataConfig,"CsvDataRequest");
 };
 
 /**
