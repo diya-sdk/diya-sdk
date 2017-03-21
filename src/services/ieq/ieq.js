@@ -395,12 +395,13 @@ IEQ.prototype.closeSubscriptions = function(){
 */
 
 
-IEQ.prototype.getCSVData = function(sensorNames,_firstDay, timeSample ,_nlines, callback){
+IEQ.prototype.getCSVData = function(sensorNames,_startTime,_endTime, timeSample ,_nlines, callback){
 	var that = this;
-	var firstDay = new Date(_firstDay);
+	var startTime = new Date(_startTime);
+	var endTime = new Date(_endTime)
 	var dataConfig = {
 		criteria: {
-			time: { start: firstDay.getTime(), rangeUnit: 'hour', range: 180, sampling: timeSample}, // 360h -> 15d // 180h -> 7j
+			time: { start: startTime.getTime(), end: endTime.getTime() , rangeUnit: 'hour', sampling: timeSample},
 			places: [],
 			robots: []
 		},
