@@ -388,7 +388,8 @@ IEQ.prototype.closeSubscriptions = function(){
 /**
 * Request Data to make CSV file
 	* @param {list} sensorNames : list of sensor and index names
-	* @param {number} _firstDay: timestamp of beginning time
+	* @param {number} _startTime: timestamp of beginning time
+	* @param {number} _endTime: timestamp of end time
   	* @param {string} timeSample: timeinterval for data. Parameters: "second", "minute", "hour", "day", "week", "month"
 	* @param {number} _nlines: maximum number of lines requested
 	* @param {callback} callback: called after update
@@ -397,11 +398,9 @@ IEQ.prototype.closeSubscriptions = function(){
 
 IEQ.prototype.getCSVData = function(sensorNames,_startTime,_endTime, timeSample ,_nlines, callback){
 	var that = this;
-	var startTime = new Date(_startTime);
-	var endTime = new Date(_endTime)
 	var dataConfig = {
 		criteria: {
-			time: { start: startTime.getTime(), end: endTime.getTime() , rangeUnit: 'hour', sampling: timeSample},
+			time: { start: _startTime, end: _endTime , sampling: timeSample},
 			places: [],
 			robots: []
 		},
