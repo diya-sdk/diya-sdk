@@ -387,25 +387,29 @@ IEQ.prototype.closeSubscriptions = function(){
 
 /**
 * Request Data to make CSV file
-	* @param {list} sensorNames : list of sensor and index names
-	* @param {number} _firstDay: timestamp of beginning time
-  	* @param {string} timeSample: timeinterval for data. Parameters: "second", "minute", "hour", "day", "week", "month"
-	* @param {number} _nlines: maximum number of lines requested
+	* @param {object} csvConfig params:
+	* @param {list} csvConfig.sensorNames : list of sensor and index names
+	* @param {number} csvConfig._startTime: timestamp of beginning time
+	* @param {number} csvConfig._endTime: timestamp of end time
+	* @param {string} csvConfig.timeSample: timeinterval for data. Parameters: "second", "minute", "hour", "day", "week", "month"
+	* @param {number} csvConfig._nlines: maximum number of lines requested
 	* @param {callback} callback: called after update
 */
 
 
-IEQ.prototype.getCSVData = function(sensorNames,_firstDay, timeSample ,_nlines, callback){
+IEQ.prototype.getCSVData = function(csvConfig, callback){
 	var that = this;
-	var firstDay = new Date(_firstDay);
+
+	if (csvConfig && typeof csvConfig.nlines !="number" ) csvConfig.nlines = undefined;
+
 	var dataConfig = {
 		criteria: {
-			time: { start: firstDay.getTime(), rangeUnit: 'hour', range: 180, sampling: timeSample}, // 360h -> 15d // 180h -> 7j
+			time: { start: (new Date(csvConfig.startTime)).getTime(), end: (new Date(csvConfig.endTime)).getTime() , sampling:csvConfig.timeSample},
 			places: [],
 			robots: []
 		},
-		sensors: sensorNames,
-		sampling: _nlines
+		sensors: csvConfig.sensorNames,
+		sampling: csvConfig.nlines
 	};
 
 	// console.log("Request: "+JSON.stringify(dataConfig));
