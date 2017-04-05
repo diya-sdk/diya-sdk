@@ -1,11 +1,12 @@
 {
   "name": "diya-sdk",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "SDK for accessing Diya One services",
   "main": "src/diya-sdk.js",
   "scripts": {
     "build-debug": "browserify src/diya-sdk.js --exclude q --im -d --s d1 > build/diya-sdk.js",
-    "build-min": "browserify src/diya-sdk.js --exclude q --im --s d1 | uglifyjs -c > build/diya-sdk.min.js",
+    "build-min": "browserify src/diya-sdk.js --exclude q --im --s d1 > build/temp.js && babel build/temp.js -d build && uglifyjs build/build/temp.js -c > build/diya-sdk.min.js && rm build/temp.js && rm -rf build/build",
+    "build-min-old": "browserify src/diya-sdk.js --exclude q --im --s d1 | uglifyjs -c > build/diya-sdk.min.js",
     "build": "npm run build-debug && npm run build-min",
     "watch": "watchify src/diya-sdk.js -d --exclude q --im --s d1 -o build/diya-sdk.js -v"
   },
@@ -13,14 +14,21 @@
   "license": "MIT",
   "dependencies": {
     "node-event-emitter": "0.0.1",
-    "inherits": "~2.0.1",
-    "base-64": "^0.1.0",
+    "inherits": "2.0.3",
+    "base-64": "0.1.0",
     "r": "0.0.5",
-    "webrtc-adapter": "~1.1.0"
+    "webrtc-adapter": "1.1.0",
+    "q": "1.4.1",
+    "json-socket": "0.2.1"
   },
   "devDependencies": {
+    "babel-cli": "^6.24.0",
+    "babel-preset-latest": "^6.24.0",
     "browserify": "^5.12.0",
     "uglify-js": "^2.4.15",
     "watchify": "^1.0.5"
+},
+  "babel": {
+      "presets": ["latest"]
   }
 }

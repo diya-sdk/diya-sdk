@@ -57,7 +57,6 @@ d1.installNodeExt = function(ip, user, password, bootstrap_ip, bootstrap_user, b
 	if(typeof bootstrap_ip !== 'string') throw "[installNode] bootstrap_ip should be an IP address";
 	if(typeof bootstrap_net !== 'string') throw "[installNode] bootstrap_net should be an IP address";
 
-
 	// Check and Format URI (FQDN)
 	if(bootstrap_ip.indexOf("ws://") !== 0 && bootstrap_ip.indexOf("wss://") !== 0) {
 		if(d1.isSecured()) bootstrap_ip = "wss://" + bootstrap_ip;
@@ -86,25 +85,27 @@ d1.installNodeExt = function(ip, user, password, bootstrap_ip, bootstrap_user, b
 			}
 			else if(err) return callback(peer, null, err, null);
 			else {
-				INFO("Add trusted peer " + peer + "(ip=" + ip + ") to " + bootstrap_ip + " with public key " + data.public_key.slice(0,20));
+				INFO("Add trusted peer '" + peer + "' (ip=" + ip + ") to '" + bootstrap_ip + "' with public key\n" + data.public_key)
 				d1.connectAsUser(bootstrap_ip, bootstrap_user, bootstrap_password).then(function(){
-					d1("#self").addTrustedPeer(peer, data.public_key, function(bootstrap_peer, err, data) {
+					d1("#self").addTrustedPeer(peer, data.public_key, function(bootstrap_peer, err, [alreadyTrusted, public_key]) {
 
 						if(err) return callback(peer, bootstrap_peer, err, null);
-						if(data.alreadyTrusted) INFO(peer + " already trusted by " + bootstrap_peer);
+						if(alreadyTrusted) INFO(peer + " already trusted by " + bootstrap_peer);
 						else INFO(bootstrap_peer + "(ip="+ bootstrap_ip +") added " + peer + "(ip=" + ip + ") as a Trusted Peer");
 
-						INFO("In return, add " + bootstrap_peer + " to " + peer + " as a Trusted Peer with public key " + data.public_key.slice(0,20));
-						d1.connectAsUser(ip, user, password).then(function(){
-							d1("#self").addTrustedPeer(bootstrap_peer, data.public_key, function(peer, err, data) {
-								if(err) callback(peer, bootstrap_peer, err, null);
-								else if(data.alreadyTrusted) INFO(bootstrap_peer + " already trusted by " + peer);
-								else INFO(peer + "(ip="+ ip +") added " + bootstrap_peer + "(ip="+ bootstrap_ip +") as a Trusted Peer");
-								// Once Keys have been exchanged ask to join the network
-								OK("KEYS OK ! Now, let "+peer+"(ip="+ip+") join the network via "+bootstrap_peer+"(ip="+bootstrap_net+") ...");
-								return join(peer, bootstrap_peer);
+						d1('#self').givePublicKey(function(_, err, data) {
+							INFO("In return, add " + bootstrap_peer + " to " + peer + " as a Trusted Peer with public key " + data.public_key)
+							d1.connectAsUser(ip, user, password).then(function(){
+								d1("#self").addTrustedPeer(bootstrap_peer, data.public_key, function(peer, err, [alreadyTrusted, public_key]) {
+									if(err) callback(peer, bootstrap_peer, err, null);
+									else if(alreadyTrusted) INFO(bootstrap_peer + " already trusted by " + peer);
+									else INFO(peer + "(ip="+ ip +") added " + bootstrap_peer + "(ip="+ bootstrap_ip +") as a Trusted Peer");
+									// Once Keys have been exchanged ask to join the network
+									OK("KEYS OK ! Now, let "+peer+"(ip="+ip+") join the network via "+bootstrap_peer+"(ip="+bootstrap_net+") ...");
+									return join(peer, bootstrap_peer);
+								});
 							});
-						});
+						})
 					});
 				});
 			}
@@ -120,6 +121,9 @@ d1.installNode = function(bootstrap_ip, bootstrap_net, callback) {
 		var password = d1.pass();
 		var bootstrap_user = user;
 		var bootstrap_password = password;
+
+		console.log (`[installNode]\nip:${ip}`)
+
 		return d1.installNodeExt(ip, user, password, bootstrap_ip, bootstrap_user, bootstrap_password, bootstrap_net, callback);
 }
 
@@ -133,17 +137,29 @@ d1.installNode = function(bootstrap_ip, bootstrap_net, callback) {
  * NOTE : This operation requires root role
  *
  * @param bootstrap_ips : an array of bootstrap IP addresses to contact to join the Network
- * @param bPermanent : if true, permanently add the bootstrap peers as automatic bootstrap peers for the selected nodes.
+ * @param permanent : if true, permanently add the bootstrap peers as automatic bootstrap peers for the selected nodes.
  *
  */
-DiyaSelector.prototype.join = function(bootstrap_ips, bPermanent, callback){
-	if(typeof bootstrap_ips === 'string') bootstrap_ips = [ bootstrap_ips ];
-	if(bootstrap_ips.constructor !== Array) throw "join() : bootstrap_ips should be an array of peers URIs";
-	this.request(
-		{service : 'meshNetwork', func: 'Join', data: { bootstrap_ips: bootstrap_ips, bPermanent: bPermanent }},
-		function(peerId, err, data) { if(typeof callback === "function") callback(peerId, err, data);}
-	);
-};
+DiyaSelector.prototype.join = function(bootstrap_ips, permanent, callback) {
+	if(typeof bootstrap_ips === 'string') bootstrap_ips = [ bootstrap_ips ]
+
+	if(bootstrap_ips.constructor !== Array)
+		throw "join() : bootstrap_ips should be an array of peers URIs"
+
+	this.request({
+		service : 'meshNetwork',
+		func: 'Join',
+		data: {
+			bootstrap_ips,
+			permanent
+		}
+	},
+		function(peerId, err, data) {
+			if (typeof callback === "function")
+				callback(peerId, err, data)
+		}
+	)
+}
 
 
 /**
@@ -179,14 +195,23 @@ DiyaSelector.prototype.givePublicKey = function(callback){
  * Add a new trusted peer RSA public key to the selected DiyaNodes
  * NOTE : This operation requires root role
  *
- * @param name : the name of the new trusted DiyaNode peer
+ * @param peer_name : the name of the new trusted DiyaNode peer
  * @param public_key : the RSA public key of the new trusted DiyaNode peer
  */
-DiyaSelector.prototype.addTrustedPeer = function(name, public_key, callback){
-	return this.request({ service: 'peerAuth',	func: 'AddTrustedPeer',	data: { name: name, public_key: public_key }},
-		function(peerId,err,data){callback(peerId,err,data);}
-	);
-};
+DiyaSelector.prototype.addTrustedPeer = function(name, public_key, callback) {
+	return this.request({
+		service: 'peerAuth',
+		func: 'AddTrustedPeer',
+		data: {
+			peer_name: name,
+			public_key: public_key
+		}
+	},
+		function (peerId,err,data) {
+			callback (peerId,err,data)
+		}
+	)
+}
 
 
 /**
