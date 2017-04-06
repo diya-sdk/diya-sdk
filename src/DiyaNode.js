@@ -20,7 +20,7 @@
 
 var isBrowser = !(typeof window === 'undefined');
 if(!isBrowser) {
-	var Q = require('q'); 
+	var Q = require('q');
 	const UNIXSocketHandler = require('./UNIXSocketHandler')
 }
 else { var Q = window.Q; }
