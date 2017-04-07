@@ -268,6 +268,8 @@ Peer.prototype._createPeer = function(data){
 		mandatory: {DtlsSrtpKeyAgreement: true, OfferToReceiveAudio: true, OfferToReceiveVideo:true}
 	}
 	
+	this._peerId = data.peerId;
+
 	var peer = new RTCPeerConnection(config,  constraints);
 	this.peer = peer;
 
@@ -363,6 +365,16 @@ Peer.prototype.removeStream = function(stream) {
 
 Peer.prototype.close = function(){
 	if(this.subscription) this.subscription.close();
+	this.dn.request({
+		service: "rtc",
+		func: "Close",
+		data: {
+			peerId: this._peerId,
+			promID: this.id
+		}
+	}, function(peerId, err, data) {
+	
+	});
 	clearTimeout(this._timeoutId);
 	if(this.peer){
 		try{
