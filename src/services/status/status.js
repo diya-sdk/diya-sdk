@@ -269,6 +269,9 @@ Status.prototype.getDataByName = function (sensorNames) {
  * Subscribe to error/status updates
  */
 Status.prototype.watch = function (robotNames, callback) {
+
+	this.selector.setMaxListeners(0);
+	this.selector._connection.setMaxListeners(0)
 	let sendData = [];
 	return Promise.try(_ => {
 		let req = this.selector.request({
@@ -281,49 +284,44 @@ Status.prototype.watch = function (robotNames, callback) {
 			let robotName = ''
 			let robotId = 1
 			for (let objectPath in objData) {
+				
 				if (objData[objectPath]['fr.partnering.Status.Robot']) {
 					robotName = objData[objectPath]['fr.partnering.Status.Robot'].RobotName
 					robotId = objData[objectPath]['fr.partnering.Status.Robot'].RobotId
 				}
 				if (objData[objectPath]['fr.partnering.Status.Part']) {
+
 					let subs = this.selector.subscribe({// subscribes to status changes for all parts
 						service: 'status',
 						func: 'CurrentStatusChanged',
 						obj: {
 							interface: 'fr.partnering.Status.Part',
 							path: objectPath
-						}
+						},
+						data: robotNames
 					}, (peerId, err, data) => {
-						//console.log(data);
 						if (err) {
-							Logger.error("StatusSubscribe:" + err);
-							this.closeSubscriptions(); // should not be necessary
-							this.subscriptionReqPeriod = this.subscriptionReqPeriod + 1000 || 1000; // increase delay by 1 sec
-							if (this.subscriptionReqPeriod > 60000) this.subscriptionReqPeriod = 60000; // max 1min
-							setTimeout(_ => { this.watch(data, callback); }, this.subscriptionReqPeriod); // try again later
-							return;
+							Logger.error("StatusSubscribe:" + (err ? err : "") + "\n" + (data && data.err ? data.err : ""));
+						} else {
+							// Converts dbus signal 'CurrentStatusChanged' data to robotModel container 
+							sendData.push(data)
+							this._getRobotModelFromRecv2(sendData, robotId, robotName);
+							if (typeof callback === 'function')
+								callback(this.robotModel);
 						}
-						this.subscriptionReqPeriod = 0; // reset period on subscription requests
-						//if (data && data.err && data.err.st) {
-						//	Logger.error("WatchStatusErr:" + JSON.stringify(data.err));
-						//} else {
-
-						// Converts dbus signal 'CurrentStatusChanged' data to model container 
-
-						sendData.push(data)
-
-						this._getRobotModelFromRecv2(sendData, robotId, robotName);
-
-						if (typeof callback === 'function')
-							callback(this.robotModel);
-					});
+					}, { auto: true });
 					this.subscriptions.push(subs);
 				}
 			}
+			this.getAllStatuses(robotName, function (model) {
+				callback(model)
+			})
 		})
 	}).catch(err => {
 		Logger.error(err)
 	})
+
+
 };
 
 /**
@@ -386,7 +384,6 @@ Status.prototype.getData = function (callback, dataConfig) {
  * @return {[type]}		[description]
  */
 Status.prototype._getRobotModelFromRecv2 = function (data, robotId, robotName) {
-
 	if (!this.robotModel)
 		this.robotModel = [];
 
@@ -426,7 +423,7 @@ Status.prototype._getRobotModelFromRecv2 = function (data, robotId, robotName) {
 		/* update part category */
 		rParts[partId].category = category;
 		/* update part name */
-		rParts[partId].name = partName;
+		rParts[partId].name = partName.toLowerCase();
 		/* update part label */
 		rParts[partId].label = label;
 
@@ -472,95 +469,6 @@ Status.prototype._getRobotModelFromRecv2 = function (data, robotId, robotName) {
 			}];
 		}
 	})
-};
-
-// NOT USED
-/**
- * Update internal robot model with received data
- * @param  {Object} data data received from DiyaNode by websocket
- * @return {[type]}		[description]
- */
-Status.prototype._getRobotModelFromRecv = function (data) {
-	var robot;
-
-	if (!this.robotModel)
-		this.robotModel = [];
-	// console.log("_getRobotModelFromRecv");
-	// console.log(this.robotModel);
-
-	/** Only one robot is manage at the same time currently **/
-	for (var n in data) {
-		if (!this.robotModel[n])
-			this.robotModel[n] = {};
-		this.robotModel[n].robot = data[n].robot;
-
-		// if(this.robotModel.length<data.length) {
-		// 	this.robotModel.push({robot: data[0].robots});
-		// }
-
-		/** extract parts info **/
-		if (data[n] && data[n].parts) {
-			if (!this.robotModel[n].parts)
-				this.robotModel[n].parts = {};
-			var parts = data[n].parts;
-			var rParts = this.robotModel[n].parts;
-			for (var q in rParts) {
-				/** part[q] was not sent because no error **/
-				if (!parts[q]
-					&& rParts[q].evts && rParts[q].evts.code) {
-					rParts[q].evts = {
-						code: [0],
-						codeRef: [0],
-						time: [Date.now()] /** update **/
-					};
-				}
-			}
-			for (var p in parts) {
-				if (parts[p] && parts[p].err && parts[p].err.st > 0) {
-					Logger.error("Parts " + p + " was in error: " + data[p].err.msg);
-					continue;
-				}
-				if (!rParts[p]) {
-					rParts[p] = {};
-				}
-				if (parts[p]) {
-					// Logger.log(n);
-					/* update part category */
-					rParts[p].category = parts[p].category;
-					/* update part name */
-					rParts[p].name = parts[p].name;
-					/* update part label */
-					rParts[p].label = parts[p].label;
-					/* update error time */
-					// console.log(parts[p]);
-					// console.log(parts[p].errors.time);
-					// console.log(rParts[p].time);
-					/* update error */
-					// console.log(parts[p].errors.code);
-
-					/** update errorList **/
-					if (!rParts[p].errorList)
-						rParts[p].errorList = {};
-					for (var el in parts[p].errorList)
-						if (!rParts[p].errorList[el])
-							rParts[p].errorList[el] = parts[p].errorList[el];
-
-					rParts[p].evts = {
-						code: this._coder.from(parts[p].evts.code),
-						codeRef: this._coder.from(parts[p].evts.codeRef),
-						time: this._coder.from(parts[p].evts.time)
-					};
-				}
-				// console.log(rParts[p].error);
-			}
-			// console.log('parts, rParts');
-			// console.log(parts);
-			// console.log(rParts);
-		}
-		else {
-			Logger.error("No parts to read for robot " + data[n].name);
-		}
-	}
 };
 
 /** create Status service **/

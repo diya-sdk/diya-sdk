@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "description": "SDK for accessing Diya One services",
   "main": "src/diya-sdk.js",
-    "scripts": {
+  "scripts": {
     "build-debug": "browserify src/diya-sdk.js --exclude q --exclude json-socket --exclude UNIXSocketHandler --im -d --s d1 > build/diya-sdk.js",
     "build-min": "browserify src/diya-sdk.js --exclude q --im --s d1 > build/temp.js && babel build/temp.js -d build && uglifyjs build/build/temp.js -c > build/diya-sdk.min.js",
     "build": "npm run build-debug && npm run build-min",
@@ -26,8 +26,10 @@
     "browserify": "14.1.0",
     "uglify-js": "^2.4.15",
     "watchify": "3.9.0"
-},
+  },
   "babel": {
-      "presets": ["latest"]
+    "presets": [
+      "latest"
+    ]
   }
 }
