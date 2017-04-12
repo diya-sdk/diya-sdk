@@ -269,10 +269,10 @@ Status.prototype.getDataByName = function (sensorNames) {
  * Subscribe to error/status updates
  */
 Status.prototype.watch = function (robotNames, callback) {
-
 	this.selector.setMaxListeners(0);
-	this.selector._connection.setMaxListeners(0)
+	this.selector._connection.setMaxListeners(0);
 	let sendData = [];
+	let robotIds = [];
 	return Promise.try(_ => {
 		let req = this.selector.request({
 			service: 'status',
@@ -281,16 +281,18 @@ Status.prototype.watch = function (robotNames, callback) {
 				interface: 'org.freedesktop.DBus.ObjectManager',
 			}
 		}, (peerId, err, objData) => { // get all object paths, interfaces and properties children of Status
-			let robotName = ''
-			let robotId = 1
+			let robotName = '';
+			let robotId = 1;
 			for (let objectPath in objData) {
-				
 				if (objData[objectPath]['fr.partnering.Status.Robot']) {
-					robotName = objData[objectPath]['fr.partnering.Status.Robot'].RobotName
-					robotId = objData[objectPath]['fr.partnering.Status.Robot'].RobotId
+					robotName = objData[objectPath]['fr.partnering.Status.Robot'].RobotName;
+					robotId = objData[objectPath]['fr.partnering.Status.Robot'].RobotId;
+					robotIds[robotName] = robotId;
+					this.getAllStatuses(robotName, function (model) {
+						callback(model);
+					})
 				}
 				if (objData[objectPath]['fr.partnering.Status.Part']) {
-
 					let subs = this.selector.subscribe({// subscribes to status changes for all parts
 						service: 'status',
 						func: 'CurrentStatusChanged',
@@ -301,24 +303,22 @@ Status.prototype.watch = function (robotNames, callback) {
 						data: robotNames
 					}, (peerId, err, data) => {
 						if (err) {
-							Logger.error("StatusSubscribe:" + (err ? err : "") + "\n" + (data && data.err ? data.err : ""));
+							Logger.error("StatusSubscribe:" + err);
 						} else {
-							// Converts dbus signal 'CurrentStatusChanged' data to robotModel container 
-							sendData.push(data)
+							robotName = objectPath.split("/")[5];
+							robotId = robotIds[robotName];
+							sendData[0] = data;
 							this._getRobotModelFromRecv2(sendData, robotId, robotName);
 							if (typeof callback === 'function')
 								callback(this.robotModel);
 						}
-					}, { auto: true });
+					});
 					this.subscriptions.push(subs);
 				}
 			}
-			this.getAllStatuses(robotName, function (model) {
-				callback(model)
-			})
 		})
 	}).catch(err => {
-		Logger.error(err)
+		Logger.error(err);
 	})
 
 
@@ -387,19 +387,17 @@ Status.prototype._getRobotModelFromRecv2 = function (data, robotId, robotName) {
 	if (!this.robotModel)
 		this.robotModel = [];
 
-	for (let n in this.robotModel) {
-		this.robotModel[n].parts = {}; // reset parts
-	}
+	if (this.robotModel[robotId])
+		this.robotModel[robotId].parts = {}; // reset parts
 
 	if (!this.robotModel[robotId])
 		this.robotModel[robotId] = {};
+
 	this.robotModel[robotId] = {
 		robot: {
 			name: robotName
 		}
 	};
-	if (!this.robotModel[robotId].parts)
-		this.robotModel[robotId].parts = {};
 
 	/** extract parts info **/
 	this.robotModel[robotId].parts = {};
