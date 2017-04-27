@@ -21,10 +21,9 @@
 
 
 
-
-DiyaSelector = require('../../DiyaSelector').DiyaSelector;
-EventEmitter = require('node-event-emitter');
-inherits = require('inherits');
+let DiyaSelector = require('../../DiyaSelector').DiyaSelector;
+let EventEmitter = require('node-event-emitter');
+let inherits = require('inherits');
 
 require('webrtc-adapter');
 
