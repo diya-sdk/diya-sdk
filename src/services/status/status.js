@@ -1,3 +1,27 @@
+/*
+ * Copyright : Partnering 3.0 (2007-2016)
+ * Author : Sylvain Mahé <sylvain.mahe@partnering.fr>
+ *
+ * This file is part of diya-sdk.
+ *
+ * diya-sdk is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ *
+ * diya-sdk is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with diya-sdk.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
+
+
+
 /* maya-client
  * Copyright (c) 2014, Partnering Robotics, All rights reserved.
  * This library is free software; you can redistribute it and/or
@@ -13,7 +37,7 @@
 
 var DiyaSelector = require('../../DiyaSelector').DiyaSelector;
 var util = require('util');
-
+const Promise = require('bluebird');
 
 var Message = require('../message');
 
@@ -24,20 +48,19 @@ var Message = require('../message');
 
 var DEBUG = true;
 var Logger = {
-	log: function(message){
-		if(DEBUG) console.log(message);
+	log: function (message) {
+		if (DEBUG) console.log(message);
 	},
 
-	error: function(message){
-		if(DEBUG) console.error(message);
+	error: function (message) {
+		if (DEBUG) console.error(message);
 	}
 };
 
 /**
  *	callback : function called after model updated
  * */
-function Status(selector){
-	var that = this;
+function Status(selector) {
 	this.selector = selector;
 	this._coder = selector.encode();
 	this.subscriptions = [];
@@ -111,7 +134,7 @@ function Status(selector){
  *  }
  * }
  */
-Status.prototype.getRobotModel = function(){
+Status.prototype.getRobotModel = function () {
 	return this.robotModel;
 };
 
@@ -122,14 +145,16 @@ Status.prototype.getRobotModel = function(){
  * else
  *	 @return {Object} current dataConfig
  */
-Status.prototype.DataConfig = function(newDataConfig){
-	if(newDataConfig) {
-		this.dataConfig=newDataConfig;
+Status.prototype.DataConfig = function (newDataConfig) {
+	if (newDataConfig) {
+		this.dataConfig = newDataConfig;
 		return this;
 	}
 	else
 		return this.dataConfig;
 };
+
+// NOT USED ??
 /**
  * TO BE IMPLEMENTED : operator management in DN-Status
  * @param  {String}	 newOperator : {[last], max, moy, sd}
@@ -141,14 +166,16 @@ Status.prototype.DataConfig = function(newDataConfig){
  * Get operator criteria.
  *	@return {String} operator
  */
-Status.prototype.DataOperator = function(newOperator){
-	if(newOperator) {
+Status.prototype.DataOperator = function (newOperator) {
+	if (newOperator) {
 		this.dataConfig.operator = newOperator;
 		return this;
 	}
 	else
 		return this.dataConfig.operator;
 };
+
+// NOT USED ??
 /**
  * Depends on numSamples
  * @param {int} number of samples in dataModel
@@ -157,14 +184,16 @@ Status.prototype.DataOperator = function(newOperator){
  * else
  *	@return {int} number of samples
  **/
-Status.prototype.DataSampling = function(numSamples){
-	if(numSamples) {
+Status.prototype.DataSampling = function (numSamples) {
+	if (numSamples) {
 		this.dataConfig.sampling = numSamples;
 		return this;
 	}
 	else
 		return this.dataConfig.sampling;
 };
+
+// NOT USED ??
 /**
  * Set or get data time criteria beg and end.
  * If param defined
@@ -174,8 +203,8 @@ Status.prototype.DataSampling = function(numSamples){
  * If no param defined:
  *	@return {Object} Time object: fields beg and end.
  */
-Status.prototype.DataTime = function(newTimeBeg,newTimeEnd, newRange){
-	if(newTimeBeg || newTimeEnd || newRange) {
+Status.prototype.DataTime = function (newTimeBeg, newTimeEnd, newRange) {
+	if (newTimeBeg || newTimeEnd || newRange) {
 		this.dataConfig.criteria.time.beg = newTimeBeg.getTime();
 		this.dataConfig.criteria.time.end = newTimeEnd.getTime();
 		this.dataConfig.criteria.time.range = newRange;
@@ -188,6 +217,8 @@ Status.prototype.DataTime = function(newTimeBeg,newTimeEnd, newRange){
 			range: new Date(this.dataConfig.criteria.time.range)
 		};
 };
+
+// NOT USED ??
 /**
  * Depends on robotIds
  * Set robot criteria.
@@ -195,14 +226,16 @@ Status.prototype.DataTime = function(newTimeBeg,newTimeEnd, newRange){
  * Get robot criteria.
  *	@return {Array[Int]} list of robot Ids
  */
-Status.prototype.DataRobotIds = function(robotIds){
-	if(robotIds) {
+Status.prototype.DataRobotIds = function (robotIds) {
+	if (robotIds) {
 		this.dataConfig.criteria.robot = robotIds;
 		return this;
 	}
 	else
 		return this.dataConfig.criteria.robot;
 };
+
+// NOT USED ??
 /**
  * Depends on placeIds // not relevant?, not implemented yet
  * Set place criteria.
@@ -210,21 +243,23 @@ Status.prototype.DataRobotIds = function(robotIds){
  * Get place criteria.
  *	@return {Array[Int]} list of place Ids
  */
-Status.prototype.DataPlaceIds = function(placeIds){
-	if(placeIds) {
+Status.prototype.DataPlaceIds = function (placeIds) {
+	if (placeIds) {
 		this.dataConfig.criteria.placeId = placeIds;
 		return this;
 	}
 	else
 		return this.dataConfig.criteria.place;
 };
+
+// NOT USED
 /**
  * Get data by sensor name.
  *	@param {Array[String]} sensorName list of sensors
  */
-Status.prototype.getDataByName = function(sensorNames){
-	var data=[];
-	for(var n in sensorNames) {
+Status.prototype.getDataByName = function (sensorNames) {
+	var data = [];
+	for (var n in sensorNames) {
 		data.push(this.dataModel[sensorNames[n]]);
 	}
 	return data;
@@ -233,90 +268,113 @@ Status.prototype.getDataByName = function(sensorNames){
 /**
  * Subscribe to error/status updates
  */
-Status.prototype.watch = function(robotNames, callback){
-	var that = this;
-	// console.log(robotNames);
+Status.prototype.watch = function (robotNames, callback) {
+	this.selector.setMaxListeners(0);
+	this.selector._connection.setMaxListeners(0);
+	let sendData = [];
+	let robotIds = [];
+	return Promise.try(_ => {
+		let req = this.selector.request({
+			service: 'status',
+			func: 'GetManagedObjects',
+			obj: {
+				interface: 'org.freedesktop.DBus.ObjectManager',
+			}
+		}, (peerId, err, objData) => { // get all object paths, interfaces and properties children of Status
+			let robotName = '';
+			let robotId = 1;
+			for (let objectPath in objData) {
+				if (objData[objectPath]['fr.partnering.Status.Robot']) {
+					robotName = objData[objectPath]['fr.partnering.Status.Robot'].RobotName;
+					robotId = objData[objectPath]['fr.partnering.Status.Robot'].RobotId;
+					robotIds[robotName] = robotId;
+					this.getAllStatuses(robotName, function (model) {
+						callback(model);
+					})
+				}
+				if (objData[objectPath]['fr.partnering.Status.Part']) {
+					let subs = this.selector.subscribe({// subscribes to status changes for all parts
+						service: 'status',
+						func: 'CurrentStatusChanged',
+						obj: {
+							interface: 'fr.partnering.Status.Part',
+							path: objectPath
+						},
+						data: robotNames
+					}, (peerId, err, data) => {
+						if (err) {
+							Logger.error("StatusSubscribe:" + err);
+						} else {
+							robotName = objectPath.split("/")[5];
+							robotId = robotIds[robotName];
+							sendData[0] = data;
+							this._getRobotModelFromRecv2(sendData, robotId, robotName);
+							if (typeof callback === 'function')
+								callback(this.robotModel);
+						}
+					});
+					this.subscriptions.push(subs);
+				}
+			}
+		})
+	}).catch(err => {
+		Logger.error(err);
+	})
 
-	var subs = this.selector.subscribe({
-		service: 'status',
-		func: 'Status',
-		data: robotNames
-	}, function (peerId, err, data) {
-		// console.log(peerId);
-		// console.log(err);
-		// console.log(data);
-		if (err || (data&&data.err&data.err.st) ) {
-			Logger.error( "StatusSubscribe:"+(err?err:"")+"\n"+(data&&data.err?data.err:"") );
-		} else {
-			if(data && data.header
-			   && data.header.type === "init") {
-				// initialisation of robot model
-				that.robotModelInit = true;
-			}
-			// console.log(data);
-			if(that.robotModelInit) {
-				that._getRobotModelFromRecv2(data);
-				if(typeof callback === 'function')
-					callback(that.robotModel);
-			}
-			else {
-				// Error
-				Logger.error("Robot model has not been initialised, cannot be updated");
-				/// TODO unsubscribe
-			}
-		}
-	}, { auto: true });
-	this.subscriptions.push(subs);
+
 };
 
 /**
  * Close all subscriptions
  */
-Status.prototype.closeSubscriptions = function(){
-	for(var i in this.subscriptions) {
+Status.prototype.closeSubscriptions = function () {
+	for (var i in this.subscriptions) {
 		this.subscriptions[i].close();
 	}
-	this.subscriptions =[];
+	this.subscriptions = [];
+	this.robotModel = [];
 };
 
-
+// NOT USED
 /**
  * Get data given dataConfig.
  * @param {func} callback : called after update
  * TODO USE PROMISE
  */
-Status.prototype.getData = function(callback, dataConfig){
-	var that=this;
+Status.prototype.getData = function (callback, dataConfig) {
 	var dataModel = {};
-	if(dataConfig)
-		this.DataConfig(dataConfig);
-	// console.log("Request: "+JSON.stringify(dataConfig));
-	this.selector.request({
-		service: "status",
-		func: "DataRequest",
-		data: {
-			type:"splReq",
-			dataConfig: that.dataConfig
-		}
-	}, function(dnId, err, data){
-		if(err) {
-			Logger.error("["+that.dataConfig.sensors+"] Recv err: "+JSON.stringify(err));
-			return;
-		}
-		if(data.header.error) {
-			// TODO : check/use err status and adapt behavior accordingly
-			Logger.error("UpdateData:\n"+JSON.stringify(data.header.reqConfig));
-			Logger.error("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
-			return;
-		}
-		//Logger.log(JSON.stringify(that.dataModel));
-		dataModel = that._getDataModelFromRecv(data);
+	return Promise.try(_ => {
+		if (dataConfig)
+			this.DataConfig(dataConfig);
+		// console.log("Request: "+JSON.stringify(dataConfig));
+		this.selector.request({
+			service: "status",
+			func: "DataRequest",
+			data: {
+				type: "splReq",
+				dataConfig: this.dataConfig
+			}
+		}, (dnId, err, data) => {
+			if (err) {
+				Logger.error("[" + this.dataConfig.sensors + "] Recv err: " + JSON.stringify(err));
+				return;
+			}
+			if (data.header.error) {
+				// TODO : check/use err status and adapt behavior accordingly
+				Logger.error("UpdateData:\n" + JSON.stringify(data.header.reqConfig));
+				Logger.error("Data request failed (" + data.header.error.st + "): " + data.header.error.msg);
+				return;
+			}
+			//Logger.log(JSON.stringify(this.dataModel));
+			dataModel = this._getDataModelFromRecv(data);
 
-		Logger.log(that.getDataModel());
-
-		callback = callback.bind(that); // bind callback with Status
-		callback(dataModel); // callback func
-	});
+			Logger.log(this.getDataModel());
+			callback = callback.bind(this); // bind callback with Status
+			callback(dataModel); // callback func
+		});
+	}).catch(err => {
+		Logger.error(err)
+	})
 };
 
 
@@ -325,203 +383,94 @@ Status.prototype.getData = function(callback, dataConfig){
  * @param  {Object} data data received from DiyaNode by websocket
  * @return {[type]}		[description]
  */
-Status.prototype._getRobotModelFromRecv2 = function(data){
-	var robot;
-	var dataRobots = data.robots;
-	var dataParts = data.partList;
-
-	if(!this.robotModel)
+Status.prototype._getRobotModelFromRecv2 = function (data, robotId, robotName) {
+	if (!this.robotModel)
 		this.robotModel = [];
-	// console.log("_getRobotModelFromRecv");
-	// console.log(this.robotModel);
 
-	for(var n in this.robotModel) {
-		// console.log(n);
-		this.robotModel[n].parts = {}; // reset parts
-	}
+	if (this.robotModel[robotId])
+		this.robotModel[robotId].parts = {}; // reset parts
 
-	for(var n in dataRobots) {
-		if(!this.robotModel[n])
-			this.robotModel[n]={};
-		this.robotModel[n].robot = dataRobots[n].robot;
+	if (!this.robotModel[robotId])
+		this.robotModel[robotId] = {};
 
-		// if(this.robotModel.length<data.length) {
-		// 	this.robotModel.push({robot: data[0].robots});
-		// }
-
-		/** extract parts info **/
-		if(dataRobots[n] && dataRobots[n].parts) {
-			var parts = dataRobots[n].parts;
-			this.robotModel[n].parts = {};
-			var rParts = this.robotModel[n].parts;
-			// for(var q in rParts) {
-			// 	/** part[q] was not sent because no error **/
-			// 	if(!parts[q]
-			// 	   &&rParts[q].evts&&rParts[q].evts.code) {
-			// 		rParts[q].evts = {
-			// 			code: 0,
-			// 			codeRef: 0,
-			// 			time: Date.now() /** update **/
-			// 		};
-			// 	}
-			// }
-			for (var p in parts) {
-				if(!rParts[p]) {
-					rParts[p]={};
-				}
-				if(parts[p]) {
-					// Logger.log(n);
-					/* update part category */
-					rParts[p].category=dataParts[p].category;
-					/* update part name */
-					rParts[p].name=dataParts[p].name;
-					/* update part label */
-					rParts[p].label=dataParts[p].label;
-					/* update error time */
-					// console.log(parts[p]);
-					// console.log(parts[p].errors.time);
-					// console.log(rParts[p].time);
-					/* update error */
-					// console.log(parts[p].errors.code);
-
-					/** update errorList **/
-					if(!rParts[p].errorList)
-						rParts[p].errorList={};
-					for( var el in dataParts[p].errorList )
-						if(!rParts[p].errorList[el])
-							rParts[p].errorList[el] = dataParts[p].errorList[el];
-					var evts_tmp = {
-						time: this._coder.from(parts[p].time),
-						code: this._coder.from(parts[p].code),
-						codeRef: this._coder.from(parts[p].codeRef)
-					};
-					/** if received list of events **/
-					if(Array.isArray(evts_tmp.code) || Array.isArray(evts_tmp.time)
-					   || Array.isArray(evts_tmp.codeRef)) {
-						if(evts_tmp.code.length === evts_tmp.codeRef.length
-						   && evts_tmp.code.length === evts_tmp.time.length) {
-							/** build list of events **/
-							rParts[p].evts = [];
-							for(var i=0; i<evts_tmp.code.length; i++) {
-								rParts[p].evts.push({
-									time: evts_tmp.time[i],
-									code: evts_tmp.code[i],
-									codeRef: evts_tmp.codeRef[i]});
-							}
-						}
-						else Logger.error("Status:Inconsistant lengths of buffers (time/code/codeRef)");
-					}
-					else { /** just in case, to provide backward compatibility **/
-						/** set received event **/
-						rParts[p].evts = [{
-							time: evts_tmp.time,
-							code: evts_tmp.code,
-							codeRef: evts_tmp.codeRef}];
-					}
-				}
-				// console.log(rParts[p].error);
-			}
-			// console.log('parts, rParts');
-			// console.log(parts);
- 		// 	console.log(rParts);
+	this.robotModel[robotId] = {
+		robot: {
+			name: robotName
 		}
-		else {
-			Logger.error("No parts to read for robot "+data[n].name);
+	};
+
+	/** extract parts info **/
+	this.robotModel[robotId].parts = {};
+	let rParts = this.robotModel[robotId].parts;
+
+	data.forEach(d => {
+		let partId = d[0];
+		let category = d[1];
+		let partName = d[2];
+		let label = d[3];
+		let time = d[4];
+		let code = d[5];
+		let codeRef = d[6];
+		let msg = d[7];
+		let critLevel = d[8];
+		let description = d[9];
+
+		if (!rParts[partId]) {
+			rParts[partId] = {};
 		}
-	}
-};
+		/* update part category */
+		rParts[partId].category = category;
+		/* update part name */
+		rParts[partId].name = partName.toLowerCase();
+		/* update part label */
+		rParts[partId].label = label;
 
+		/* update error */
+		/** update errorList **/
+		if (!rParts[partId].errorList)
+			rParts[partId].errorList = {};
 
-/**
- * Update internal robot model with received data
- * @param  {Object} data data received from DiyaNode by websocket
- * @return {[type]}		[description]
- */
-Status.prototype._getRobotModelFromRecv = function(data){
-	var robot;
-
-	if(!this.robotModel)
-		this.robotModel = [];
-	// console.log("_getRobotModelFromRecv");
-	// console.log(this.robotModel);
-
-	/** Only one robot is manage at the same time currently **/
-	for(var n in data) {
-		if(!this.robotModel[n])
-			this.robotModel[n]={};
-		this.robotModel[n].robot = data[n].robot;
-
-		// if(this.robotModel.length<data.length) {
-		// 	this.robotModel.push({robot: data[0].robots});
-		// }
-
-		/** extract parts info **/
-		if(data[n] && data[n].parts) {
-			if(!this.robotModel[n].parts)
-				this.robotModel[n].parts = {};
-			var parts = data[n].parts;
-			var rParts = this.robotModel[n].parts;
-			for(var q in rParts) {
-				/** part[q] was not sent because no error **/
-				if(!parts[q]
-				   &&rParts[q].evts&&rParts[q].evts.code) {
-					rParts[q].evts = {
-						code: [0],
-						codeRef: [0],
-						time: [Date.now()] /** update **/
-					};
+		if (!rParts[partId].errorList[codeRef])
+			rParts[partId].errorList[codeRef] = {
+				msg: msg,
+				critLevel: critLevel,
+				description: description
+			};
+		let evts_tmp = {
+			time: this._coder.from(time),
+			code: this._coder.from(code),
+			codeRef: this._coder.from(codeRef)
+		};
+		/** if received list of events **/
+		if (Array.isArray(evts_tmp.code) || Array.isArray(evts_tmp.time)
+			|| Array.isArray(evts_tmp.codeRef)) {
+			if (evts_tmp.code.length === evts_tmp.codeRef.length
+				&& evts_tmp.code.length === evts_tmp.time.length) {
+				/** build list of events **/
+				rParts[partId].evts = [];
+				for (let i = 0; i < evts_tmp.code.length; i++) {
+					rParts[partId].evts.push({
+						time: evts_tmp.time[i],
+						code: evts_tmp.code[i],
+						codeRef: evts_tmp.codeRef[i]
+					});
 				}
 			}
-			for (var p in parts) {
-				if(parts[p]&&parts[p].err && parts[p].err.st>0) {
-					Logger.error("Parts "+p+" was in error: "+data[p].err.msg);
-					continue;
-				}
-				if(!rParts[p]) {
-					rParts[p]={};
-				}
-				if(parts[p]) {
-					// Logger.log(n);
-					/* update part category */
-					rParts[p].category=parts[p].category;
-					/* update part name */
-					rParts[p].name=parts[p].name;
-					/* update part label */
-					rParts[p].label=parts[p].label;
-					/* update error time */
-					// console.log(parts[p]);
-					// console.log(parts[p].errors.time);
-					// console.log(rParts[p].time);
-					/* update error */
-					// console.log(parts[p].errors.code);
-
-					/** update errorList **/
-					if(!rParts[p].errorList)
-						rParts[p].errorList={};
-					for( var el in parts[p].errorList )
-						if(!rParts[p].errorList[el])
-							rParts[p].errorList[el] = parts[p].errorList[el];
-
-					rParts[p].evts = {
-						code: this._coder.from(parts[p].evts.code),
-						codeRef: this._coder.from(parts[p].evts.codeRef),
-						time: this._coder.from(parts[p].evts.time)
-					};
-				}
-				// console.log(rParts[p].error);
-			}
-			// console.log('parts, rParts');
-			// console.log(parts);
-			// console.log(rParts);
+			else Logger.error("Status:Inconsistant lengths of buffers (time/code/codeRef)");
 		}
-		else {
-			Logger.error("No parts to read for robot "+data[n].name);
+		else { /** just in case, to provide backward compatibility **/
+			/** set received event **/
+			rParts[partId].evts = [{
+				time: evts_tmp.time,
+				code: evts_tmp.code,
+				codeRef: evts_tmp.codeRef
+			}];
 		}
-	}
+	})
 };
 
 /** create Status service **/
-DiyaSelector.prototype.Status = function(){
+DiyaSelector.prototype.Status = function () {
 	return new Status(this);
 };
 
@@ -533,19 +482,37 @@ DiyaSelector.prototype.Status = function(){
  * @param source		source
  * @param callback		return callback (<bool>success)
  */
-DiyaSelector.prototype.setStatus = function(robotName, partName, code, source, callback) {
-	var funcName = "SetStatus_"+partName;
-	this.request(
-		{service:"status",func:funcName,data: {robotName: robotName, statusCode: code, partName: partName, source: source|1}}, function(peerId, err, data) {
-			if(err) {
-				if(callback) callback(false);
+DiyaSelector.prototype.setStatus = function (robotName, partName, code, source, callback) {
+	return Promise.try(_ => {
+		var objectPath = "/fr/partnering/Status/Robots/" + robotName + "/Parts/" + partName;
+		this.request({
+			service: "status",
+			func: "SetPart",
+			obj: {
+				interface: 'fr.partnering.Status.Part',
+				path: objectPath
+			},
+			data: {
+				//robotName: robotName,
+				code: code,
+				//partName: partName,
+				source: source | 1
+			}
+		}, (peerId, err, data) => {
+			if (err) {
+				if (callback) callback(false);
 			}
 			else {
-				if(callback) callback(true);
+				if (callback) callback(true);
 			}
 		});
+	}).catch(err => {
+		Logger.error(err)
+	})
 };
 
+
+// NOT USED
 /**
  * Get one status
  * @param robotName to get status
@@ -553,15 +520,85 @@ DiyaSelector.prototype.setStatus = function(robotName, partName, code, source, c
  * @param callback		return callback(-1 if not found/data otherwise)
  * @param _full 	more data about status
  */
-DiyaSelector.prototype.getStatus = function(robotName, partName, callback, _full) {
-	var full=_full||false;
-	this.request(
-		{service:"status",func:"GetStatus",data: {robotName: robotName, partName: partName, full: full}}, function(peerId, err, data) {
-			if(err) {
-				if(callback) callback(-1);
+Status.prototype.getStatus = function (robotName, partName, callback/*, _full*/) {
+	let sendData = []
+	return Promise.try(_ => {
+		let req = this.selector.request({
+			service: 'status',
+			func: 'GetManagedObjects',
+			obj: {
+				interface: 'org.freedesktop.DBus.ObjectManager',
 			}
-			else {
-				if(callback) callback(data);
+		}, (peerId, err, objData) => {
+
+			let objectPathRobot = "/fr/partnering/Status/Robots/" + robotName;
+			let objectPathPart = "/fr/partnering/Status/Robots/" + robotName + "/Parts/" + partName;
+			let robotId = objData[objectPathRobot]['fr.partnering.Status.Robot'].RobotId
+			this.selector.request({
+				service: "status",
+				func: "GetPart",
+				obj: {
+					interface: 'fr.partnering.Status.Part',
+					path: objectPathPart
+				}
+			}, (peerId, err, data) => {
+				sendData.push(data)
+				this._getRobotModelFromRecv2(sendData, robotId, robotName);
+				if (err) {
+					if (callback) callback(-1);
+				}
+				else {
+					if (callback) callback(this.robotModel);
+				}
+			});
+		})
+	}).catch(err => {
+		Logger.error(err)
+	})
+};
+
+/**
+ * Get all status
+ * @param robotName to get status
+ * @param partName 	to get status
+ * @param callback		return callback(-1 if not found/data otherwise)
+ * @param _full 	more data about status
+ */
+Status.prototype.getAllStatuses = function (robotName, callback) {
+	let req = this.selector.request({
+		service: 'status',
+		func: 'GetManagedObjects',
+		obj: {
+			interface: 'org.freedesktop.DBus.ObjectManager',
+		}
+	}, (peerId, err, objData) => { // get all object paths, interfaces and properties children of Status
+		let objectPath = "/fr/partnering/Status/Robots/" + robotName;
+		if (objData[objectPath]) {
+			if (objData[objectPath]['fr.partnering.Status.Robot']) {
+				let robotId = objData[objectPath]['fr.partnering.Status.Robot'].RobotId
+				//var full = _full || false;
+				this.selector.request({
+					service: "status",
+					func: "GetAllParts",
+					obj: {
+						interface: 'fr.partnering.Status.Robot',
+						path: objectPath
+					}
+				}, (peerId, err, data) => {
+					if (err) {
+						if (callback) callback(-1);
+						throw new Error(err)
+					}
+					else {
+						this._getRobotModelFromRecv2(data, robotId, robotName);
+						if (callback) callback(this.robotModel);
+					}
+				});
+			} else {
+				Logger.error("Interface fr.partnering.Status.Robot doesn't exist!")
 			}
-		});
+		} else {
+			Logger.error("ObjectPath " + objectPath + " doesn't exist!")
+		}
+	})
 };

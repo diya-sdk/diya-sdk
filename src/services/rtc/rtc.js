@@ -1,3 +1,27 @@
+/*
+ * Copyright : Partnering 3.0 (2007-2016)
+ * Author : Sylvain Mahé <sylvain.mahe@partnering.fr>
+ *
+ * This file is part of diya-sdk.
+ *
+ * diya-sdk is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ *
+ * diya-sdk is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with diya-sdk.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
+
+
+
 DiyaSelector = require('../../DiyaSelector').DiyaSelector;
 EventEmitter = require('node-event-emitter');
 inherits = require('inherits');
@@ -216,23 +240,34 @@ Peer.prototype._createPeer = function(data){
 
 	var iceServers = [];
 	if(this._turninfo) {
-		iceServers.push({ urls: [ this._turninfo.url ], username: this._turninfo.username, credential: this._turninfo.password });
+		if (!Array.isArray(this._turninfo)) {
+			iceServers.push({ 
+				urls: [ this._turninfo.url ], 
+				username: this._turninfo.username, 
+				credential: this._turninfo.password 
+			});
+		} else {
+			iceServers = this._turninfo.map(function(turn) { 
+				return { 
+					urls: [ turn.url ], 
+					username: turn.username, 
+					credential: turn.password 
+				} 
+			});
+		}
 	} else {
 		iceServers.push({urls: [ "stun:stun.l.google.com:19302" ]});
 	}
 	
 	var config = {
 		iceServers: iceServers,
-		iceTransportPolicy: 'all'	
+		iceTransportPolicy: 'all'
 	};
 
 	var constraints = {
 		mandatory: {DtlsSrtpKeyAgreement: true, OfferToReceiveAudio: true, OfferToReceiveVideo:true}
 	}
 	
-	console.log(config);
-	console.log(constraints);
-
 	var peer = new RTCPeerConnection(config,  constraints);
 	this.peer = peer;
 
@@ -243,6 +278,9 @@ Peer.prototype._createPeer = function(data){
 	peer.setRemoteDescription(new RTCSessionDescription({sdp: data.sdp, type: data.type}));
 
 	peer.createAnswer(function(session_description){
+		//favor VP9 instead of VP8
+		session_description.sdp = session_description.sdp.replace(/SAVPF 100 101/g, 'SAVPF 101 100');
+
 		peer.setLocalDescription(session_description);
 
 		that.dn.request({
@@ -295,8 +333,6 @@ Peer.prototype._createPeer = function(data){
 
 Peer.prototype._addRemoteICECandidate = function(data){
 	try {
-		//console.log('remote ice :');
-		//console.log(data.candidate.candidate);
 		var candidate = new RTCIceCandidate(data.candidate);
 		this.peer.addIceCandidate(candidate, function(){},function(err){ console.error(err);	});
 	} catch(err) { console.error(err); }
