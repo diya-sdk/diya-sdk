@@ -3,9 +3,10 @@
   "version": "2.0.0",
   "description": "SDK for accessing Diya One services",
   "main": "src/diya-sdk.js",
-    "scripts": {
-    "build-debug": "browserify src/diya-sdk.js --exclude q --exclude json-socket --exclude UNIXSocketHandler --im -d --s d1 > build/diya-sdk.js",
-    "build-min": "browserify src/diya-sdk.js --exclude q --im --s d1 > build/temp.js && babel build/temp.js -d build && uglifyjs build/build/temp.js -c > build/diya-sdk.min.js",
+  "scripts": {
+    "clean": "rm -f build/diya-sdk.js && rm -f build/diya-sdk.min.js && rm -f build/temp.js && rm -rf build/build",
+    "build-debug": "browserify src/diya-sdk.js -t [ babelify --presets [ es2015 es2016 ] ] --exclude q --exclude json-socket --s d1 --im -d > build/diya-sdk.js",
+    "build-min": "browserify src/diya-sdk.js -t [ babelify --presets [ es2015 es2016 ] ] --exclude q --exclude json-socket --s d1 --im | uglifyjs -c > build/diya-sdk.min.js",
     "build": "npm run build-debug && npm run build-min",
     "watch": "watchify src/diya-sdk.js -d --exclude q --im --s d1 -o build/diya-sdk.js -v"
   },
@@ -21,13 +22,10 @@
     "json-socket": "0.2.1"
   },
   "devDependencies": {
-    "babel-cli": "^6.24.0",
-    "babel-preset-latest": "^6.24.0",
+    "babel-preset-es2015": "6.24.1",
+    "babel-preset-es2016": "6.24.1",
     "browserify": "14.1.0",
-    "uglify-js": "^2.4.15",
+    "uglify-js": "2.8.22",
     "watchify": "3.9.0"
-},
-  "babel": {
-      "presets": ["latest"]
   }
 }

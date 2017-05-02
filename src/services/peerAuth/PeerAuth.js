@@ -4,8 +4,8 @@ var isBrowser = !(typeof window === 'undefined');
 if(!isBrowser) { var Q = require('q'); }
 else { var Q = window.Q; }
 
-if(typeof INFO === 'undefined') INFO = function(s) { console.log(s);}
-if(typeof OK === 'undefined') OK = function(s) { console.log(s);}
+if(typeof INFO === 'undefined') var INFO = function(s) { console.log(s);}
+if(typeof OK === 'undefined') var OK = function(s) { console.log(s);}
 
 
 

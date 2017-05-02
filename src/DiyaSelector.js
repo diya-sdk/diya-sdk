@@ -395,7 +395,7 @@ Subscription.prototype.close = function() {
 
 Subscription.prototype._addSubscription = function(peerId) {
 	var that = this;
-	params = {};
+	var params = {};
 	for(var k in this.params) params[k] = this.params[k];
 	params.target = peerId;
 	var subId = this.selector._connection.subscribe(params, function(err, data){

@@ -1,4 +1,4 @@
-EventEmitter = require('node-event-emitter');
+let EventEmitter = require('node-event-emitter');
 
 function LOG(msg){
 	//console.log(msg);

@@ -1,6 +1,6 @@
-DiyaSelector = require('../../DiyaSelector').DiyaSelector;
-EventEmitter = require('node-event-emitter');
-inherits = require('inherits');
+let DiyaSelector = require('../../DiyaSelector').DiyaSelector;
+let EventEmitter = require('node-event-emitter');
+let inherits = require('inherits');
 
 require('webrtc-adapter');
 
@@ -220,16 +220,16 @@ Peer.prototype._createPeer = function(data){
 	} else {
 		iceServers.push({urls: [ "stun:stun.l.google.com:19302" ]});
 	}
-	
+
 	var config = {
 		iceServers: iceServers,
-		iceTransportPolicy: 'all'	
+		iceTransportPolicy: 'all'
 	};
 
 	var constraints = {
 		mandatory: {DtlsSrtpKeyAgreement: true, OfferToReceiveAudio: true, OfferToReceiveVideo:true}
 	}
-	
+
 	console.log(config);
 	console.log(constraints);
 
