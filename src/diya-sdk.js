@@ -23,6 +23,7 @@ var d1 = require('./DiyaSelector.js');
 
 require('./services/rtc/rtc.js');
 require('./services/ieq/ieq.js');
+require('./services/config/config.js');
 require('./services/peerAuth/PeerAuth.js');
 require('./services/meshNetwork/MeshNetwork.js');
 require('./utils/encoding/encoding.js');
