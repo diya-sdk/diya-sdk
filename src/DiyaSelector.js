@@ -36,8 +36,6 @@ var IP_REGEX = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[0
 //  D1 API  //
 //////////////
 
-
-
 function newInstance () {
 
 	var connection = new DiyaNode();
@@ -441,7 +439,7 @@ Subscription.prototype.close = function() {
 
 Subscription.prototype._addSubscription = function(peerId) {
 	var that = this;
-	params = {};
+	var params = {};
 	for(var k in this.params) params[k] = this.params[k];
 	params.target = peerId;
 	var subId = this.selector._connection.subscribe(params, function(err, data){
