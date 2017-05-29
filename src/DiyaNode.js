@@ -1,13 +1,14 @@
 var isBrowser = !(typeof window === 'undefined');
-let UNIXSocketHandler
 if(!isBrowser) {
 	var Q = require('q');
-	UNIXSocketHandler = require('./UNIXSocketHandler')
+	const UNIXSocketHandler = require('./UNIXSocketHandler')
 }
 else { var Q = window.Q; }
 
 var EventEmitter = require('node-event-emitter');
 var inherits = require('inherits');
+
+//var StreamSocket = require('./StreamSocket')
 
 //////////////////////////////////////////////////////////////
 /////////////////// Logging utility methods //////////////////
@@ -46,6 +47,8 @@ function DiyaNode(){
 	this._peers = [];
 	this._reconnectTimeout = 1000;
 	this._connectTimeout = 5000;
+	this._streamSocket = [];
+	this._socketId = 0;
 }
 inherits(DiyaNode, EventEmitter);
 
@@ -70,8 +73,6 @@ DiyaNode.prototype.peers = function(){ return this._peers; };
 DiyaNode.prototype.self = function() { return this._self; };
 DiyaNode.prototype.setSecured = function(bSecured) { this._secured = bSecured !== false; };
 DiyaNode.prototype.setWSocket = function(WSocket) {this._WSocket = WSocket;}
-
-
 
 /** @return {Promise<String>} the connected peer name */
 DiyaNode.prototype.connect = function (addr, WSocket) {
@@ -324,6 +325,26 @@ DiyaNode.prototype.subscribe = function(params, callback){
 	return message.id;
 };
 
+DiyaNode.prototype.openSocket = function(streamSocket, socketId){
+	this._streamSocket[socketId] = streamSocket;
+};
+
+DiyaNode.prototype.onSocketClosed = function(socketId){
+	if (this._streamSocket[socketId]){
+		this._streamSocket[socketId].emit('close')
+		delete this._streamSocket[socketId];
+	}
+}
+
+DiyaNode.prototype.sendSocket = function(params){
+	var message = this._createMessage(params, "ClientData");
+	if(!this._send(message)){
+		Logger.error('Cannot send socket!');
+		return -1;
+	}
+	return message.id;
+};
+
 DiyaNode.prototype.unsubscribe = function(subId){
 	if(this._pendingMessages[subId] && this._pendingMessages[subId].type === "Subscription"){
 		var subscription = this._removeMessage(subId);
@@ -385,6 +406,7 @@ DiyaNode.prototype._getMessageHandler = function(messageId){
 	return handler ? handler : null;
 };
 
+
 DiyaNode.prototype._notifyListener = function(handler, error, data){
 	if(handler && typeof handler.callback === 'function') {
 		error = error ? error : null;
@@ -409,7 +431,7 @@ DiyaNode.prototype._setupPingResponse = function(){
 		var curTime = new Date().getTime();
 		if(curTime - that._lastPing > that._pingTimeout){
 			that._forceClose();
-			Logger.log("d1:  timed out !");
+			Logger.log("d1:  timed out!");
 		}else{
 			Logger.log("d1: last ping ok");
 			that._pingSetTimeoutId = setTimeout(checkPing, Math.round(that._pingTimeout / 2.1));
@@ -434,6 +456,7 @@ DiyaNode.prototype._forceClose = function(){
 
 
 DiyaNode.prototype._onmessage = function(message){
+	if(message.type === "ServerData") this._handleServerData(message);
 	if(isNaN(message.id)) return this._handleInternalMessage(message);
 	var handler = this._getMessageHandler(message.id);
 	if(!handler) return;
@@ -563,6 +586,7 @@ DiyaNode.prototype._handlePeerDisconnected = function(message){
 };
 
 DiyaNode.prototype._handleRequest = function(handler, message){
+
 	if(message.type === 'PartialAnswer') {
 		if(typeof this._pendingMessages[message.id].callback_partial === 'function') {
 			var error = message.error ? message.error : null;
@@ -570,6 +594,7 @@ DiyaNode.prototype._handleRequest = function(handler, message){
 			this._pendingMessages[message.id].callback_partial(error, data);
 		}
 	} else {
+
 		this._removeMessage(message.id);
 		this._notifyListener(handler, message.error, message.data);
 	}
@@ -584,6 +609,9 @@ DiyaNode.prototype._handleSubscription = function(handler, message){
 	this._notifyListener(handler, message.error, message.data ? message.data : null);
 };
 
+DiyaNode.prototype._handleServerData = function(message){
+	 this._streamSocket[message.data.socketId].push(new Buffer(message.data.buffer, 'base64'));
+};
 
 ///////////////////
 // SocketHandler //
@@ -707,7 +735,7 @@ SocketHandler.prototype.unregisterCallbacks = function() {
 ///////////////////////////////////////////////////////////////
 
 DiyaNode.prototype._createMessage = function(params, type){
-	if(!params || !type || (type !== "Request" && type !== "Subscription" && type !== "Unsubscribe")){
+	if(!params || !type || (type !== "Request" && type !== "Subscription" && type !== "Unsubscribe" && type !== "ClientData")){
 		return null;
 	}
 

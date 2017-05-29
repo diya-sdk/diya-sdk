@@ -5,6 +5,10 @@ var EventEmitter = require('node-event-emitter');
 var inherits = require('inherits');
 
 var DiyaNode = require('./DiyaNode');
+var StreamSocket = require('./StreamSocket')
+//var Shortid = require('shortid');
+//const Duplex = require('stream').Duplex;
+//const Writable = require('stream').Writable;
 
 var IP_REGEX = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
 
@@ -281,7 +285,58 @@ DiyaSelector.prototype.auth = function(user, password, callback, timeout){
 	return deferred.promise;
 };
 
+DiyaSelector.prototype.openSocket = function (params, callback) {
+	var that = this;
 
+	if (typeof callback === 'function') callback = callback.bind(this);
+
+	var socketName = params.socketName;
+
+	this.request({
+		service: 'socketHandler',
+		func: 'OpenSocket',
+		data: {
+			socket_name: socketName,
+		}
+	}, function (peerId, err, data) {
+		params = {
+			err: err,
+			answer: data.answer,
+			socketId: data.socket_id,
+			socketName: socketName,
+			target: peerId,
+		}
+		if (!err && params.answer && (params.answer === "ok")) {
+			var streamSocket = new StreamSocket(that, params);
+			streamSocket.subscribeSocketClosed(params.socketId);
+			that._connection.openSocket(streamSocket, params.socketId);
+			if (typeof callback === 'function') callback(peerId, null, streamSocket);
+		} else {
+			if (typeof callback === 'function') callback(peerId, params.err, null);
+		}
+	});
+};
+
+DiyaSelector.prototype.sendSocket = function (params) {
+	return this.each(function (peerId) {
+		params.target = peerId;
+		this._connection.sendSocket(params);
+	});
+};
+
+DiyaSelector.prototype.onSocketClosed = function(socketId){
+	this._connection.onSocketClosed(socketId);
+}
+
+///DiyaSelector.prototype.sendSocket = function (chunk, streamSocket) {
+	//streamSocket.push(chunk)
+	// return this.each(function (peerId) {
+	// 	params.target = peerId;
+	// 	this._connection.sendSocket(params, function (err, data) {
+	// 		if (typeof callback === 'function') callback(peerId, err, data);
+	// 	});
+	// });
+//};
 
 // Privates
 
