@@ -21,7 +21,7 @@ class StreamSocket extends Transform {
 				data: {
 					socketName: this.socketName,
 					socketId: this.socketId,
-					socketBuffer: chunk.toString(),
+					socketBuffer: chunk.toString('base64'),
 				}, target: this.peerId
 			};
 			this.d1inst.sendSocket(params);

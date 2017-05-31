@@ -610,7 +610,11 @@ DiyaNode.prototype._handleSubscription = function(handler, message){
 };
 
 DiyaNode.prototype._handleServerData = function(message){
-	 this._streamSocket[message.data.socketId].push(new Buffer(message.data.buffer, 'base64'));
+	try {
+		this._streamSocket[message.data.socketId].push(new Buffer(message.data.buffer, 'base64'));
+	} catch (err) {
+		console.error(err)
+	}
 };
 
 ///////////////////
