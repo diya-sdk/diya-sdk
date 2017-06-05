@@ -5,10 +5,6 @@ var EventEmitter = require('node-event-emitter');
 var inherits = require('inherits');
 
 var DiyaNode = require('./DiyaNode');
-var StreamSocket = require('./StreamSocket')
-//var Shortid = require('shortid');
-//const Duplex = require('stream').Duplex;
-//const Writable = require('stream').Writable;
 
 var IP_REGEX = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
 
@@ -299,44 +295,33 @@ DiyaSelector.prototype.openSocket = function (params, callback) {
 			socket_name: socketName,
 		}
 	}, function (peerId, err, data) {
-		params = {
-			err: err,
-			answer: data.answer,
-			socketId: data.socket_id,
-			socketName: socketName,
-			target: peerId,
-		}
-		if (!err && params.answer && (params.answer === "ok")) {
-			var streamSocket = new StreamSocket(that, params);
-			streamSocket.subscribeSocketClosed(params.socketId);
-			that._connection.openSocket(streamSocket, params.socketId);
-			if (typeof callback === 'function') callback(peerId, null, streamSocket);
+		if (err == null && data.socket_id != null) {
+			params = {
+				err: err,
+				socketId: data.socket_id,
+				socketName: socketName,
+				target: peerId,
+			}
+			that._connection.openSocket(that, params, (diyaSocket) => {
+				if (typeof callback === 'function') callback(peerId, null, diyaSocket);
+			});
+
 		} else {
-			if (typeof callback === 'function') callback(peerId, params.err, null);
+			if (typeof callback === 'function') callback(peerId, err, null);
 		}
 	});
 };
 
-DiyaSelector.prototype.sendSocket = function (params) {
+DiyaSelector.prototype.sendSocketData = function (params) {
 	return this.each(function (peerId) {
 		params.target = peerId;
-		this._connection.sendSocket(params);
+		this._connection.sendSocketData(params);
 	});
 };
 
 DiyaSelector.prototype.onSocketClosed = function(socketId){
 	this._connection.onSocketClosed(socketId);
 }
-
-///DiyaSelector.prototype.sendSocket = function (chunk, streamSocket) {
-	//streamSocket.push(chunk)
-	// return this.each(function (peerId) {
-	// 	params.target = peerId;
-	// 	this._connection.sendSocket(params, function (err, data) {
-	// 		if (typeof callback === 'function') callback(peerId, err, data);
-	// 	});
-	// });
-//};
 
 // Privates
 
