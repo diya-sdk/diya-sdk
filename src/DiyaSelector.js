@@ -22,6 +22,8 @@ function newInstance () {
 		return new DiyaSelector(selector, connection);
 	}
 
+	connection._d1inst = d1inst
+
 	d1inst.DiyaNode = DiyaNode;
 	d1inst.DiyaSelector = DiyaSelector;
 

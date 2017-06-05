@@ -46,6 +46,8 @@ function DiyaNode(){
 	this._peers = [];
 	this._reconnectTimeout = 1000;
 	this._connectTimeout = 5000;
+
+	this.store = new Map()
 }
 inherits(DiyaNode, EventEmitter);
 
@@ -376,8 +378,12 @@ DiyaNode.prototype._clearMessages = function(err, data){
 	}
 };
 
-DiyaNode.prototype._clearPeers = function(){
-	while(this._peers.length) this.emit('peer-disconnected', this._peers.pop());
+DiyaNode.prototype._clearPeers = function() {
+	while(this._peers.length) {
+		let peer = this._peers.pop()
+		this.store.delete(peer)
+		this.emit('peer-disconnected', peer);
+	}
 };
 
 DiyaNode.prototype._getMessageHandler = function(messageId){
@@ -513,6 +519,7 @@ DiyaNode.prototype._handleHandshake = function(message){
 
 	for(var i=0;i<message.peers.length; i++){
 		this._peers.push(message.peers[i]);
+		this.store.set(message.peers[i], new Map())
 		this.emit('peer-connected', message.peers[i]);
 	}
 
@@ -559,6 +566,7 @@ DiyaNode.prototype._handlePeerDisconnected = function(message){
 		}
 	}
 
+	this.store.delete(message.peerId)
 	this.emit('peer-disconnected', message.peerId);
 };
 

@@ -6,5 +6,6 @@ require('./services/peerAuth/PeerAuth.js');
 require('./services/meshNetwork/MeshNetwork.js');
 require('./utils/encoding/encoding.js');
 require('./services/status/status.js');
+require('./DBusObject.js');
 
 module.exports = d1;
