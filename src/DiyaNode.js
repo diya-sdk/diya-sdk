@@ -8,6 +8,7 @@ else { var Q = window.Q; }
 
 var EventEmitter = require('node-event-emitter');
 var inherits = require('inherits');
+var DiyaSocket = require('./DiyaSocket')
 
 //////////////////////////////////////////////////////////////
 /////////////////// Logging utility methods //////////////////
@@ -46,8 +47,8 @@ function DiyaNode(){
 	this._peers = [];
 	this._reconnectTimeout = 1000;
 	this._connectTimeout = 5000;
-
 	this.store = new Map()
+	this._diyaSocket = new Map();
 }
 inherits(DiyaNode, EventEmitter);
 
@@ -72,8 +73,6 @@ DiyaNode.prototype.peers = function(){ return this._peers; };
 DiyaNode.prototype.self = function() { return this._self; };
 DiyaNode.prototype.setSecured = function(bSecured) { this._secured = bSecured !== false; };
 DiyaNode.prototype.setWSocket = function(WSocket) {this._WSocket = WSocket;}
-
-
 
 /** @return {Promise<String>} the connected peer name */
 DiyaNode.prototype.connect = function (addr, WSocket) {
@@ -326,6 +325,27 @@ DiyaNode.prototype.subscribe = function(params, callback){
 	return message.id;
 };
 
+DiyaNode.prototype.openSocket = function(d1inst, params, callback){
+	this._diyaSocket.set(params.socketId, new DiyaSocket(d1inst, params));
+	this._diyaSocket.get(params.socketId).subscribeSocketClosed(params.socketId);
+	if (typeof callback === 'function') callback(this._diyaSocket.get(params.socketId));
+};
+
+DiyaNode.prototype.onSocketClosed = function(socketId){
+	if (this._diyaSocket.has(socketId)){
+		this._diyaSocket.get(socketId).emit('close')
+		this._diyaSocket.delete(socketId);
+	}
+}
+
+DiyaNode.prototype.sendSocketData = function(params){
+	let message = this._createMessage(params, "SocketClientData");
+	if(!this._send(message)){
+		throw new Error('Cannot send socket!');
+	}
+	return message.id;
+};
+
 DiyaNode.prototype.unsubscribe = function(subId){
 	if(this._pendingMessages[subId] && this._pendingMessages[subId].type === "Subscription"){
 		var subscription = this._removeMessage(subId);
@@ -391,6 +411,7 @@ DiyaNode.prototype._getMessageHandler = function(messageId){
 	return handler ? handler : null;
 };
 
+
 DiyaNode.prototype._notifyListener = function(handler, error, data){
 	if(handler && typeof handler.callback === 'function') {
 		error = error ? error : null;
@@ -415,7 +436,7 @@ DiyaNode.prototype._setupPingResponse = function(){
 		var curTime = new Date().getTime();
 		if(curTime - that._lastPing > that._pingTimeout){
 			that._forceClose();
-			Logger.log("d1:  timed out !");
+			Logger.log("d1:  timed out!");
 		}else{
 			Logger.log("d1: last ping ok");
 			that._pingSetTimeoutId = setTimeout(checkPing, Math.round(that._pingTimeout / 2.1));
@@ -440,6 +461,7 @@ DiyaNode.prototype._forceClose = function(){
 
 
 DiyaNode.prototype._onmessage = function(message){
+	if(message.type === "SocketServerData") this._handleSocketServerData(message);
 	if(isNaN(message.id)) return this._handleInternalMessage(message);
 	var handler = this._getMessageHandler(message.id);
 	if(!handler) return;
@@ -578,6 +600,7 @@ DiyaNode.prototype._handleRequest = function(handler, message){
 			this._pendingMessages[message.id].callback_partial(error, data);
 		}
 	} else {
+
 		this._removeMessage(message.id);
 		this._notifyListener(handler, message.error, message.data);
 	}
@@ -592,6 +615,9 @@ DiyaNode.prototype._handleSubscription = function(handler, message){
 	this._notifyListener(handler, message.error, message.data ? message.data : null);
 };
 
+DiyaNode.prototype._handleSocketServerData = function(message){
+		this._diyaSocket.get(message.data.socketId).push(new Buffer(message.data.buffer, 'base64'));
+};
 
 ///////////////////
 // SocketHandler //
@@ -715,7 +741,7 @@ SocketHandler.prototype.unregisterCallbacks = function() {
 ///////////////////////////////////////////////////////////////
 
 DiyaNode.prototype._createMessage = function(params, type){
-	if(!params || !type || (type !== "Request" && type !== "Subscription" && type !== "Unsubscribe")){
+	if(!params || !type || (type !== "Request" && type !== "Subscription" && type !== "Unsubscribe" && type !== "SocketClientData")){
 		return null;
 	}
 

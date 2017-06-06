@@ -283,7 +283,47 @@ DiyaSelector.prototype.auth = function(user, password, callback, timeout){
 	return deferred.promise;
 };
 
+DiyaSelector.prototype.openSocket = function (params, callback) {
+	var that = this;
 
+	if (typeof callback === 'function') callback = callback.bind(this);
+
+	var socketName = params.socketName;
+
+	this.request({
+		service: 'socketHandler',
+		func: 'OpenSocket',
+		data: {
+			socket_name: socketName,
+		}
+	}, function (peerId, err, data) {
+		if (err == null && data.socket_id != null) {
+			params = {
+				err: err,
+				socketId: data.socket_id,
+				socketName: socketName,
+				target: peerId,
+			}
+			that._connection.openSocket(that, params, (diyaSocket) => {
+				if (typeof callback === 'function') callback(peerId, null, diyaSocket);
+			});
+
+		} else {
+			if (typeof callback === 'function') callback(peerId, err, null);
+		}
+	});
+};
+
+DiyaSelector.prototype.sendSocketData = function (params) {
+	return this.each(function (peerId) {
+		params.target = peerId;
+		this._connection.sendSocketData(params);
+	});
+};
+
+DiyaSelector.prototype.onSocketClosed = function(socketId){
+	this._connection.onSocketClosed(socketId);
+}
 
 // Privates
 
