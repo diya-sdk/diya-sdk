@@ -288,7 +288,7 @@ DiyaSelector.prototype.openSocket = function (params, callback) {
 
 	if (typeof callback === 'function') callback = callback.bind(this);
 
-	var socketName = params.socketName;
+	var socketName = params;
 
 	this.request({
 		service: 'socketHandler',
