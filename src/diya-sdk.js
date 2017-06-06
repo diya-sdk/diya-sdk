@@ -7,5 +7,6 @@ require('./services/meshNetwork/MeshNetwork.js');
 require('./utils/encoding/encoding.js');
 require('./services/status/status.js');
 require('./DBusObject.js');
+require('./services/shell/Shell.js');
 
 module.exports = d1;
