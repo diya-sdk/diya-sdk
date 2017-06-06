@@ -1,5 +1,4 @@
 const Transform = require('stream').Transform;
-const d1 = require('diya-sdk');
 
 class DiyaSocket extends Transform {
 	constructor(d1inst, params, options) {
