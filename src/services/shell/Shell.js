@@ -28,9 +28,9 @@ DiyaSelector.prototype.shell = function (command, args, cols, rows, term, callba
 				resize: (cols, rows) => {
 					this._connection._d1inst(peerId).request({
 						service: 'shell',
-						func: 'Resize',
+						func: 'ResizeShell',
 						data: {
-							commandId: termId,
+							process_id: termId,
 							cols: cols,
 							rows: rows
 						}
