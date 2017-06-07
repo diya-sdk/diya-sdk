@@ -647,7 +647,7 @@ function SocketHandler(WSocket, addr, timeout) {
 		this._socket.addEventListener('error', this._socketErrorCallback);
 
 		this._socket.addEventListener('error', function(err){
-			Logger.error("[WS] error : "+JSON.stringify(err));
+			Logger.error("[WS] error : " + err.toString());
 			that._socket.close();
 		});
 
