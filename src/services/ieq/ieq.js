@@ -447,15 +447,27 @@ IEQ.prototype.getCSVData = function(csvConfig, callback){
 	});
 };
 
+
+
+/**
+ * Request Data to make data map
+  * @param {Object} dataConfig config for data request
+  * @param {callback} callback: called after update
+  */
+IEQ.prototype.getDataMapData = function(dataConfig, callback){
+	this._updateData(callback, dataConfig, "DataRequest");
+};
+
+
 /**
  * Request Data to make heatmap
   * @param {list} sensorNames : list of sensor and index names
   * @param {object} time: object containing timestamps for begin and end of data for heatmap
   * @param {string} sample: timeinterval for data. Parameters: "second", "minute", "hour", "day", "week", "month"
   * @param {callback} callback: called after update
+  * @deprecated Will be deprecated in future version. Please use "getDataMapData" instead.
+
   */
-
-
 IEQ.prototype.getHeatMapData = function(sensorNames,time, sample, callback){
 	var dataConfig = {
 		criteria: {
@@ -465,7 +477,8 @@ IEQ.prototype.getHeatMapData = function(sensorNames,time, sample, callback){
 		},
 		sensors: sensorNames
 	};
-	this._updateData(callback, dataConfig,"DataRequest");
+	console.warn('This function will be deprecated. Please use "getDataMapData" instead.');
+	this.getDataMapData(dataConfig, callback)
 };
 
 /**
