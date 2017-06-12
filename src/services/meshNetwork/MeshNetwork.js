@@ -17,7 +17,7 @@ DiyaSelector.prototype.knownPeers = function(callback) {
 	this.request({service: 'meshNetwork',func: 'ListKnownPeers'}, function(peerId, err, data){
 		if(err) return deferred.reject(err);
 		var peers = [];
-		for(var i=0; i<data.peers.length; i++) peers.push(data.peers[i].name);
+		for(var i=0; i<data.length; i++) peers.push(data[i].peer_name);
 		return deferred.resolve(peers);
 	});
 	return deferred.promise;
