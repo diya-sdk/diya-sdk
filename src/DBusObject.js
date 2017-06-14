@@ -3,7 +3,7 @@
 let EventEmitter = require('node-event-emitter')
 let DiyaSelector = require('./DiyaSelector.js').DiyaSelector
 
-DiyaSelector.prototype.dbusObject = function (service, path, partialObject) {
+DiyaSelector.prototype.dbusObject = function (service, path, partialObject, signals) {
 	let objects = []
 
 	this.each(peerId => {
@@ -19,11 +19,12 @@ DiyaSelector.prototype.dbusObject = function (service, path, partialObject) {
 		let dbusService = dbus.get(service)
 
 		if (dbusService.get(path) == null) {
-			dbusService.set(path, new DBusObjectHandler(this._connection._d1inst, peerId, service, path))
+			dbusService.set(path, new DBusObjectHandler(this._connection._d1inst, peerId, service, path, signals))
 		}
 		let object = dbusService.get(path)
 
 		object.importPartialObject(partialObject)
+		object.importSignals(signals)
 
 		objects.push(object)
 	})
@@ -31,14 +32,14 @@ DiyaSelector.prototype.dbusObject = function (service, path, partialObject) {
 	return objects
 }
 
-
 class DBusObjectHandler extends EventEmitter {
 
-	constructor (d1inst, peerId, service, path) {
+	constructor (d1inst, peerId, service, path, signals) {
 		super()
 
 		this.objPath = path
 		this.service = service
+		this._signals = signals
 		this._d1inst = d1inst
 		this._peerId = peerId
 
@@ -53,6 +54,14 @@ class DBusObjectHandler extends EventEmitter {
 		for (let iface in partialObject) {
 			this._onPropertiesChanged ([iface, partialObject[iface], []])
 		}
+	}
+
+	importSignals (signals) {
+		if (signals == null) {
+			return
+		}
+		this._signals = signals
+		this.subscribeToSignals()
 	}
 
 	get (iface, propName) {
@@ -117,7 +126,7 @@ class DBusObjectHandler extends EventEmitter {
 
 	initPropertiesChangedSignal () {
 		if (this._subProperties != null) return 
-
+		console.log(`Subscribe to property changes`)
 		this._subProperties = this._d1inst(this._peerId).subscribe({
 			service: this.service,
 			func: 'PropertiesChanged',
@@ -160,4 +169,33 @@ class DBusObjectHandler extends EventEmitter {
 
 		this.emit('properties-changed', simpleIface, changedProperties, invalidatedProperties)
 	}
+
+	subscribeToSignals() {
+		console.log(`subscribeToSignals , signals = ${JSON.stringify(this._signals)}, this._subscriptions = ${this._subscriptions}`)
+		if (this._signals == null) return
+		if (this._subscriptions == null) this._subscriptions = new Map()
+		this._signals.forEach(obj => {
+			if (this._subscriptions.get(obj.id) != null) {
+				console.warn(`Already subscribed, signal ${obj.id}`)
+				return
+			} // refuse duplicate subscriptions
+			let subscription = this._d1inst(this._peerId).subscribe({
+				service: this.service,
+				func: obj.name,
+				obj: {
+					interface: obj.iface,
+					path: obj.objectPath,
+				}
+			}, (peerId, err, data) => {
+				if (err) {
+					console.error('subscribeToSignals', obj, err)
+					return
+				}
+				this.emit(obj.id, Array.isArray(data) ? data[0] : data) // event 'id' is emitted instead of 'name' because signal's names may be duplicate
+			})
+			this._subscriptions.set(obj.id, subscription)
+		})
+
+	}
+
 }
