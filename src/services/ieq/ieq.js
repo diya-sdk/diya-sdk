@@ -1,3 +1,27 @@
+/*
+ * Copyright : Partnering 3.0 (2007-2016)
+ * Author : Sylvain Mahé <sylvain.mahe@partnering.fr>
+ *
+ * This file is part of diya-sdk.
+ *
+ * diya-sdk is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ *
+ * diya-sdk is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with diya-sdk.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
+
+
+
 /* maya-client
  * Copyright (c) 2014, Partnering Robotics, All rights reserved.
  * This library is free software; you can redistribute it and/or
@@ -15,7 +39,6 @@
    Todo :
    check err for each data
    improve API : getData(sensorName, dataConfig)
-   return adapted vector for display with D3 to reduce code in IHM ?
    updateData(sensorName, dataConfig)
    set and get for the different dataConfig params
 
@@ -44,8 +67,8 @@ var Logger = {
 };
 
 /**
- *	callback : function called after model updated
- * */
+ * IEQ API handler
+ */
 function IEQ(selector){
 	var that = this;
 	this.selector = selector;
@@ -217,6 +240,9 @@ IEQ.prototype.DataPlaceIds = function(placeIds){
  * Get data by sensor name.
  *	@param {Array[String]} sensorName list of sensors
  */
+
+
+
 IEQ.prototype.getDataByName = function(sensorNames){
 	var data=[];
 	for(var n in sensorNames) {
@@ -224,41 +250,57 @@ IEQ.prototype.getDataByName = function(sensorNames){
 	}
 	return data;
 };
+
 /**
  * Update data given dataConfig.
  * @param {func} callback : called after update
+ * @param {object} dataConfig: data to config request
  * TODO USE PROMISE
  */
+
 IEQ.prototype.updateData = function(callback, dataConfig){
-	var that=this;
+	this._updateData(callback, dataConfig, "DataRequest")
+};
+
+/**
+ * Update data given dataConfig.
+ * @param {func} callback : called after update
+ * @param {object} dataConfig: data to config request
+ * @param {string} funcName: name of requested function in diya-node-ieq. Default: "DataRequest".
+ * TODO USE PROMISE
+ */
+
+IEQ.prototype._updateData = function(callback, dataConfig, funcName){
+	var that = this;
 	if(dataConfig)
 		this.DataConfig(dataConfig);
 	// console.log("Request: "+JSON.stringify(dataConfig));
 	this.selector.request({
 		service: "ieq",
-		func: "DataRequest",
-		data: {
-			type:"splReq",
-			dataConfig: that.dataConfig
+		func: funcName,
+		data: JSON.stringify(that.dataConfig),
+		//	type:"splReq",
+		obj:{
+			path: '/fr/partnering/Ieq',
+			interface: "fr.partnering.Ieq"
 		}
 	}, function(dnId, err, data){
 		if(err) {
-			Logger.error("["+that.dataConfig.sensors+"] Recv err: "+JSON.stringify(err));
+			if (typeof err =="string") Logger.error("Recv err: "+ err);
+			else if (typeof err == "object" && typeof err.name =='string') {
+				callback(null, err.name);
+				if (typeof err.message=="string") Logger.error(err.message);
+			}
 			return;
 		}
-		if(data.header.error) {
+		if(data && data.header && data.header.error) {
 			// TODO : check/use err status and adapt behavior accordingly
 			Logger.error("UpdateData:\n"+JSON.stringify(data.header.dataConfig));
 			Logger.error("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
 			return;
 		}
-
-		// console.log(data);
 		that._getDataModelFromRecv(data);
-
 		// Logger.log(that.getDataModel());
-
-		callback = callback.bind(that); // bind callback with IEQ
 		callback(that.getDataModel()); // callback func
 	});
 };
@@ -294,45 +336,45 @@ IEQ.prototype.getEnvQualityLevel = function(){
  * @param  data to configure subscription
  * @param  callback called on answers (@param : dataModel)
  */
-IEQ.prototype.watch = function(data, callback){
+IEQ.prototype.watch = function(config, callback){
 	var that = this;
-	// console.log("Request: "+JSON.stringify(dataConfig));
-
 	/** default **/
-	data = data || {};
-	data.timeRange = data.timeRange  || 'hours';
-	data.cat = data.cat || 'ieq'; /* category */
+	config = config || {};
+	console.log("WATCH")
+	config.timeRange = config.timeRange  || 'hours';
+	config.cat = config.cat || 'ieq'; /* category */
 
 	var subs = this.selector.subscribe({
 		service: "ieq",
-		func: "Data",
-		data: data,
-		obj: data.cat /* provide category of sensor to be watched, filtered according to CRM */
-	}, function(dnId, err, data){
+		func: "FireIEQ",
+		data: {data: config},
+	//	obj: config.cat /* provide category of sensor to be watched, filtered according to CRM */
+		obj:{
+			path: '/fr/partnering/Ieq',
+			interface: "fr.partnering.Ieq"
+		}
+	}, function(dnd, err, data){
 		if(err) {
-			Logger.error("WatchIEQRecvErr:"+JSON.stringify(err));
-			// console.log(e);
-			// console.log(that.selector);
-			// if(err==="SubscriptionClosed") {
-			// 	that.closeSubscriptions(); // should not be necessary
-			// 	that.subscriptionError = that.subscriptionErrorNum+1; // increase error counter
-			// 	setTimeout(that.subscriptionErrorNum*60000, that.watch(data,callback)); // try again later
-			// }
-			// else {
-			// 	console.error("Unmanage cases : should the subscription be regenerated ?");
-			// }
+		//	Logger.error("WatchIEQRecvErr:"+JSON.stringify(err));
+			that.closeSubscriptions(); // should not be necessary
+			that.subscriptionReqPeriod = that.subscriptionReqPeriod+1000||1000; // increase delay by 1 sec
+			if(that.subscriptionReqPeriod > 300000) that.subscriptionReqPeriod=300000; // max 5min
+			setTimeout(function() {	that.watch(config,callback); }, that.subscriptionReqPeriod); // try again later
 			return;
 		}
-		if(data.header.error) {
+		data = JSON.parse(data);
+				console.log(data)
+
+		that.subscriptionReqPeriod=0; // reset period on subscription requests
+	/*	if(data.header.error) {
 			// TODO : check/use err status and adapt behavior accordingly
 			Logger.error("WatchIEQ:\n"+JSON.stringify(data.header.dataConfig));
 			Logger.error("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
 			return;
-		}
-		// console.log(data);
+		} */
+	//	console.log(data);
 		that._getDataModelFromRecv(data);
 //		that.subscriptionError = 0; // reset error counter
-
 		callback = callback.bind(that); // bind callback with IEQ
 		callback(that.getDataModel()); // callback func
 	});
@@ -351,22 +393,103 @@ IEQ.prototype.closeSubscriptions = function(){
 };
 
 /**
- * request Data to make CSV file
- */
-IEQ.prototype.getCSVData = function(sensorNames,_firstDay,callback){
-	var firstDay = new Date(_firstDay);
+* Request Data to make CSV file
+	* @param {object} csvConfig params:
+	* @param {list} csvConfig.sensorNames : list of sensor and index names
+	* @param {number} csvConfig._startTime: timestamp of beginning time
+	* @param {number} csvConfig._endTime: timestamp of end time
+	* @param {string} csvConfig.timeSample: timeinterval for data. Parameters: "second", "minute", "hour", "day", "week", "month"
+	* @param {number} csvConfig._nlines: maximum number of lines requested
+	* @param {callback} callback: called after update
+*/
+
+
+IEQ.prototype.getCSVData = function(csvConfig, callback){
+
+	var that = this;
+
+	if (csvConfig && typeof csvConfig.nlines !="number" ) csvConfig.nlines = undefined;
+
+	var dataConfig =JSON.stringify({
+		criteria: {
+			time: { start: (new Date(csvConfig.startTime)).getTime(), end: (new Date(csvConfig.endTime)).getTime() , sampling:csvConfig.timeSample},
+			places: [],
+			robots: []
+		},
+		sensors: csvConfig.sensorNames,
+		sampling: csvConfig.nlines
+	});
+
+	this.selector.request({
+		service: "ieq",
+		func: "CsvDataRequest",
+		data: {data: dataConfig},
+		//	type:"splReq",
+		obj:{
+			path: '/fr/partnering/Ieq',
+			interface: "fr.partnering.Ieq"
+		}
+	}, function(dnId, err, data){
+		if(err) {
+			if (typeof err =="string") Logger.error("Recv err: "+ err);
+			else if (typeof err == "object" && typeof err.name =='string') {
+				callback(null, err.name);
+				if (typeof err.message=="string") Logger.error(err.message);
+			}
+			return;
+		}
+		if(typeof data === 'string') {
+			callback(data);
+		}
+		else {
+			// DEPRECATED
+			if(data && data.header && data.header.error) {
+			// TODO : check/use err status and adapt behavior accordingly
+			Logger.error("UpdateData:\n"+JSON.stringify(data.header.dataConfig));
+			Logger.error("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
+				return;
+			}
+			console.log('EHIEHIEHIEHI I SEE YOU')
+			that._getDataModelFromRecv(data);
+			// Logger.log(that.getDataModel());
+			callback(that.getDataModel()); // callback func
+		}
+	});
+};
+
+
+
+/**
+ * Request Data to make data map
+  * @param {Object} dataConfig config for data request
+  * @param {callback} callback: called after update
+  */
+IEQ.prototype.getDataMapData = function(dataConfig, callback){
+	this._updateData(callback, dataConfig, "DataRequest");
+};
+
+
+/**
+ * Request Data to make heatmap
+  * @param {list} sensorNames : list of sensor and index names
+  * @param {object} time: object containing timestamps for begin and end of data for heatmap
+  * @param {string} sample: timeinterval for data. Parameters: "second", "minute", "hour", "day", "week", "month"
+  * @param {callback} callback: called after update
+  * @deprecated Will be deprecated in future version. Please use "getDataMapData" instead.
+
+  */
+IEQ.prototype.getHeatMapData = function(sensorNames,time, sample, callback){
 	var dataConfig = {
 		criteria: {
-			time: { start: firstDay.getTime(), rangeUnit: 'hour', range: 180}, // 360h -> 15d // 180h -> 7j
+			time: {start: time.startEpoch, end: time.endEpoch, sampling: sample},
 			places: [],
 			robots: []
 		},
 		sensors: sensorNames
 	};
-
-	this.updateData(callback, dataConfig);
+	console.warn('This function will be deprecated. Please use "getDataMapData" instead.');
+	this.getDataMapData(dataConfig, callback)
 };
-
 
 /**
  * Update internal model with received data
@@ -375,13 +498,15 @@ IEQ.prototype.getCSVData = function(sensorNames,_firstDay,callback){
  */
 IEQ.prototype._getDataModelFromRecv = function(data){
 	var dataModel=null;
-
-	if(data.err && data.err.st>0) {
+//	console.log('getDataModel');
+//	console.log(data);
+	console.log(data)
+/*	if(data.err && data.err.st>0) {
 		Logger.error(data.err.msg);
 		return null;
-	}
-	delete data.err;
-	if(data && data.header) {
+	} */
+//	delete data.err;
+	if(data != null) {
 		for (var n in data) {
 			if(n != "header" && n != "err") {
 
@@ -409,9 +534,10 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 				dataModel[n].precision=data[n].precision;
 				/* update data categories */
 				dataModel[n].category=data[n].category;
-
 				/* suggested y display range */
 				dataModel[n].zoomRange = [0, 100];
+				// update sensor confort range
+				dataModel[n].confortRange = data[n].confortRange;
 
 				/* update data indexRange */
 				dataModel[n].qualityConfig={
