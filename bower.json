@@ -25,6 +25,7 @@
     "package.json"
   ],
   "dependencies": {
-    "q": "1.4"
+    "q": "1.4",
+    "bluebird": "3.5.0"
   }
 }

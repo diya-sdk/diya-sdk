@@ -35,9 +35,11 @@
  * License along with this library.
  */
 
+var isBrowser = !(typeof window === 'undefined');
+if(!isBrowser) { var Promise = require('bluebird'); }
+else { var Promise = window.Promise; }
 var DiyaSelector = require('../../DiyaSelector').DiyaSelector;
 var util = require('util');
-const Promise = require('bluebird');
 
 var Message = require('../message');
 
@@ -272,7 +274,7 @@ Status.prototype.watch = function (robotNames, callback) {
 			let robotName = '';
 			let robotId = 1;
 			for (let objectPath in objData) {
-				if (objData[objectPath]['fr.partnering.Status.Robot']) {
+				if (objData[objectPath]['fr.partnering.Status.Robot'] != null) {
 					robotName = objData[objectPath]['fr.partnering.Status.Robot'].RobotName;
 					robotId = objData[objectPath]['fr.partnering.Status.Robot'].RobotId;
 					robotIds[robotName] = robotId;
@@ -280,7 +282,7 @@ Status.prototype.watch = function (robotNames, callback) {
 						callback(model);
 					})
 				}
-				if (objData[objectPath]['fr.partnering.Status.Part']) {
+				if (objData[objectPath]['fr.partnering.Status.Part'] != null) {
 					let subs = this.selector.subscribe({// subscribes to status changes for all parts
 						service: 'status',
 						func: 'CurrentStatusChanged',
@@ -290,7 +292,7 @@ Status.prototype.watch = function (robotNames, callback) {
 						},
 						data: robotNames
 					}, (peerId, err, data) => {
-						if (err) {
+						if (err != null) {
 							Logger.error("StatusSubscribe:" + err);
 						} else {
 							robotName = objectPath.split("/")[5];
@@ -331,7 +333,7 @@ Status.prototype.closeSubscriptions = function(){
 Status.prototype.getData = function(callback, dataConfig){
 	var dataModel = {};
 	return Promise.try(_ => {
-		if(dataConfig)
+		if(dataConfig != null)
 			this.DataConfig(dataConfig);
 		// console.log("Request: "+JSON.stringify(dataConfig));
 		this.selector.request({
@@ -342,11 +344,11 @@ Status.prototype.getData = function(callback, dataConfig){
 				dataConfig: this.dataConfig
 			}
 		}, (dnId, err, data) => {
-			if (err) {
+			if (err != null) {
 				Logger.error("[" + this.dataConfig.sensors + "] Recv err: " + JSON.stringify(err));
 				return;
 			}
-			if(data.header.error) {
+			if(data.header.error != null) {
 				// TODO : check/use err status and adapt behavior accordingly
 				Logger.error("UpdateData:\n"+JSON.stringify(data.header.reqConfig));
 				Logger.error("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
@@ -371,13 +373,13 @@ Status.prototype.getData = function(callback, dataConfig){
  * @return {[type]}		[description]
  */
 Status.prototype._getRobotModelFromRecv2 = function(data, robotId, robotName) {
-	if(!this.robotModel)
+	if(this.robotModel == null)
 		this.robotModel = [];
 
-	if(this.robotModel[robotId])
+	if(this.robotModel[robotId] != null)
 		this.robotModel[robotId].parts = {}; // reset parts
 
-	if(!this.robotModel[robotId])
+	if(this.robotModel[robotId] == null)
 		this.robotModel[robotId] = {};
 
 	this.robotModel[robotId] = {
@@ -402,7 +404,7 @@ Status.prototype._getRobotModelFromRecv2 = function(data, robotId, robotName) {
 		let critLevel = d[8];
 		let description = d[9];
 
-		if (!rParts[partId]) {
+		if (rParts[partId] == null) {
 			rParts[partId] = {};
 		}
 		/* update part category */
@@ -414,10 +416,10 @@ Status.prototype._getRobotModelFromRecv2 = function(data, robotId, robotName) {
 
 		/* update error */
 		/** update errorList **/
-		if (!rParts[partId].errorList)
+		if (rParts[partId].errorList == null)
 			rParts[partId].errorList = {};
 
-		if (!rParts[partId].errorList[codeRef])
+		if (rParts[partId].errorList[codeRef] == null)
 			rParts[partId].errorList[codeRef] = {
 				msg: msg,
 				critLevel: critLevel,
@@ -486,11 +488,11 @@ DiyaSelector.prototype.setStatus = function (robotName, partName, code, source, 
 				source: source | 1
 			}
 		}, (peerId, err, data) => {
-			if (err) {
-				if (callback) callback(false);
+			if (err != null) {
+				if (typeof callback === 'function') callback(false);
 			}
 			else {
-				if (callback) callback(true);
+				if (typeof callback === 'function') callback(true);
 			}
 		});
 	}).catch(err => {
@@ -529,11 +531,11 @@ Status.prototype.getStatus = function (robotName, partName, callback/*, _full*/)
 			}, (peerId, err, data) => {
 				sendData.push(data)
 				this._getRobotModelFromRecv2(sendData, robotId, robotName);
-				if (err) {
-					if (callback) callback(-1);
+				if (err != null) {
+					if (typeof callback === 'function') callback(-1);
 				}
 				else {
-					if (callback) callback(this.robotModel);
+					if (typeof callback === 'function') callback(this.robotModel);
 				}
 			});
 		})
@@ -558,8 +560,8 @@ Status.prototype.getAllStatuses = function (robotName, callback) {
 		}
 	}, (peerId, err, objData) => { // get all object paths, interfaces and properties children of Status
 		let objectPath = "/fr/partnering/Status/Robots/" + robotName;
-		if (objData[objectPath]) {
-			if (objData[objectPath]['fr.partnering.Status.Robot']) {
+		if (objData[objectPath] != null) {
+			if (objData[objectPath]['fr.partnering.Status.Robot'] != null) {
 				let robotId = objData[objectPath]['fr.partnering.Status.Robot'].RobotId
 				//var full = _full || false;
 				this.selector.request({
@@ -570,13 +572,13 @@ Status.prototype.getAllStatuses = function (robotName, callback) {
 						path: objectPath
 					}
 				}, (peerId, err, data) => {
-					if (err) {
-						if (callback) callback(-1);
+					if (err != null) {
+						if (typeof callback === 'function') callback(-1);
 						throw new Error(err)
 					}
 					else {
 						this._getRobotModelFromRecv2(data, robotId, robotName);
-						if (callback) callback(this.robotModel);
+						if (typeof callback === 'function') callback(this.robotModel);
 					}
 				});
 			} else {
