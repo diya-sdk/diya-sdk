@@ -47,6 +47,8 @@ class DiyaSocket extends Transform {
 			if (err == null && data != null) {
 				if (data[0] === openedSocketId) this.d1inst.onSocketClosed(data[0]);
 				this.subscriptionSocketClosed.close();
+			} else {
+				this.disconnect()
 			}
 		})
 	}
