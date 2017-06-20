@@ -46,10 +46,16 @@ class DiyaSocket extends Transform {
 		}, (peerId, err, data) => {
 			if (err == null && data != null) {
 				if (data[0] === openedSocketId) this.d1inst.onSocketClosed(data[0]);
-				this.subscriptionSocketClosed.close();
 			} else {
 				this.disconnect()
 			}
+			this.subscriptionSocketClosed.close();
+			this.subscriptionSocketClosed = null;
+			this.d1inst = null;
+			this.socketName = null;
+			this.socketId = null;
+			this.peerId = null;
+			this.flagSocketIsDead = null;
 		})
 	}
 }
