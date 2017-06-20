@@ -44,8 +44,10 @@ class DiyaSocket extends Transform {
 			service: 'SocketHandler',
 			func: 'SocketIsClosed'
 		}, (peerId, err, data) => {
-			if (data[0] === openedSocketId) this.d1inst.onSocketClosed(data[0]);
-			this.subscriptionSocketClosed.close();
+			if (err == null && data != null) {
+				if (data[0] === openedSocketId) this.d1inst.onSocketClosed(data[0]);
+				this.subscriptionSocketClosed.close();
+			}
 		})
 	}
 }
