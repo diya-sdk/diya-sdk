@@ -82,3 +82,75 @@ d1.connectAsUser('wss://localhost/api', 'toto', 'toto_password', WebSocket).then
 }); 
 ```
 
+### Unix Socket
+
+#### Open a UNIX socket and write on it
+
+```js
+d1("D1R01").openSocket("/tmp/echo_server.sock", (peerId, err, sock) => { // Open a DiyaSocket
+	if (sock) { // The opened socket
+		sock.write("Hello"); // Write on socket
+	}
+})
+```
+
+#### Read the socket
+
+```js
+sock.on('data', (buff) => console.log(buff.toString('ascii')));
+```
+
+#### Pipe on the socket
+e.g. pipe on stdin:
+
+```js
+process.stdin.resume();
+process.stdin.pipe(sock);
+```
+
+#### Be notified that the socket is closed
+
+```js
+sock.on('close', () => {
+	console.log('Socket closed!');
+})
+```
+
+#### Close the socket
+
+```js
+sock.disconnect();
+```
+
+#### Full example code
+
+```js
+var d1 = require('diya-sdk');
+var WebSocket = require('ws');
+var Promise = require('bluebird');
+
+Promise.try(_ => { return d1.connectAsUser('wss://172.18.0.3/api', 'TheUserName', 'ThePassWord', WebSocket) })
+.then(() => {
+    console.log('connected !');
+    d1("D1R01").openSocket("/tmp/echo_server.sock", (peerId, err, sock) => { // Open a DiyaSocket
+        if (sock) { // The opened socket
+            sock.write("Hello"); // Write on socket
+            sock.on('data', (buff) => console.log(buff.toString('ascii')));
+            process.stdin.resume();
+            process.stdin.pipe(sock);
+            sock.on('close', () => {
+                console.log('Socket closed!');
+            })
+            process.on('SIGINT', () => {
+                sock.disconnect();
+                process.exit();
+            });
+        } else {
+            console.log("Error: " + err)
+        }
+    });
+})
+.catch((error) => {
+    console.log('game over : ' + error);
+}); 
+```
