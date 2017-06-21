@@ -84,7 +84,7 @@ d1.connectAsUser('wss://localhost/api', 'toto', 'toto_password', WebSocket).then
 
 ### Unix Socket
 
-#### Open a UNIX socket and write on it
+#### Open an UNIX socket and write on it
 
 ```js
 d1("D1R01").openSocket("/tmp/echo_server.sock", (peerId, err, sock) => { // Open a DiyaSocket
