@@ -559,6 +559,7 @@ DiyaNode.prototype._handlePeerConnected = function(message){
 
 	//Add peer to the list of reachable peers
 	this._peers.push(message.peerId);
+	this.store.set(message.peerId, new Map())
 
 	this.emit('peer-connected', message.peerId);
 };
@@ -568,6 +569,16 @@ DiyaNode.prototype._handlePeerDisconnected = function(message){
 		Logger.error("Missing arguments for PeerDisconnected Message, dropping...");
 		return ;
 	}
+	
+	//Remove peer from list of reachable peers
+	for(var i=this._peers.length - 1; i >= 0; i--){
+		if(this._peers[i] === message.peerId){
+			this._peers.splice(i, 1);
+			break;
+		}
+	}
+	//remove associated store
+	this.store.delete(message.peerId)
 
 	//Go through all pending messages and notify the ones that are targeted
 	//at the disconnected peer that it disconnected and therefore the command
@@ -580,15 +591,6 @@ DiyaNode.prototype._handlePeerDisconnected = function(message){
 		}
 	}
 
-	//Remove peer from list of reachable peers
-	for(var i=this._peers.length - 1; i >= 0; i--){
-		if(this._peers[i] === message.peerId){
-			this._peers.splice(i, 1);
-			break;
-		}
-	}
-
-	this.store.delete(message.peerId)
 	this.emit('peer-disconnected', message.peerId);
 };
 

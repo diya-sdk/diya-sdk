@@ -5,8 +5,8 @@
   "main": "src/diya-sdk.js",
   "scripts": {
     "clean": "rm -f build/diya-sdk.js && rm -f build/diya-sdk.min.js && rm -f build/temp.js && rm -rf build/build",
-    "build-debug": "browserify src/diya-sdk.js -t [ babelify --presets [ es2015 es2016 ] ] --exclude q --exclude json-socket --s d1 --im -d > build/diya-sdk.js",
-    "build-min": "browserify src/diya-sdk.js -t [ babelify --presets [ es2015 es2016 ] ] --exclude q --exclude json-socket --s d1 --im | uglifyjs -c > build/diya-sdk.min.js",
+    "build-debug": "browserify src/diya-sdk.js -t [ babelify --presets [ es2015 es2016 ] ] --exclude q --exclude json-socket --exclude bluebird --s d1 --im -d > build/diya-sdk.js",
+    "build-min": "browserify src/diya-sdk.js -t [ babelify --presets [ es2015 es2016 ] ] --exclude q --exclude json-socket --exclude bluebird --s d1 --im | uglifyjs -c > build/diya-sdk.min.js",
     "build": "npm run build-debug && npm run build-min",
     "watch": "watchify src/diya-sdk.js -d --exclude q --im --s d1 -o build/diya-sdk.js -v"
   },
