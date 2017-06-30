@@ -274,17 +274,17 @@ IEQ.prototype._updateData = function(callback, dataConfig, funcName){
 	var that = this;
 	if(dataConfig)
 		this.DataConfig(dataConfig);
-	// console.log("Request: "+JSON.stringify(dataConfig));
+
 	this.selector.request({
 		service: "ieq",
 		func: funcName,
-		data: JSON.stringify(that.dataConfig),
-		//	type:"splReq",
+		data: {data: JSON.stringify(that.dataConfig)},		//	type:"splReq",
 		obj:{
 			path: '/fr/partnering/Ieq',
 			interface: "fr.partnering.Ieq"
 		}
 	}, function(dnId, err, data){
+		data = JSON.parse(data);
 		if(err) {
 			if (typeof err =="string") Logger.error("Recv err: "+ err);
 			else if (typeof err == "object" && typeof err.name =='string') {
@@ -340,7 +340,6 @@ IEQ.prototype.watch = function(config, callback){
 	var that = this;
 	/** default **/
 	config = config || {};
-	console.log("WATCH")
 	config.timeRange = config.timeRange  || 'hours';
 	config.cat = config.cat || 'ieq'; /* category */
 
@@ -363,7 +362,6 @@ IEQ.prototype.watch = function(config, callback){
 			return;
 		}
 		data = JSON.parse(data);
-				console.log(data)
 
 		that.subscriptionReqPeriod=0; // reset period on subscription requests
 	/*	if(data.header.error) {
@@ -449,7 +447,6 @@ IEQ.prototype.getCSVData = function(csvConfig, callback){
 			Logger.error("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
 				return;
 			}
-			console.log('EHIEHIEHIEHI I SEE YOU')
 			that._getDataModelFromRecv(data);
 			// Logger.log(that.getDataModel());
 			callback(that.getDataModel()); // callback func
@@ -500,7 +497,6 @@ IEQ.prototype._getDataModelFromRecv = function(data){
 	var dataModel=null;
 //	console.log('getDataModel');
 //	console.log(data);
-	console.log(data)
 /*	if(data.err && data.err.st>0) {
 		Logger.error(data.err.msg);
 		return null;
