@@ -153,7 +153,7 @@ Config.prototype.watch = function(key, callback){
 Config.prototype.closeSubscriptions = function(){
 	for(var i in this.subscriptions) {
 		this.subscriptions[i].close();
-		clearTimeout(this.subscription[i].watchTentative);
+		clearTimeout(this.subscriptions[i].watchTentative);
 	}
 	this.subscriptions =[];
 };

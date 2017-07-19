@@ -273,7 +273,7 @@ Status.prototype.watch = function(robotNames, callback){
 			that.closeSubscriptions(); // should not be necessary
 			that.subscriptionReqPeriod = that.subscriptionReqPeriod+1000||1000; // increase delay by 1 sec
 			if(that.subscriptionReqPeriod > 60000) that.subscriptionReqPeriod=60000; // max 1min
-			setTimeout(function() {	that.watch(data,callback); }, that.subscriptionReqPeriod); // try again later
+			subs.watchTentative = setTimeout(function() {	that.watch(data,callback); }, that.subscriptionReqPeriod); // try again later
 			return;
 		}
 		that.subscriptionReqPeriod=0; // reset period on subscription requests
@@ -294,6 +294,7 @@ Status.prototype.watch = function(robotNames, callback){
 Status.prototype.closeSubscriptions = function(){
 	for(var i in this.subscriptions) {
 		this.subscriptions[i].close();
+		clearTimeout(this.subscriptions[i].watchTentative);
 	}
 	this.subscriptions =[];
 	this.robotModel = [];
