@@ -77,7 +77,7 @@ function IEQ(selector){
 	this.subscriptions = [];
 //	that.subscriptionErrorNum = 0;
 
-	/*** structure of data config ***
+	/*** structure of data config. [] means default value ***
 		 criteria :
 		   time: all 3 time criteria should not be defined at the same time. (range would be given up)
 		     start: {[null],time} (null means most recent) // stored a UTC in ms (num)
@@ -85,12 +85,12 @@ function IEQ(selector){
 		     range: {[null], time} (range of time(positive) ) // in s (num)
 		   robot: {ArrayOf ID or ["all"]}
 		   place: {ArrayOf ID or ["all"]}
-		 operator: {[last], max, moy, sd} -( maybe moy should be default
+		 operator: {[last], max, moy, sd} - deprecated
 		 ...
 
 		 sensors : {[null] or ArrayOf SensorName}
 
-		 sampling: {[null] or int}
+		 sampling: {[null] or int} - deprecated
 	*/
 	this.dataConfig = {
 		criteria: {
@@ -353,7 +353,7 @@ IEQ.prototype.watch = function(config, callback){
 			that.closeSubscriptions(); // should not be necessary
 			that.subscriptionReqPeriod = that.subscriptionReqPeriod+1000||1000; // increase delay by 1 sec
 			if(that.subscriptionReqPeriod > 300000) that.subscriptionReqPeriod=300000; // max 5min
-			setTimeout(function() {	that.watch(config,callback); }, that.subscriptionReqPeriod); // try again later
+			subs.watchTentative = setTimeout(function() {	that.watch(config,callback); }, that.subscriptionReqPeriod); // try again later
 			return;
 		}
 		that.subscriptionReqPeriod=0; // reset period on subscription requests
@@ -381,6 +381,7 @@ IEQ.prototype.watch = function(config, callback){
 IEQ.prototype.closeSubscriptions = function(){
 	for(var i in this.subscriptions) {
 		this.subscriptions[i].close();
+		clearTimeout(this.subscriptions[i].watchTentative);
 	}
 	this.subscriptions =[];
 };
