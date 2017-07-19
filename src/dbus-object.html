@@ -17,7 +17,8 @@
 					object: { type: Object, notify: true },
 					partialObject: { type: Object },
 					signals: { type: Array, observer: 'updateState' },
-					watchChanges: { type: Boolean, value: false }
+					watchChanges: { type: Boolean, value: false },
+					debug: { type: Boolean },
 				}
 			}
 
@@ -26,13 +27,13 @@
 			}
 
 			updateState () {
-				console.log(`updateState, selector = ${this.selector}, service = ${this.service}, objectPath = ${this.objectPath}, object = ${this.object}, signals = ${this.signals == null ? null : this.signals[0].id}`)
+				if (this.debug) console.log(`updateState, selector = ${this.selector}, service = ${this.service}, objectPath = ${this.objectPath}, object = ${this.object}, signals = ${this.signals == null ? null : this.signals[0].id}`)
 				// remove old callbacks
 				if (this.object != null) {
 					this.object.removeListener('properties-changed', this._propertiesChangedCallback)
 					if (this.signals != null) {
 						this.signals.forEach(signal => {
-							console.warn(`updateState, removing listener ${signal.id}`)
+							if (this.debug) console.warn(`updateState, removing listener ${signal.id}`)
 							this.object.removeListener(signal.id, signal.listener)
 						})
 					}
@@ -52,7 +53,7 @@
 				this.object = obj[0]
 
 				if (this.object == null) {
-					console.warn('updateState, unregistered object. Terminated.')
+					if (this.debug) console.warn('updateState, unregistered object. Terminated.')
 					return
 				}
 

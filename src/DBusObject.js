@@ -125,8 +125,7 @@ class DBusObjectHandler extends EventEmitter {
 	}
 
 	initPropertiesChangedSignal () {
-		if (this._subProperties != null) return 
-		console.log(`Subscribe to property changes`)
+		if (this._subProperties != null) return
 		this._subProperties = this._d1inst(this._peerId).subscribe({
 			service: this.service,
 			func: 'PropertiesChanged',
@@ -171,7 +170,6 @@ class DBusObjectHandler extends EventEmitter {
 	}
 
 	subscribeToSignals() {
-		console.log(`subscribeToSignals , signals = ${JSON.stringify(this._signals)}, this._subscriptions = ${this._subscriptions}`)
 		if (this._signals == null) return
 		if (this._subscriptions == null) this._subscriptions = new Map()
 		this._signals.forEach(obj => {
