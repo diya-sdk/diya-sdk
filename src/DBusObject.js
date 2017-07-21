@@ -174,7 +174,7 @@ class DBusObjectHandler extends EventEmitter {
 		if (this._subscriptions == null) this._subscriptions = new Map()
 		this._signals.forEach(obj => {
 			if (this._subscriptions.get(obj.id) != null) {
-				console.warn(`Already subscribed, signal ${obj.id}`)
+				// console.warn(`Already subscribed, signal ${obj.id}`)
 				return
 			} // refuse duplicate subscriptions
 			let subscription = this._d1inst(this._peerId).subscribe({
