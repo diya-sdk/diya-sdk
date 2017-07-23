@@ -341,7 +341,51 @@ IEQ.prototype.watch = function(config, callback){
 	/** default **/
 	config = config || {};
 	config.timeRange = config.timeRange  || 'hours';
-	config.cat = config.cat || 'ieq'; /* category */
+	config.category = config.cat || 'ieq'; /* category */
+
+	var requestConfig = {
+		sampling: config.sampling || 500,
+		criteria: {
+			time: {rangeUnit: config.timeRange},
+			robots: config.robots
+		},
+		operators: ['avg','min','max','stddev']
+	};
+
+	// Request history data before subscribing
+	this.selector.request({
+		service: "ieq",
+		func: "DataRequest",
+		data: {data: JSON.stringify(requestConfig)},
+		obj:{
+			path: '/fr/partnering/Ieq',
+			interface: "fr.partnering.Ieq"
+		}
+	}, function(dnId, err, dataString){
+		var data = JSON.parse(dataString);
+		if(err != null) {
+			if (typeof err =="string") Logger.error("Recv err: "+ err);
+			else if (typeof err == "object" && typeof err.name =='string') {
+				callback(null, err.name);
+				if (typeof err.message=="string") Logger.error(err.message);
+			}
+			return;
+		}
+		// if(typeof data === 'string') {
+		// 	callback(data);
+		// }
+		// else {
+			// DEPRECATED
+
+		if(data && data.header && data.header.error) {
+			// TODO : check/use err status and adapt behavior accordingly
+			Logger.error("UpdateData:\n"+JSON.stringify(data.header.dataConfig));
+			Logger.error("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
+			return;
+		}
+		callback(that._getDataModelFromRecv(data)); // callback func
+		// }
+	});
 
 	var subs = this.selector.subscribe({
 		service: "ieq",
@@ -371,10 +415,8 @@ IEQ.prototype.watch = function(config, callback){
 			return;
 		} */
 	//	console.log(data);
-		that._getDataModelFromRecv(data);
 //		that.subscriptionError = 0; // reset error counter
-		callback = callback.bind(that); // bind callback with IEQ
-		callback(that.getDataModel()); // callback func
+		callback(that._getDataModelFromRecv(data)); // callback func
 	});
 
 	this.subscriptions.push(subs);
