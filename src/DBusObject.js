@@ -46,6 +46,13 @@ class DBusObjectHandler extends EventEmitter {
 		this._getAllDone = {}
 	}
 
+	close () {
+		if (this._subProperties != null) {
+			this._subProperties.close()
+			this._subProperties = null
+		}
+	}
+
 	importPartialObject (partialObject) {
 		if (partialObject == null) {
 			return 
@@ -64,6 +71,24 @@ class DBusObjectHandler extends EventEmitter {
 		this.subscribeToSignals()
 	}
 
+	call (method, args, callback) {
+		let iface = method.split('.')
+		method = iface[iface.length - 1]
+		iface.pop()
+		iface = iface.join('.')
+
+		this._d1inst(this._peerId).request({
+			service: this.service,
+			func: method,
+			obj: {
+				path: this.objPath,
+				interface: iface
+			},
+			args,
+			callback
+		})
+	}
+
 	get (iface, propName) {
 		this._d1inst(this._peerId).request({
 			service: this.service,
@@ -73,7 +98,8 @@ class DBusObjectHandler extends EventEmitter {
 				path: this.objPath
 			},
 			data: {
-				interface: iface, 
+				interface: iface, //systemd devs are fucktard that don't follow their own fucking standard !
+				interface_name: iface,
 				property: propName
 			}
 		}, (peerId, err, data) => {
@@ -100,11 +126,12 @@ class DBusObjectHandler extends EventEmitter {
 			service: this.service,
 			func: 'GetAll',
 			obj: {
-				interface: 'org.freedesktop.DBus.Properties',
+				interface: 'org.freedesktop.DBus.Properties', 
 				path: this.objPath
 			},
 			data: {
-				interface: iface 
+				interface: iface, //systemd devs are fucktard that don't follow their own fucking standard !
+				interface_name: iface,
 			}
 		}, (peerId, err, data) => {
 			if (err) {
