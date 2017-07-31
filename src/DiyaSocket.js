@@ -24,7 +24,8 @@ class DiyaSocket extends Transform {
 		callback();
 	}
 
-	disconnect() {
+	end() {
+		super.end();
 		if (this.flagSocketIsDead === false) {
 			this.end();
 			this.d1inst.request({
