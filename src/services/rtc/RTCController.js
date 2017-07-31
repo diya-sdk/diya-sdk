@@ -88,30 +88,6 @@ class RTCController {
 				channels.push(channel)
 
 				break
-
-				/*
-				// If a stream id is provided for the channel, register the mapping
-				if(remoteStreamId) {
-					this._channelsByStream = this._channelsByStream.filter((cbs) => {
-						return cbs.stream !== remoteStreamId && cbs.channel !== channel
-					})
-					this._channelsByStream.push({
-						stream: remoteStreamId, 
-						channel: channel
-					})
-					channel.streamId = streamId
-				}
-				//let localStreamId = that.channelsByStream.filter(function(cbs){return cbs.channel === name; })[0]; TODO: what's that global channelsByStream obj ?!
-				if(localStreamId) {
-					this._channelsByStream = this._channelsByStream.filter((cbs) => {
-						return cbs.stream !== localStreamId && cbs.channel !== name
-					})
-					this._channelsByStream.push({
-						stream: localStreamId, 
-						channel: name
-					})
-					channel.localStreamId = localStreamId
-				}*/
 			}
 		}
 

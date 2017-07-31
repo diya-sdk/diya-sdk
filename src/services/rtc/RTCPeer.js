@@ -121,8 +121,6 @@ class RTCPeer extends EventEmitter {
 			}
 		})
 
-		/*this.streams.forEach(function(s) { peer.addStream(s);});*/
-
 		this._peerConnection.setRemoteDescription(new RTCSessionDescription({
 			sdp: offer.sdp, 
 			type: offer.type
@@ -189,9 +187,15 @@ class RTCPeer extends EventEmitter {
 		channel.setDataChannel (evt.channel)
 	}
 
-	_onAddStream (stream) {
-		/*that.connected = true;
-		that.rtc._onAddStream(that.dnId, evt.stream);*/
+	_onAddStream (evt) {
+		let channel = this.channels.find(c => c.name === evt.stream.id)
+		if (channel == null) {
+			console.warn (`no matching channel found for ${evt.channel.label}. Closing...`)
+			evt.stream.close()
+			return 
+		}
+
+		channel.setStream (evt.stream)
 	}
 }
 

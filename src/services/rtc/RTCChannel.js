@@ -14,6 +14,7 @@ class RTCChannel extends EventEmitter {
 
 		this._dataChannel = null
 		this._buffer = null
+		this._stream = null
 
 		console.log ('created channel '+this.name+' !')
 	}
@@ -62,14 +63,17 @@ class RTCChannel extends EventEmitter {
 		}
 	}
 
-	/** Bind an incoming RTC stream to this channel 
-	onAddStream (stream) {
-		this.stream = stream;
-		if(typeof this.onstream === 'function') this.onstream(this.dnId, stream);
-		else console.warn("Ignore stream " + stream.id);
+	/** Bind an incoming RTC stream to this channel */
+	setStream (stream) {
+		this._stream = stream
+		if(typeof this._streamCallback === 'function') {
+			this._streamCallback ("N/A", stream)
+		} else {
+			console.warn("Ignore stream " + stream.id)
+		}
 	
-		console.log('Open stream '+this.name);
-	}*/
+		console.log(`stream ${this.name} ready !`);
+	}
 
 	/** Write a scalar value to the given index on the RTC datachannel */
 	write (index, value) {
