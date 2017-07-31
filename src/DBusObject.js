@@ -84,9 +84,8 @@ class DBusObjectHandler extends EventEmitter {
 				path: this.objPath,
 				interface: iface
 			},
-			args,
-			callback
-		})
+			data: args
+		}, callback)
 	}
 
 	get (iface, propName) {

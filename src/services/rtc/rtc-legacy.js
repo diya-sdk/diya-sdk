@@ -25,16 +25,17 @@ require('webrtc-adapter');
  */
 function Channel(dnId, name, datachannel_cb, stream_cb) {
 	EventEmitter.call(this);
-	this.name = name;
-	this.dnId = dnId;
+	this.name = name
+	this.dnId = dnId
 
-	this.frequency = 20;
+	this.frequency = 20
+	this._lastSendTimestamp = 0
 
-	this.channel = undefined;
-	this.stream = undefined;
-	this.ondatachannel = datachannel_cb;
-	this.onstream = stream_cb;
-	this.closed = false;
+	this.channel = undefined
+	this.stream = undefined
+	this.ondatachannel = datachannel_cb
+	this.onstream = stream_cb
+	this.closed = false
 }
 inherits(Channel, EventEmitter);
 
@@ -107,7 +108,7 @@ Channel.prototype.writeAll = function(values){
 Channel.prototype._requestSend = function(){
 	var that = this;
 
-	var elapsedTime = new Date().getTime() - this._lastSendTimestamp;
+	var elapsedTime = new Date().getTime() - this._lastSendTimestamp
 	var period = 1000 / this.frequency;
 	if(elapsedTime >= period) doSend();
 	else if(!this._sendRequested) {

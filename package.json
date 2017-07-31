@@ -15,6 +15,7 @@
   "dependencies": {
     "babelify": "7.3.0",
     "base-64": "0.1.0",
+    "buffer": "github:feross/buffer",
     "inherits": "2.0.3",
     "json-socket": "0.2.1",
     "messageify": "github:partnering/messageify",

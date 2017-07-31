@@ -10,7 +10,8 @@ class RTCController {
 
 		this._peers = new Map()
 
-		this._dbusObject.on('properties-changed', (...args) => this._propertiesChanged (...args))
+		this._propertiesChangedCallback = (...args) => this._propertiesChanged(...args)
+		this._dbusObject.on('properties-changed', this._propertiesChangedCallback)
 	}
 
 	connect () {
@@ -22,6 +23,9 @@ class RTCController {
 		for (let [id, peer] of this._peers) {
 			peer.close()
 		}
+
+		this._dbusObject.removeListener ('properties-changed', this._propertiesChangedCallback)
+		this._propertiesChangedCallback = null
 		this._usedChannels = []
 		this._dbusObject.close ()
 	}
@@ -79,9 +83,11 @@ class RTCController {
 					continue 
 				}
 				
-				let channel = new RTCChannel(name, req.cb, req.stream_cb);
-				this._usedChannels[name] = channel;
-				channels.push(channel);
+				let channel = new RTCChannel(name, req.cb, req.stream_cb)
+				this._usedChannels[name] = channel
+				channels.push(channel)
+
+				break
 
 				/*
 				// If a stream id is provided for the channel, register the mapping
