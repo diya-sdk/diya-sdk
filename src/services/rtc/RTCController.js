@@ -15,7 +15,7 @@ class RTCController {
 	}
 
 	connect () {
-		this._dbusObject.initPropertiesChangedSignal()
+		this._dbusObject.watchProperties (this)
 		this._dbusObject.getAll('fr.partnering.RTC', true)
 	}
 
@@ -27,7 +27,7 @@ class RTCController {
 		this._dbusObject.removeListener ('properties-changed', this._propertiesChangedCallback)
 		this._propertiesChangedCallback = null
 		this._usedChannels = []
-		this._dbusObject.close ()
+		this._dbusObject.unwatchProperties (this)
 	}
 
 	_propertiesChanged (iface, changedProperties, invalidatedProperties) {

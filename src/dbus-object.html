@@ -27,24 +27,21 @@
 			}
 
 			updateState () {
-				if (this.debug) console.log(`updateState, selector = ${this.selector}, service = ${this.service}, objectPath = ${this.objectPath}, object = ${this.object}, signals = ${this.signals == null ? null : this.signals[0].id}`)
 				// remove old callbacks
 				if (this.object != null) {
-					this.object.removeListener('properties-changed', this._propertiesChangedCallback)
-					if (this.signals != null) {
-						this.signals.forEach(signal => {
-							if (this.debug) console.warn(`updateState, removing listener ${signal.id}`)
-							this.object.removeListener(signal.id, signal.listener)
-						})
-					}
+					this.unwatchProperties()
+					this.object.removeListener ('properties-changed', this._propertiesChangedCallback)
 					this.object = null
 				}
 
-				if (this.selector == null || this.service == null || this.objectPath == null) {
+				if (this.selector == null 
+					|| (Array.isArray(this.selector) && this.selector.length === 0) 
+					|| this.service == null 
+					|| this.objectPath == null) {
 					return
 				}
 
-				let obj = d1(this.selector).dbusObject(this.service, this.objectPath, this.partialObject, this.signals)
+				let obj = d1(this.selector).dbusObject(this.service, this.objectPath, this.partialObject)
 
 				if (obj.length !== 1) {
 					this.dispatchEvent(new CustomEvent('error', { detail: 'dbus-object : unsupported object count ('+obj.lengh+')' }))
@@ -52,27 +49,11 @@
 
 				this.object = obj[0]
 
-				if (this.object == null) {
-					if (this.debug) console.warn('updateState, unregistered object. Terminated.')
-					return
-				}
-
-				this._propertiesChangedCallback = (iface, changedProperties, invalidatedProperties) => {
-					this._onPropertiesChanged (iface, changedProperties, invalidatedProperties)
-				}
-
-				// listen to property changes, and signals
+				this._propertiesChangedCallback = (...args) => this._onPropertiesChanged(...args)
 				this.object.on('properties-changed', this._propertiesChangedCallback)
 
-				if (this.signals != null) {
-					this.signals.forEach(signal => {
-						this.object.on(signal.id, signal.listener)
-					})
-				}
-
 				if (this.watchChanges) {
-					this.initPropertiesChangedSignal()
-					this.subscribeToSignals()
+					this.watchProperties ()
 				}
 			}
 
@@ -92,24 +73,46 @@
 				this.object.getAll(iface)
 			}
 
-			initPropertiesChangedSignal () {
+			call (method, data, callback) {
 				if (this.object == null) {
 					return
 				}
 
-				this.object.initPropertiesChangedSignal()
+				this.object.call (method, data, callback)
 			}
 
-			subscribeToSignals () {
+			watchProperties () {
 				if (this.object == null) {
 					return
 				}
-				this.object.subscribeToSignals()
+				
+				this.object.watchProperties (this)
 			}
 
-			/**
-			 * Array properties not taken into consideration in this case
-			 */
+			unwatchProperties () {
+				if (this.object == null) {
+					return
+				}
+
+				this.object.unwatchProperties (this)
+			}
+
+			watchSignal (signal, callback) {
+				if (this.object == null) {
+					return 
+				}
+
+				this.object.on(signal, callback, this)
+			}
+
+			unwatchSignal (signal, callback) {
+				if (this.object == null) {
+					return
+				}
+
+				this.object.removeListener (signal, callback, this)
+			}
+
 			_onPropertiesChanged (iface, changedProperties, invalidatedProperties) {
 				for (let propName in changedProperties) {
 					this.notifyPath(`object.${iface}.${propName}`)
