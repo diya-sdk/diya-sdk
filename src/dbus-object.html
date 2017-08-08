@@ -6,9 +6,6 @@
 		class DBusObject extends Polymer.Element {
 			static get is () { return 'dbus-object' }
 
-			/**
-			 * signals is an array of signal objects. Each signal object has the form { id, name, objectPath, iface, listener }. The unique ids are for reference purpose. Signal's names may be duplicate, but id are not.
-			 */
 			static get properties () {
 				return {
 					selector: { observer: 'updateState' },
@@ -24,38 +21,13 @@
 
 			constructor () {
 				super()
+
+				this._signals = null
 			}
 
-			updateState () {
-				// remove old callbacks
-				if (this.object != null) {
-					this.unwatchProperties()
-					this.object.removeListener ('properties-changed', this._propertiesChangedCallback)
-					this.object = null
-				}
-
-				if (this.selector == null 
-					|| (Array.isArray(this.selector) && this.selector.length === 0) 
-					|| this.service == null 
-					|| this.objectPath == null) {
-					return
-				}
-
-				let obj = d1(this.selector).dbusObject(this.service, this.objectPath, this.partialObject)
-
-				if (obj.length !== 1) {
-					this.dispatchEvent(new CustomEvent('error', { detail: 'dbus-object : unsupported object count ('+obj.lengh+')' }))
-				}
-
-				this.object = obj[0]
-
-				this._propertiesChangedCallback = (...args) => this._onPropertiesChanged(...args)
-				this.object.on('properties-changed', this._propertiesChangedCallback)
-
-				if (this.watchChanges) {
-					this.watchProperties ()
-				}
-			}
+			////////////////////////////////////////////////
+			////////////// dbus-object API /////////////////
+			////////////////////////////////////////////////
 
 			get (iface, propName) {
 				if (this.object == null) {
@@ -102,7 +74,9 @@
 					return 
 				}
 
-				this.object.on(signal, callback, this)
+				this._signals.push({signal, callback})
+
+				this.object.on(signal, callback)
 			}
 
 			unwatchSignal (signal, callback) {
@@ -110,7 +84,86 @@
 					return
 				}
 
-				this.object.removeListener (signal, callback, this)
+				//remove signal from signals list
+				this._signals = this._signals.filter (s => s.signal !== signal && s.callback !== callback)
+
+				this.object.removeListener (signal, callback)
+			}
+
+			////////////////////////////////////////////
+			/////////// Internal methods ///////////////
+			////////////////////////////////////////////
+			
+			updateState () {
+				//avoid updating state multiple times when multiple properties are changed in the same function
+				if (this._updateRequest != null) return
+				this._updateRequest = setTimeout (() => {
+					this._updateRequest = null
+					this._doUpdateState ()
+				})
+			}
+
+			_doUpdateState () {
+				// remove old callbacks
+				if (this.object != null) {
+					this.unwatchProperties ()
+					this._unregisterSignals ()
+					this.object.removeListener ('properties-changed', this._propertiesChangedCallback)
+					this.object = null
+				}
+
+				if (this.selector == null 
+					|| (Array.isArray(this.selector) && this.selector.length === 0) 
+					|| this.service == null 
+					|| this.objectPath == null) {
+					return
+				}
+
+				let obj = d1(this.selector).dbusObject(this.service, this.objectPath, this.partialObject)
+
+				if (obj.length !== 1) {
+					this.dispatchEvent(new CustomEvent('error', { detail: 'dbus-object : unsupported object count ('+obj.lengh+')' }))
+				}
+
+				this.object = obj[0]
+
+				this._registerSignals ()
+
+				this._propertiesChangedCallback = (...args) => this._onPropertiesChanged(...args)
+				this.object.on('properties-changed', this._propertiesChangedCallback)
+
+				
+				if (this.watchChanges) {
+					this.watchProperties ()
+				}
+			}
+
+			_registerSignals () {
+				this._signals = []
+
+				//if signals are defined, subscribe to them
+				if (!Array.isArray(this.signals)) { 
+					return
+				}
+				
+				//save signals and associated callback for later unsubscription
+				this.signals.forEach (s => {
+					if (typeof s[0] !== 'string' || typeof s[1] !== 'function'){
+						console.warn (`Ignoring malformed signal ${s[0]} !`)	
+						return
+					}
+					this.watchSignal (s[0], s[1])
+				})
+
+			}
+
+			_unregisterSignals () {
+				if (!Array.isArray(this._signals)) {
+					return
+				}
+
+				this._signals.forEach (s => this.unwatchSignal (s.signal, s.callback))
+				this._signals = null
 			}
 
 			_onPropertiesChanged (iface, changedProperties, invalidatedProperties) {
