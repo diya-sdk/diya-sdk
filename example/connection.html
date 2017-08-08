@@ -1,0 +1,48 @@
+<html>
+	<head>
+		<script src="../build/diya-sdk.js"></script>
+
+		<script>
+			const dn = new d1.DiyaNode ("wss://172.23.0.2/api")
+
+
+			dn.on ('open', onConnected)
+
+			function onConnected () {
+				//authenticate 
+				dn.request ({
+					service: 'auth',
+					func: 'Authenticate',
+					data: {
+						username: 'sylvmahe',
+						password: ''
+					}
+				}, 
+				dn.self,
+				onAuthenticated)
+
+			}
+
+			function onAuthenticated (authenticated) {
+				if (authenticated) {
+					console.log ('authenticated successfully')
+				} else {
+					console.log ('failed to authenticate !')
+				}
+
+				dn.request({
+					service: 'meshNetwork',
+					func: 'ListKnownPeers'
+				},
+				dn.self,
+				onListKnownPeers)
+			}
+
+			function onListKnownPeers (data) {
+				console.log(data)
+			}
+		</script>
+	</head>
+	<body>
+	</body>
+</html>
