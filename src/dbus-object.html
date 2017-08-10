@@ -76,7 +76,6 @@
 
 				this._signals.push({signal, callback})
 
-				this.object.on(signal, callback)
 				this.object.onSignal(signal, callback)
 			}
 
@@ -88,7 +87,6 @@
 				//remove signal from signals list
 				this._signals = this._signals.filter (s => s.signal !== signal && s.callback !== callback)
 
-				this.object.removeListener (signal, callback)
 				this.object.removeSignalListener(signal, callback)
 			}
 
