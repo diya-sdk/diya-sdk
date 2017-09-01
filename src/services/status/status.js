@@ -299,7 +299,6 @@ Status.prototype.watch = function (robotNames, callback) {
 							this._getRobotModelFromRecv2(sendData, robotId, robotName);
 							if (typeof callback === 'function') {
 								callback(this.robotModel);
-								console.log(this.robotModel)
 							}
 						}
 					});
