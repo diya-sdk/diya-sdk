@@ -15,6 +15,7 @@
 					partialObject: { type: Object, observer: 'updateState' },
 					signals: { type: Array, observer: 'updateState' },
 					watchChanges: { type: Boolean, value: false },
+					getProperties: { type: Array, value: () => [] },
 					debug: { type: Boolean },
 				}
 			}
@@ -23,6 +24,20 @@
 				super()
 
 				this._signals = null
+				this._isPartialObject = false
+				this._connected = false
+			}
+
+			disconnectedCallback () {
+				super.disconnectedCallback ()
+				this._connected = false
+				this.updateState ()
+			}
+
+			connectedCallback () {
+				super.connectedCallback ()
+				this._connected = true
+				this.updateState ()
 			}
 
 			////////////////////////////////////////////////
@@ -115,7 +130,8 @@
 					this._isPartialObject = false
 				}
 
-				if (this.selector == null 
+				if (!this._connected 
+					|| this.selector == null 
 					|| (Array.isArray(this.selector) && this.selector.length === 0) 
 					|| this.service == null) {
 					return
@@ -143,6 +159,15 @@
 				
 				if (this.watchChanges) {
 					this.watchProperties ()
+				}
+
+				if (Array.isArray (this.getProperties)) {
+					this.getProperties.forEach (iface => {
+						if (typeof iface !== 'string')
+							return
+
+						this.getAll (iface)
+					})
 				}
 			}
 
