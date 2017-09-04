@@ -12,7 +12,7 @@
 					service: { type: String, observer: 'updateState' },
 					objectPath: { type: String, observer: 'updateState' },
 					object: { type: Object, notify: true },
-					partialObject: { type: Object },
+					partialObject: { type: Object, observer: 'updateState' },
 					signals: { type: Array, observer: 'updateState' },
 					watchChanges: { type: Boolean, value: false },
 					debug: { type: Boolean },
@@ -30,7 +30,7 @@
 			////////////////////////////////////////////////
 
 			get (iface, propName) {
-				if (this.object == null) {
+				if (this.object == null || this._isPartialObject) {
 					return
 				}
 
@@ -38,7 +38,7 @@
 			}
 
 			getAll (iface) {
-				if (this.object == null) {
+				if (this.object == null || this._isPartialObject) {
 					return
 				}
 
@@ -46,7 +46,7 @@
 			}
 
 			call (method, data, callback) {
-				if (this.object == null) {
+				if (this.object == null || this._isPartialObject) {
 					return
 				}
 
@@ -54,7 +54,7 @@
 			}
 
 			watchProperties () {
-				if (this.object == null) {
+				if (this.object == null || this._isPartialObject) {
 					return
 				}
 				
@@ -62,7 +62,7 @@
 			}
 
 			unwatchProperties () {
-				if (this.object == null) {
+				if (this.object == null || this._isPartialObject) {
 					return
 				}
 
@@ -70,7 +70,7 @@
 			}
 
 			watchSignal (signal, callback) {
-				if (this.object == null) {
+				if (this.object == null || this._isPartialObject) {
 					return 
 				}
 
@@ -80,7 +80,7 @@
 			}
 
 			unwatchSignal (signal, callback) {
-				if (this.object == null) {
+				if (this.object == null || this._isPartialObject) {
 					return
 				}
 
@@ -108,15 +108,23 @@
 				if (this.object != null) {
 					this.unwatchProperties ()
 					this._unregisterSignals ()
-					this.object.removeListener ('properties-changed', this._propertiesChangedCallback)
+					if (!this._isPartialObject) {
+						this.object.removeListener ('properties-changed', this._propertiesChangedCallback)
+					}
 					this.object = null
+					this._isPartialObject = false
 				}
 
 				if (this.selector == null 
 					|| (Array.isArray(this.selector) && this.selector.length === 0) 
-					|| this.service == null 
-					|| this.objectPath == null) {
+					|| this.service == null) {
 					return
+				}
+
+				if (this.objectPath == null) {
+					this.object = this.partialObject
+					this._isPartialObject = true
+					return 
 				}
 
 				let obj = d1(this.selector).dbusObject(this.service, this.objectPath, this.partialObject)
