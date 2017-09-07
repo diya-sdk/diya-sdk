@@ -349,6 +349,7 @@ IEQ.prototype.watch = function(config, callback){
 			time: {rangeUnit: config.timeRange},
 			robots: config.robots
 		},
+		category: config.category,
 		operators: ['avg','min','max','stddev']
 	};
 
@@ -371,27 +372,13 @@ IEQ.prototype.watch = function(config, callback){
 			}
 			return;
 		}
-		// if(typeof data === 'string') {
-		// 	callback(data);
-		// }
-		// else {
-			// DEPRECATED
-
-		if(data && data.header && data.header.error) {
-			// TODO : check/use err status and adapt behavior accordingly
-			Logger.error("UpdateData:\n"+JSON.stringify(data.header.dataConfig));
-			Logger.error("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
-			return;
-		}
 		callback(that._getDataModelFromRecv(data)); // callback func
-		// }
 	});
 
 	var subs = this.selector.subscribe({
 		service: "ieq",
-		func: "FireIEQ",
+		func: "Second",
 		data: {data: config},
-	//	obj: config.cat /* provide category of sensor to be watched, filtered according to CRM */
 		obj:{
 			path: '/fr/partnering/Ieq',
 			interface: "fr.partnering.Ieq"
@@ -408,14 +395,6 @@ IEQ.prototype.watch = function(config, callback){
 		data = JSON.parse(data);
 
 		that.subscriptionReqPeriod=0; // reset period on subscription requests
-	/*	if(data.header.error) {
-			// TODO : check/use err status and adapt behavior accordingly
-			Logger.error("WatchIEQ:\n"+JSON.stringify(data.header.dataConfig));
-			Logger.error("Data request failed ("+data.header.error.st+"): "+data.header.error.msg);
-			return;
-		} */
-	//	console.log(data);
-//		that.subscriptionError = 0; // reset error counter
 		callback(that._getDataModelFromRecv(data)); // callback func
 	});
 
