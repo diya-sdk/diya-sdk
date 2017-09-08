@@ -285,7 +285,7 @@ Status.prototype.watch = function (robotNames, callback) {
 				if (objData[objectPath]['fr.partnering.Status.Part'] != null) {
 					let subs = this.selector.subscribe({// subscribes to status changes for all parts
 						service: 'status',
-						func: 'CurrentStatusChanged',
+						func: 'StatusChanged',
 						obj: {
 							interface: 'fr.partnering.Status.Part',
 							path: objectPath
@@ -295,12 +295,11 @@ Status.prototype.watch = function (robotNames, callback) {
 						if (err != null) {
 							Logger.error("StatusSubscribe:" + err);
 						} else {
-							robotName = objectPath.split("/")[5];
-							robotId = robotIds[robotName];
 							sendData[0] = data;
 							this._getRobotModelFromRecv2(sendData, robotId, robotName);
-							if (typeof callback === 'function')
+							if (typeof callback === 'function') {
 								callback(this.robotModel);
+							}
 						}
 					});
 					this.subscriptions.push(subs);
@@ -473,7 +472,7 @@ DiyaSelector.prototype.Status = function(){
  */
 DiyaSelector.prototype.setStatus = function (robotName, partName, code, source, callback) {
 	return Promise.try(_ => {
-		var objectPath = "/fr/partnering/Status/Robots/" + robotName + "/Parts/" + partName;
+		var objectPath = "/fr/partnering/Status/Robots/" + this.splitAndCamelCase(robotName, "-") + "/Parts/" + partName;
 		this.request({
 			service: "status",
 			func: "SetPart",
@@ -518,8 +517,8 @@ Status.prototype.getStatus = function (robotName, partName, callback/*, _full*/)
 			}
 		}, (peerId, err, objData) => {
 
-			let objectPathRobot = "/fr/partnering/Status/Robots/" + robotName;
-			let objectPathPart = "/fr/partnering/Status/Robots/" + robotName + "/Parts/" + partName;
+			let objectPathRobot = "/fr/partnering/Status/Robots/" + this.splitAndCamelCase(robotName, "-");
+			let objectPathPart = "/fr/partnering/Status/Robots/" + this.splitAndCamelCase(robotName, "-") + "/Parts/" + partName;
 			let robotId = objData[objectPathRobot]['fr.partnering.Status.Robot'].RobotId
 			this.selector.request({
 				service: "status",
@@ -559,7 +558,7 @@ Status.prototype.getAllStatuses = function (robotName, callback) {
 			interface: 'org.freedesktop.DBus.ObjectManager',
 		}
 	}, (peerId, err, objData) => { // get all object paths, interfaces and properties children of Status
-		let objectPath = "/fr/partnering/Status/Robots/" + robotName;
+		let objectPath = "/fr/partnering/Status/Robots/" + this.splitAndCamelCase(robotName, "-");
 		if (objData[objectPath] != null) {
 			if (objData[objectPath]['fr.partnering.Status.Robot'] != null) {
 				let robotId = objData[objectPath]['fr.partnering.Status.Robot'].RobotId
@@ -589,3 +588,12 @@ Status.prototype.getAllStatuses = function (robotName, callback) {
 		}
 	})
 };
+
+Status.prototype.splitAndCamelCase = function (inString, delimiter) {
+	let arraySplitString = inString.split(delimiter);
+	let outCamelString = '';
+	arraySplitString.forEach(str => {
+		outCamelString += str.charAt(0).toUpperCase() + str.substring(1);
+	})
+	return outCamelString;
+}
