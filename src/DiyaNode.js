@@ -1,3 +1,5 @@
+'use strict';
+
 var isBrowser = !(typeof window === 'undefined');
 let UNIXSocketHandler
 if(!isBrowser) {
