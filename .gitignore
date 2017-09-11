@@ -3,4 +3,5 @@ node_modules
 *.project*
 *.jshintrc*
 npm-debug.log
-
+dist/
+bower_components/
