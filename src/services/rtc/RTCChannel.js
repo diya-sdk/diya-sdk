@@ -1,3 +1,5 @@
+'use strict';
+
 const EventEmitter = require('node-event-emitter')
 
 class RTCChannel extends EventEmitter {
