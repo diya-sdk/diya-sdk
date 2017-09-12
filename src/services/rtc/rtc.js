@@ -1,3 +1,5 @@
+'use strict';
+
 const DiyaSelector = require('../../DiyaSelector').DiyaSelector
 const EventEmitter = require('node-event-emitter')
 
