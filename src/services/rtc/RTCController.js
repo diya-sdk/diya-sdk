@@ -1,3 +1,5 @@
+'use strict';
+
 const RTCPeer = require('./RTCPeer.js')
 const RTCChannel = require('./RTCChannel.js')
 
