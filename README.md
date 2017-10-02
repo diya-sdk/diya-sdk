@@ -48,7 +48,7 @@ Enough with the theory, let's code ! diya-sdk is packaged both as a bower packag
 ### Browser
 #### install
 ```sh
-bower install partnering/diya-sdk
+bower install diya-sdk/diya-sdk
 ```
 
 #### example code
@@ -125,7 +125,7 @@ d1.connectAsUser('wss://localhost/api', 'toto', 'toto_password').then(function (
 #### install
 ```sh
 npm init
-npm install partnering/diya-sdk
+npm install diya-sdk/diya-sdk
 npm install ws
 npm install q
 ```
