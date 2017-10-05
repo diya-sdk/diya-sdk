@@ -24,7 +24,7 @@ npm run build-min
 ### Browser
 #### install
 ```sh
-bower install partnering/diya-sdk
+bower install diya-sdk/diya-sdk
 ```
 
 #### example code
