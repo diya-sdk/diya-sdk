@@ -22,15 +22,13 @@ select the time range. Depending on the time range, data will be averaged on dif
 - month: data averaged by days on the last month
 - year: data averaged by weeks on the last year
 
-A callback will provide one with the result formatted in a model containing relevant 
+A callback will provide one with the result formatted in a model containing relevant
 data (see Reference).
 
 
 In order to end all running subscriptions, use the ```IEQ.closeSubscriptions``` method.
 
-Data can also be requested with the ```IEQ.getCSVData``` method. The data
-on 7 days starting from the ```firstDay``` parameter are exported and
-available in the callback. Data are provided averaged by minutes.
+Data can also be requested with the ```IEQ.getCSVData``` method.
 
 
 ### References
@@ -84,43 +82,16 @@ available in the callback. Data are provided averaged by minutes.
 ### d1(selector).IEQ().closeSubscriptions()
 
 
-#### d1(selector).IEQ().getCSVData(sensorNames,firstDay,callback)
+#### d1(selector).IEQ().getCSVData(csvConfig,callback)
 
-- **sensorNames** ```< null | Array<String> >``` list of sensors to request. Default is null i.e. all available sensors.
-- **firstDay** ```< String | <Javascript Date> >``` beginning date of the exported data. The String must follow a parsable date format in ```new Date(string)```, for instance : ```'2016-01-01 12:00:12'```
+- **csvConfig**
+	- **sensorNames** ```< null | Array<String> >``` list of sensors to request. Default is null i.e. all available sensors.
+	- **nlines** ```< undefined | number >``` max number of lines to be fetched
+	- **startTime** ```< String | <Javascript Date> >``` beginning date of the exported data. The String must follow a parsable date format in ```new Date(string)```, for instance : ```'2016-01-01 12:00:12'```
+	- **endTime** ```< String | <Javascript Date> >``` end date of the exported data. The String must follow a parsable date format in ```new Date(string)```, for instance : ```'2016-01-01 12:00:12'```
+	- **timeSample** ```< 'second' | string >``` select which table to take data from according to sampling time : one of ```{'second','minute','hour','day','week','month'}```
 - **callback** ```<Function>``` callback
-	- **dataModel** ```<Object>``` model filled with the received IEQ data
-		- **Sensor 1** ```<Object>```
-			- **time** ```< Array<float> >``` array of timestamps. The items are synchronised by index in array between the different following arrays (first item in time with first item in avg.d for instance, etc.)
-			- **avg** ```<Object>```
-				- **d** ```< Array<float> >``` array of averaged data value
-				- **i** ```< Array<float> >``` array of averaged quality estimation (%)
-			- **max** ```<Object>```
-				- **d** ```< Array<float> >``` array of max data value
-				- **i** ```< Array<float> >``` array of max quality estimation (%)
-			- **min** ```<Object>```
-				- **d** ```< Array<float> >``` array of min data value
-				- **i** ```< Array<float> >``` array of min quality estimation (%)
-			- **stddev** ```<Object>```	not implemented yet
-				- **d** ```< Array<float> >``` array of stddev data value
-				- **i** ```< Array<float> >``` array of stddev quality estimation (%)
-			- **robotId** ```< Array<int> >``` array of robots, each item correspond to an item in time and thus tags the sample by the name of the robot which captured the data
-			- **x** ```< Array<float> >``` array of x positions
-			- **y** ```< Array<float> >``` array of y positions
-			- **precision** ```<float>``` accuracy of data value
-			- **unit** ```<String>``` unit of data value
-			- **category** ```< String>``` comma separated list of tags ('ieq','sensor','index')
-			- **range** ```< Array<float> >``` [min possible value, max possible value]
-			- **timeRange** ```< Array<float> >``` [begin time, end time] for the received data
-			- **label** ```<String>``` a label naming the sensor. deprecated, use i18n file to display name of sensor.
-			- **data** ```<Object>``` array of data value. Mainly duplicate of avg.d. deprecated.
-			- **qualityIndex** ```< Array<float> >``` array of quality index, duplicate of avg.i, deprecated
-			- **placeId** ```< Array<int> >``` array of place indexes, deprecated
-			- **trend** ```<String>``` not implemented
-			- **zoomRange** ```< Array<float> >``` not implemented
-		- ...
-		- **Sensor n**
-			- ...
+	- **file** ```< String >``` path to download generated csv file
 
 
 ## Example
@@ -144,7 +115,7 @@ this.ieq_handler.watch({}, function(data) {
 		/** Example of output
 		"Confinement":{
 			"range":[0,1],
-			"timeRange":[1483917420000,1483917420000], 
+			"timeRange":[1483917420000,1483917420000],
 			"label":"Confinement",
 			"unit":" ",
 			"precision":1,
@@ -396,7 +367,7 @@ this.ieq_handler.watch({timeRange:timeRange}}, function(data) {
 			"category":"ieq,index",
 			"zoomRange":[0,100],
 			"qualityConfig":{"indexRange":1},
-			"time":[1483833600000,1483837200000,1483909200000,1483912800000,1483916400000], 	// 5 samples corresponding to 5 different hours on the past day. Note timestamps are in ms. 
+			"time":[1483833600000,1483837200000,1483909200000,1483912800000,1483916400000], 	// 5 samples corresponding to 5 different hours on the past day. Note timestamps are in ms.
 			"data":[1,1,1,1,1],
 			"qualityIndex":[1,1,1,1,1],
 			"robotId":null,
@@ -482,7 +453,7 @@ this.ieq_handler.watch({timeRange:timeRange, robots: ['D1R00015']}}, function(da
 				"d":[1],
 				"i":[1]},
 			"trend":"mss"},
-		...		
+		...
 		**/
 
 	}
@@ -496,21 +467,16 @@ this.ieq_handler.watch({timeRange:timeRange, robots: ['D1R00015']}}, function(da
 
 ```js
 
-this.ieq_handler.getCSVData(['Temperature','Ozone'],'2016-01-01 12:12:12'}, function(data) {  
-	// Name of sensor is case sensitive. Check names as fields from output examples above.
-	// NB using null or undefined instead of array of sensor names will export all available sensors 
-	try {
-		// data contains the received data
-		console.log(data);
+this.ieq_handler.getCSVData({sensorNames: ['Temperature','Ozone'], startTime: '2016-01-01 12:12:12'}, function(filename) {
+	var downloadPath = 'https://partnering-cloud.com/files/'+filename;
 
+	// Name of sensor is case sensitive. Check names as fields from output examples above.
+	// NB using null or undefined instead of array of sensor names will export all available sensors
+	try {
+		// file name to download data
+		console.log(downloadPath);
 	}
 	catch(e) { console.error(e); }
 });
 
 ```
-
-
-
-
-
-
