@@ -35,12 +35,12 @@ var inherits = require('inherits');
 
 var DEBUG = false;
 var Logger = {
-	log: function(message){
-		if(DEBUG) console.log(message);
+	log: function(...args){
+		if(DEBUG) console.log(...args);
 	},
 
-	error: function(message){
-		if(DEBUG) console.error(message);
+	error: function(...args){
+		if(DEBUG) console.error(...args);
 	}
 };
 
@@ -73,17 +73,17 @@ inherits(DiyaNode, EventEmitter);
 ////////////////// Public API //////////////////////
 ////////////////////////////////////////////////////
 
-DiyaNode.prototype.user = function(user) { 
+DiyaNode.prototype.user = function(user) {
 	if(user) this._user = user;
-	else return this._user; 
+	else return this._user;
 };
-DiyaNode.prototype.authenticated = function(authenticated) { 
+DiyaNode.prototype.authenticated = function(authenticated) {
 	if(authenticated !== undefined) this._authenticated = authenticated;
-	else return this._authenticated; 
+	else return this._authenticated;
 };
-DiyaNode.prototype.pass = function(pass) { 
+DiyaNode.prototype.pass = function(pass) {
 	if(pass !== undefined) this._pass = pass;
-	else return this._pass; 
+	else return this._pass;
 };
 DiyaNode.prototype.addr = function() { return this._addr; };
 DiyaNode.prototype.peers = function(){ return this._peers; };
@@ -392,7 +392,7 @@ DiyaNode.prototype._onclose = function(){
 		setTimeout(function(){
 			that.connect(that._addr, that._WSocket).catch(function(err){});
 		}, that._reconnectTimeout);
-	}	
+	}
 	this.emit('close', this._addr);
 };
 
@@ -535,7 +535,7 @@ function SocketHandler(WSocket, addr, timeout) {
 		this._socket.addEventListener('error', this._socketErrorCallback);
 
 		this._socket.addEventListener('error', function(err){
-			Logger.error("[WS] error : "+JSON.stringify(err));
+			Logger.error("[WS] error : ",err);
 			that._socket.close();
 		});
 
