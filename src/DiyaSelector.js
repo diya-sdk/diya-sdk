@@ -288,20 +288,20 @@ DiyaSelector.prototype.openSocket = function (params, callback) {
 
 	if (typeof callback === 'function') callback = callback.bind(this);
 
-	var socketName = params;
+	var socketPath = params;
 
 	this.request({
 		service: 'socketHandler',
 		func: 'OpenSocket',
 		data: {
-			socket_name: socketName,
+			socket_path: socketPath,
 		}
 	}, function (peerId, err, data) {
 		if (err == null && data.socket_id != null) {
 			params = {
 				err: err,
 				socketId: data.socket_id,
-				socketName: socketName,
+				socketPath: socketPath,
 				target: peerId,
 			}
 			that._connection.openSocket(that, params, (diyaSocket) => {
