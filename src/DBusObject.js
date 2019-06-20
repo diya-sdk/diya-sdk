@@ -150,7 +150,7 @@ class DBusObjectHandler extends EventEmitter {
 		this.call('org.freedesktop.DBus.Properties.Get', {
 			interface: iface, //systemd devs are fucktard that don't follow their own fucking standard !
 			interface_name: iface,
-			property: propName
+			property_name: propName
 		}, (peerId, err, data) => {
 			if (err) {
 				//TODO : handle error
