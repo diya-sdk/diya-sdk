@@ -105,10 +105,10 @@ function newInstance () {
 
 
 	/** Try to connect to the given servers list in the list order, until finding an available one */
-	d1inst.tryConnect = function(servers, WSocket){
+	d1inst.tryConnect = function(servers, WSocket, peerName){
 		var deferred = Q.defer();
 		function tc(i) {
-			d1inst.connect(servers[i], WSocket).then(function(e){
+			d1inst.connect(servers[i], WSocket, peerName).then(function(e){
 				return deferred.resolve(servers[i]);
 			}).catch(function(e){
 				d1inst.disconnect().then(function() {
@@ -137,8 +137,8 @@ function newInstance () {
 	};
 
 	/** Shorthand function to connect and login with the given (user,password) */
-	d1inst.connectAsUser = function(ip, user, password, WSocket) {
-		return d1inst.connect(ip, WSocket).then(function(){
+	d1inst.connectAsUser = function(ip, user, password, WSocket, peerName) {
+		return d1inst.connect(ip, WSocket, peerName).then(function(){
 			return d1inst("#self").auth(user, password);
 		});
 	};
