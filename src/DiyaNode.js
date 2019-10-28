@@ -1,12 +1,13 @@
 'use strict';
 
-var isBrowser = !(typeof window === 'undefined');
+var isBrowser = (typeof window !== 'undefined');
 let UNIXSocketHandler
+var Q
 if(!isBrowser) {
-	var Q = require('q');
+	Q = require('q');
 	UNIXSocketHandler = require('./UNIXSocketHandler')
 }
-else { var Q = window.Q; }
+else { Q = window.Q; }
 
 var EventEmitter = require('node-event-emitter');
 var inherits = require('inherits');
@@ -77,9 +78,12 @@ DiyaNode.prototype.setSecured = function(bSecured) { this._secured = bSecured !=
 DiyaNode.prototype.setWSocket = function(WSocket) {this._WSocket = WSocket;}
 
 /** @return {Promise<String>} the connected peer name */
-DiyaNode.prototype.connect = function (addr, WSocket) {
+DiyaNode.prototype.connect = function (addr, WSocket, peerName) {
 	this.bDontReconnect = false
 
+	if (peerName != null) {
+		this._self = peerName
+	}
 	// Handle local clients on UNIX sockets
 	if (addr.startsWith('unix://')) {
 		// If we've trying to connect to the same address we're already connected to
@@ -192,7 +196,7 @@ DiyaNode.prototype.connect = function (addr, WSocket) {
 		this._addr = addr
 		this._connectionDeferred = Q.defer()
 		Logger.log('d1: connect to ' + this._addr)
-		var sock = new SocketHandler(WSocket, this._addr, this._connectTimeout)
+		var sock = new SocketHandler(WSocket, this._addr, this._connectTimeout, this._self)
 
 		if (!this._socketHandler)
 			this._socketHandler = sock
@@ -560,10 +564,11 @@ DiyaNode.prototype._handlePeerConnected = function(message){
 	}
 
 	//Add peer to the list of reachable peers
-	this._peers.push(message.peerId);
-	this.store.set(message.peerId, new Map())
-
-	this.emit('peer-connected', message.peerId);
+	if (this._self == message.targetPeer) {
+		this._peers.push(message.peerId);
+		this.store.set(message.peerId, new Map())
+		this.emit('peer-connected', message.peerId);
+	}
 };
 
 DiyaNode.prototype._handlePeerDisconnected = function(message){
@@ -572,28 +577,30 @@ DiyaNode.prototype._handlePeerDisconnected = function(message){
 		return ;
 	}
 	
-	//Remove peer from list of reachable peers
-	for(var i=this._peers.length - 1; i >= 0; i--){
-		if(this._peers[i] === message.peerId){
-			this._peers.splice(i, 1);
-			break;
+	if (this._self == message.targetPeer) {
+		//Remove peer from list of reachable peers
+		for(var i=this._peers.length - 1; i >= 0; i--){
+			if(this._peers[i] === message.peerId){
+				this._peers.splice(i, 1);
+				break;
+			}
 		}
-	}
-	//remove associated store
-	this.store.delete(message.peerId)
+		//remove associated store
+		this.store.delete(message.peerId)
 
-	//Go through all pending messages and notify the ones that are targeted
-	//at the disconnected peer that it disconnected and therefore the command
-	//cannot be fulfilled
-	for(var messageId in this._pendingMessages){
-		var handler = this._getMessageHandler(messageId);
-		if(handler && handler.target === message.peerId) {
-			this._removeMessage(messageId);
-			this._notifyListener(handler, 'PeerDisconnected', null);
+		//Go through all pending messages and notify the ones that are targeted
+		//at the disconnected peer that it disconnected and therefore the command
+		//cannot be fulfilled
+		for(var messageId in this._pendingMessages){
+			var handler = this._getMessageHandler(messageId);
+			if(handler && handler.target === message.peerId) {
+				this._removeMessage(messageId);
+				this._notifyListener(handler, 'PeerDisconnected', null);
+			}
 		}
-	}
 
-	this.emit('peer-disconnected', message.peerId);
+		this.emit('peer-disconnected', message.peerId);
+	}
 };
 
 DiyaNode.prototype._handleRequest = function(handler, message){
@@ -627,7 +634,7 @@ DiyaNode.prototype._handleSocketServerData = function(message){
 // SocketHandler //
 ///////////////////
 
-function SocketHandler(WSocket, addr, timeout) {
+function SocketHandler(WSocket, addr, timeout, self) {
 	var that = this;
 	this.addr = addr;
 
@@ -638,7 +645,7 @@ function SocketHandler(WSocket, addr, timeout) {
 	this._status = 'opening';
 
 	try {
-		this._socket = addr.indexOf("wss://")===0 ? new WSocket(addr, undefined, {rejectUnauthorized:false}) : new WSocket(addr);
+		this._socket = addr.indexOf("wss://")===0 ? new WSocket(addr, self, {rejectUnauthorized:false}) : new WSocket(addr);
 
 		this._socketOpenCallback = this._onopen.bind(this);
 		this._socketCloseCallback = this._onclose.bind(this);
@@ -669,7 +676,7 @@ function SocketHandler(WSocket, addr, timeout) {
 		that.close();
 		throw e;
 	}
-};
+}
 inherits(SocketHandler, EventEmitter);
 
 SocketHandler.prototype.close = function() {
@@ -758,6 +765,7 @@ DiyaNode.prototype._createMessage = function(params, type){
 		obj: params.obj,
 		data: params.data,
 		bus: params.bus,
+		fromPeer: this._self
 	};
 };
 

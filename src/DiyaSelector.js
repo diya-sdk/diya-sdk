@@ -1,6 +1,7 @@
-var isBrowser = !(typeof window === 'undefined');
-if(!isBrowser) { var Q = require('q'); }
-else { var Q = window.Q; }
+var isBrowser = (typeof window !== 'undefined');
+var Q
+if(!isBrowser) { Q = require('q'); }
+else { Q = window.Q; }
 var EventEmitter = require('node-event-emitter');
 var inherits = require('inherits');
 
@@ -27,8 +28,8 @@ function newInstance () {
 	d1inst.DiyaNode = DiyaNode;
 	d1inst.DiyaSelector = DiyaSelector;
 
-	d1inst.connect = function(addr, WSocket){
-		return connection.connect(addr, WSocket);
+	d1inst.connect = function(addr, WSocket, peerName){
+		return connection.connect(addr, WSocket, peerName);
 	};
 
 	d1inst.disconnect = function(){
@@ -424,7 +425,7 @@ function Subscription(selector, params, callback, options) {
 		}
 
 		return this;
-};
+}
 
 Subscription.prototype.close = function() {
 	for(var i = 0; i<this.subIds.length; i++) {
