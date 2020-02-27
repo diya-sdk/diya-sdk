@@ -72,7 +72,10 @@ DiyaNode.prototype.pass = function(pass) {
 	else return this._pass;
 };
 DiyaNode.prototype.addr = function() { return this._addr; };
-DiyaNode.prototype.peers = function(){ return this._peers; };
+DiyaNode.prototype.peers = function(targetPeer){
+	targetPeer = targetPeer == null && this._self != null ? this._self : targetPeer;
+	return this._peers[targetPeer];
+};
 DiyaNode.prototype.self = function() { return this._self; };
 DiyaNode.prototype.setSecured = function(bSecured) { this._secured = bSecured !== false; };
 DiyaNode.prototype.setWSocket = function(WSocket) {this._WSocket = WSocket;}
@@ -81,9 +84,6 @@ DiyaNode.prototype.setWSocket = function(WSocket) {this._WSocket = WSocket;}
 DiyaNode.prototype.connect = function (addr, WSocket, peerName) {
 	this.bDontReconnect = false
 
-	if (peerName != null) {
-		this._self = peerName
-	}
 	// Handle local clients on UNIX sockets
 	if (addr.startsWith('unix://')) {
 		// If we've trying to connect to the same address we're already connected to
@@ -161,6 +161,10 @@ DiyaNode.prototype.connect = function (addr, WSocket, peerName) {
 
 			return this._connectionDeferred.promise
 		})
+	}
+
+	if (peerName != null) {
+		this._self = peerName;
 	}
 
 	if (WSocket !== undefined)
@@ -405,10 +409,12 @@ DiyaNode.prototype._clearMessages = function(err, data){
 };
 
 DiyaNode.prototype._clearPeers = function() {
-	while(this._peers.length) {
-		let peer = this._peers.pop()
-		this.store.delete(peer)
-		this.emit('peer-disconnected', peer);
+	for(let peerElt in this._peers) {
+		while(this._peers[peerElt].length) {
+			let peer = this._peers[peerElt].pop();
+			this.store.delete(peer);
+			this.emit('peer-disconnected', peer);
+		}
 	}
 };
 
@@ -536,19 +542,30 @@ DiyaNode.prototype._handlePing = function (message) {
 }
 
 DiyaNode.prototype._handleHandshake = function(message){
-
-	if(message.peers === undefined || typeof message.self !== 'string'){
+	if(message.peers == null || message.self == null){
 		Logger.error("Missing arguments for Handshake message, dropping...");
 		return ;
 	}
 
-
 	this._self = message.self;
 
-	for(var i=0;i<message.peers.length; i++){
-		this._peers.push(message.peers[i]);
-		this.store.set(message.peers[i], new Map())
-		this.emit('peer-connected', message.peers[i]);
+	if(typeof this._self === 'string') {
+		for(let i = 0; i < message.peers.length; i++){
+			if (this._peers[this._self] == null) {
+				this._peers[this._self] = []
+			}
+			this._peers[this._self].push(message.peers[i]);
+			this.store.set(message.peers[i], new Map())
+			this.emit('peer-connected', message.peers[i]);
+		}
+	} else {
+		for(let i=0;i<message.peers.length; i++){
+			this._peers[this._self[i]] = message.peers[i];
+			for (let j = 0; j < message.peers[i].length; j++){
+				this.store.set(message.peers[i][j], new Map())
+			}
+			this.emit('peer-connected', message.peers[i]);
+		}
 	}
 
 	this._connectionDeferred.resolve(this.self());
@@ -564,9 +581,9 @@ DiyaNode.prototype._handlePeerConnected = function(message){
 	}
 
 	//Add peer to the list of reachable peers
-	if (this._self == message.targetPeer) {
-		this._peers.push(message.peerId);
-		this.store.set(message.peerId, new Map())
+	if(this._self === message.targetPeer || this._self.includes(message.targetPeer)) {
+		this._peers[message.targetPeer].push(message.peerId);
+		this.store.set(message.peerId, new Map());
 		this.emit('peer-connected', message.peerId);
 	}
 };
@@ -576,12 +593,12 @@ DiyaNode.prototype._handlePeerDisconnected = function(message){
 		Logger.error("Missing arguments for PeerDisconnected Message, dropping...");
 		return ;
 	}
-	
-	if (this._self == message.targetPeer) {
+
+	if(this._self === message.targetPeer || this._self.includes(message.targetPeer)) {
 		//Remove peer from list of reachable peers
-		for(var i=this._peers.length - 1; i >= 0; i--){
-			if(this._peers[i] === message.peerId){
-				this._peers.splice(i, 1);
+		for(var i = this._peers[message.targetPeer].length - 1; i >= 0; i--){
+			if(this._peers[message.targetPeer][i] === message.peerId){
+				this._peers[message.targetPeer].splice(i, 1);
 				break;
 			}
 		}
@@ -627,7 +644,7 @@ DiyaNode.prototype._handleSubscription = function(handler, message){
 };
 
 DiyaNode.prototype._handleSocketServerData = function(message){
-		this._diyaSocket.get(message.data.socketId).push(new Buffer(message.data.buffer, 'base64'));
+	this._diyaSocket.get(message.data.socketId).push(new Buffer(message.data.buffer, 'base64'));
 };
 
 ///////////////////

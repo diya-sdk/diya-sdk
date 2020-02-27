@@ -36,8 +36,8 @@ function newInstance () {
 		return connection.disconnect();
 	};
 
-	d1inst.isConnected = function() {	return connection.isConnected();};
-	d1inst.peers = function() { return connection.peers();};
+	d1inst.isConnected = function() {return connection.isConnected(); };
+	d1inst.peers = function(targetPeer) { return connection.peers(targetPeer); };
 	d1inst.self = function() { return connection.self(); };
 	d1inst.addr = function() { return connection.addr(); };
 	d1inst.user = function() { return connection.user(); };
