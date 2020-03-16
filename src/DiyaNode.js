@@ -163,9 +163,7 @@ DiyaNode.prototype.connect = function (addr, WSocket, peerName) {
 		})
 	}
 
-	if (peerName != null) {
-		this._self = peerName;
-	}
+	this._self = peerName != null ? peerName : this.computeSiteName(addr)
 
 	if (WSocket !== undefined)
 		this._WSocket = WSocket
@@ -465,6 +463,14 @@ DiyaNode.prototype._stopPingResponse = function(){
 DiyaNode.prototype._forceClose = function(){
 	this._socketHandler.close();
 	this._onclose();
+};
+
+DiyaNode.prototype.computeSiteName = function (str) {
+	let noPrefix = str.replace (/^(wss?:\/\/)?([\w\d-\/]*)$/, '$2'),
+	    noTrailingAPI = noPrefix.split(/(\/api)$/)[0],
+		splitted = noTrailingAPI.split('/'),
+		last = splitted[splitted.length - 1];
+	return last;
 };
 
 ///////////////////////////////////////////////////////////////
