@@ -2,7 +2,7 @@
 
 let isBrowser = !(typeof window === 'undefined')
 
-if (!isBrowser) {
+if (isBrowser) {
 
 	const Q            = require('q')
 	const net          = require ('net')
