@@ -1,13 +1,10 @@
 var isBrowser = !(typeof window === 'undefined');
-let UNIXSocketHandler
 
 if(!isBrowser || window.Q === undefined) {
 	const Q = require('q');
 
 	if ( isBrowser === true)
 		window.Q = Q
-	else
-		UNIXSocketHandler = require('./UNIXSocketHandler')
 }
 else { const Q = window.Q; }
 var EventEmitter = require('node-event-emitter');
