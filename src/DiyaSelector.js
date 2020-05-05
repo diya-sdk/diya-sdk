@@ -1,6 +1,12 @@
 var isBrowser = !(typeof window === 'undefined');
-if(!isBrowser) { var Q = require('q'); }
-else { var Q = window.Q; }
+
+if(!isBrowser || window.Q === undefined) {
+	const Q = require('q');
+
+	if ( isBrowser === true)
+		window.Q = Q
+}
+else { const Q = window.Q; }
 var EventEmitter = require('node-event-emitter');
 var inherits = require('inherits');
 

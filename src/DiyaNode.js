@@ -2,11 +2,16 @@
 
 var isBrowser = !(typeof window === 'undefined');
 let UNIXSocketHandler
-if(!isBrowser) {
-	var Q = require('q');
-	UNIXSocketHandler = require('./UNIXSocketHandler')
+
+if(!isBrowser || window.Q === undefined) {
+	const Q = require('q');
+
+	if ( isBrowser === true)
+		window.Q = Q
+	else
+		UNIXSocketHandler = require('./UNIXSocketHandler')
 }
-else { var Q = window.Q; }
+else { const Q = window.Q; }
 
 var EventEmitter = require('node-event-emitter');
 var inherits = require('inherits');
@@ -571,7 +576,7 @@ DiyaNode.prototype._handlePeerDisconnected = function(message){
 		Logger.error("Missing arguments for PeerDisconnected Message, dropping...");
 		return ;
 	}
-	
+
 	//Remove peer from list of reachable peers
 	for(var i=this._peers.length - 1; i >= 0; i--){
 		if(this._peers[i] === message.peerId){
