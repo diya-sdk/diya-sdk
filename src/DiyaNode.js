@@ -2,12 +2,16 @@
 
 var isBrowser = !(typeof window === 'undefined');
 let UNIXSocketHandler
+
 if(!isBrowser || window.Q === undefined) {
-	let Q = require('q');
-	UNIXSocketHandler = require('./UNIXSocketHandler')
-	window.Q = Q
+	const Q = require('q');
+
+	if ( isBrowser === true)
+		window.Q = Q
+	else
+		UNIXSocketHandler = require('./UNIXSocketHandler')
 }
-else { let Q = window.Q; }
+else { const Q = window.Q; }
 
 var EventEmitter = require('node-event-emitter');
 var inherits = require('inherits');
